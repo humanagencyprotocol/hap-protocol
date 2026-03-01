@@ -12,6 +12,9 @@ nmd/
 # Demo agent (separate repository)
 demo-agent/
 
+# Service provider demo (separate repository)
+demo-sp/
+
 # macOS
 .DS_Store
 
