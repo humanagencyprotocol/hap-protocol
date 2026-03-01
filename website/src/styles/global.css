@@ -103,7 +103,8 @@ nav {
 nav .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1.5rem 1.5rem;
+    padding: 0 1.5rem;
+    height: var(--nav-height);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -135,6 +136,7 @@ nav .version-badge {
 
 nav ul {
     display: flex;
+    align-items: center;
     gap: 2rem;
     list-style: none;
     margin: 0;
@@ -156,6 +158,64 @@ nav a:hover {
 nav a.active {
     color: var(--accent);
     font-weight: 600;
+}
+
+/* Nav Dropdown */
+.nav-dropdown {
+    position: relative;
+}
+
+.dropdown-menu {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: column;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0;
+    min-width: 200px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    margin: 0;
+    gap: 0;
+    list-style: none;
+    z-index: 1001;
+}
+
+@media (prefers-color-scheme: dark) {
+    .dropdown-menu {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+}
+
+.nav-dropdown:hover > .dropdown-menu,
+.nav-dropdown:focus-within > .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+}
+
+.dropdown-menu li {
+    width: 100%;
+    margin: 0;
+    border: none;
+}
+
+.dropdown-menu a {
+    display: block;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
+.dropdown-menu a:hover {
+    background: var(--accent-subtle);
+    color: var(--accent);
 }
 
 /* Burger Menu */
@@ -358,6 +418,10 @@ hr {
 
 /* Responsive */
 @media (max-width: 768px) {
+    :root {
+        --nav-height: 58px;
+    }
+
     .burger {
         display: flex;
     }
@@ -396,8 +460,42 @@ hr {
         font-size: 1.1rem;
     }
 
+    /* Mobile dropdown: inline, always visible */
+    .nav-dropdown {
+        position: static;
+    }
+
+    .dropdown-menu {
+        position: static;
+        transform: none;
+        opacity: 1;
+        visibility: visible;
+        background: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0;
+        min-width: 0;
+        height: auto;
+        width: 100%;
+        max-width: none;
+    }
+
+    .dropdown-menu li {
+        border-bottom: 1px solid var(--border);
+    }
+
+    .dropdown-menu a {
+        padding: 0.75rem 0 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    .dropdown-menu a:hover {
+        background: none;
+    }
+
     nav .container {
-        padding: 1rem 1.5rem;
+        padding: 0 1.5rem;
     }
 
     .content {

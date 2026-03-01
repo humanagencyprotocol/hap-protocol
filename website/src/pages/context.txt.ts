@@ -14,7 +14,8 @@ export async function GET() {
   const governanceContent = fs.readFileSync(path.join(contentPath, 'governance.md'), 'utf-8');
 
   // Read demo documentation (not versioned, lives in website content)
-  const demoContent = fs.readFileSync(path.join(process.cwd(), 'src/content/docs/demo.md'), 'utf-8');
+  const demoDeployContent = fs.readFileSync(path.join(process.cwd(), 'src/content/docs/demo-deploy.md'), 'utf-8');
+  const demoAgentContent = fs.readFileSync(path.join(process.cwd(), 'src/content/docs/demo-agent.md'), 'utf-8');
 
   // Read v0.3 review/proposal document (conditional - only if it exists)
   const reviewPath = path.join(contentPath, 'review.md');
@@ -162,7 +163,8 @@ HAP applies wherever AI executes consequential actions:
 
 - **Protocol** — How direction is described, measured, and enforced
 - **Integration** — How to integrate HAP into your systems
-- **Demo** — See HAP enforcement in action
+- **Deploy Gate Demo** — Multi-person approval for GitHub PRs
+- **Agent Demo** — Bounded execution for AI agents via MCP
 - **Service Providers** — Verified infrastructure enforcing compliance
 - **Governance** — Transparent, federated oversight
 
@@ -186,7 +188,11 @@ ${governanceContent}
 
 ---
 
-${demoContent}
+${demoDeployContent}
+
+---
+
+${demoAgentContent}
 ${reviewContent ? `
 ---
 

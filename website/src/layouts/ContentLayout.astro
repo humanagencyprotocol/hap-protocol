@@ -6,13 +6,28 @@ interface Props {
   version?: string;
   date?: string;
   nextPage?: { url: string; label: string };
+  breadcrumb?: { url: string; label: string }[];
 }
 
-const { title, version, date, nextPage } = Astro.props;
+const { title, version, date, nextPage, breadcrumb } = Astro.props;
 ---
 
 <BaseLayout title={`${title} | Human Agency Protocol`}>
-    <article class="content">
+    {breadcrumb && breadcrumb.length > 0 && (
+        <nav class="breadcrumb-bar" aria-label="Breadcrumb">
+            <div class="breadcrumb-inner">
+                {breadcrumb.map((item, i) => (
+                    <>
+                        <a href={item.url}>{item.label}</a>
+                        {i < breadcrumb.length - 1 && <span class="breadcrumb-sep">/</span>}
+                    </>
+                ))}
+                <span class="breadcrumb-sep">/</span>
+                <span class="breadcrumb-current">{title}</span>
+            </div>
+        </nav>
+    )}
+    <article class:list={['content', { 'has-breadcrumb': breadcrumb && breadcrumb.length > 0 }]}>
         {(version || date) && (
             <div class="version-badge-top">
                 {version && <a href="/changelog" class="version-pill">{version}</a>}
@@ -61,5 +76,54 @@ const { title, version, date, nextPage } = Astro.props;
     .version-date {
         color: var(--text-tertiary);
         font-weight: 400;
+    }
+
+    .breadcrumb-bar {
+        position: fixed;
+        top: var(--nav-height);
+        left: 0;
+        width: 100%;
+        background: var(--bg-main);
+        border-bottom: 1px solid var(--border);
+        z-index: 999;
+    }
+
+    .breadcrumb-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0.5rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        line-height: 1;
+    }
+
+    .breadcrumb-bar a {
+        color: var(--text-tertiary);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .breadcrumb-bar a:hover {
+        color: var(--accent);
+    }
+
+    .breadcrumb-sep {
+        color: var(--text-tertiary);
+    }
+
+    .breadcrumb-current {
+        color: var(--text-secondary);
+    }
+
+    .has-breadcrumb {
+        padding-top: 14.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .has-breadcrumb {
+            padding-top: 8.5rem;
+        }
     }
 </style>
