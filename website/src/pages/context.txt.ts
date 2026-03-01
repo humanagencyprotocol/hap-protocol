@@ -13,9 +13,11 @@ export async function GET() {
   const integrationContent = fs.readFileSync(path.join(contentPath, 'integration.md'), 'utf-8');
   const governanceContent = fs.readFileSync(path.join(contentPath, 'governance.md'), 'utf-8');
 
-  // Read demo documentation (not versioned, lives in website content)
-  const demoDeployContent = fs.readFileSync(path.join(process.cwd(), 'src/content/docs/demo-deploy.md'), 'utf-8');
-  const demoAgentContent = fs.readFileSync(path.join(process.cwd(), 'src/content/docs/demo-agent.md'), 'utf-8');
+  // Read demo documentation (not versioned, synced from demo repos if available)
+  const demoDeployPath = path.join(process.cwd(), 'src/content/docs/demo-deploy.md');
+  const demoDeployContent = fs.existsSync(demoDeployPath) ? fs.readFileSync(demoDeployPath, 'utf-8') : null;
+  const demoAgentPath = path.join(process.cwd(), 'src/content/docs/demo-agent.md');
+  const demoAgentContent = fs.existsSync(demoAgentPath) ? fs.readFileSync(demoAgentPath, 'utf-8') : null;
 
   // Read v0.3 review/proposal document (conditional - only if it exists)
   const reviewPath = path.join(contentPath, 'review.md');
@@ -188,11 +190,8 @@ ${governanceContent}
 
 ---
 
-${demoDeployContent}
-
----
-
-${demoAgentContent}
+${demoDeployContent ? `${demoDeployContent}\n\n---\n` : ''}
+${demoAgentContent ? `${demoAgentContent}\n` : ''}
 ${reviewContent ? `
 ---
 
