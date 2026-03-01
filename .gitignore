@@ -9,6 +9,9 @@ CLAUDE.md
 sdk/
 nmd/
 
+# Demo agent (separate repository)
+demo-agent/
+
 # macOS
 .DS_Store
 
