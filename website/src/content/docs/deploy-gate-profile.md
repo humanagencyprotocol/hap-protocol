@@ -253,6 +253,16 @@ It does **not** guarantee:
 
 ---
 
+## Live Demo
+
+The Deploy Gate Profile is demonstrated in a live GitHub App integration:
+
+**https://deploy-demo.humanagencyprotocol.org/**
+
+This demo uses the shared HAP Service Provider at **https://service.humanagencyprotocol.org/** for attestation signing and verification. Install the GitHub App on a repository, open a pull request, and the demo walks through the full attestation flow: gate resolution, domain owner attestation, and gatekeeper verification before deployment.
+
+---
+
 ## Demo Wire Contract
 
 For reference implementations, the attestation is embedded in PR comments:

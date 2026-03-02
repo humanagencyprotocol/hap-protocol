@@ -1807,6 +1807,14 @@ HAP provides accountability infrastructure. Compliance requires additional organ
 ## 23. Next Steps
 
 1. Review this proposal
-2. Implement in demo (deploy-gate profile)
+2. ~~Implement in demo (deploy-gate profile)~~ — Live at https://deploy-demo.humanagencyprotocol.org/
 3. Validate with real multi-domain scenario
 4. Finalize for v0.3 specification
+
+### Live Reference Implementations
+
+The v0.3 execution context model is implemented in two live demos sharing a single Service Provider:
+
+- **Service Provider:** https://service.humanagencyprotocol.org/
+- **Deploy Gate Demo:** https://deploy-demo.humanagencyprotocol.org/ — GitHub App integration for deployment attestation
+- **Agent Demo:** https://agent-demo.humanagencyprotocol.org/ — Agent authorization with `comms-send` and `payment-gate` profiles

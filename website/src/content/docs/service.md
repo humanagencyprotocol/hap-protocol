@@ -281,6 +281,34 @@ If Alex's scope was missing → no attestation → no deploy.
 
 ---
 
+## Live Reference Implementation
+
+A public reference Service Provider is available at:
+
+**https://service.humanagencyprotocol.org/**
+
+This SP serves two live demo applications:
+
+| Demo | URL | Profile |
+|------|-----|---------|
+| **Agent Demo** | https://agent-demo.humanagencyprotocol.org/ | `comms-send@0.3`, `payment-gate@0.3` |
+| **Deploy Gate Demo** | https://deploy-demo.humanagencyprotocol.org/ | `deploy-gate@0.3` |
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/sp/pubkey` | GET | SP Ed25519 public key |
+| `/api/sp/attest` | POST | Sign and issue attestation (API key required) |
+| `/api/sp/verify` | POST | Verify attestation blob |
+| `/api/profiles` | GET | List supported profiles and execution paths |
+| `/api/users` | GET | List demo users and their domains |
+| `/api/attestations` | GET | Query stored attestations |
+
+The reference SP demonstrates a shared, multi-profile Service Provider that issues attestations for multiple demo applications using a single Ed25519 keypair.
+
+---
+
 ## Summary
 
 Service Providers in HAP v0.2:
