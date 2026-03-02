@@ -8,7 +8,7 @@ A merge-blocking deployment gate built on **[Human Agency Protocol v0.3](https:/
 
 Before code ships, each required domain owner reviews the same deterministic execution context and takes explicit responsibility for what the change does, why, and at what cost. No rubber stamps — cryptographic proof that the right people bound themselves to the deployment.
 
-**Live demo:** [demo.humanagencyprotocol.org](https://demo.humanagencyprotocol.org/)
+**Live demo:** [deploy-demo.humanagencyprotocol.org](https://deploy-demo.humanagencyprotocol.org/)
 
 **GitHub:** [github.com/humanagencyprotocol/hap-deploy-gate-demo](https://github.com/humanagencyprotocol/hap-deploy-gate-demo)
 

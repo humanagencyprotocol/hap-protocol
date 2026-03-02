@@ -8,6 +8,10 @@ A bounded-execution MCP server and authorization UI built on **[Human Agency Pro
 
 AI agents call tools (payments, emails) through MCP — but every tool execution is gated by human-created authorizations. Domain owners define bounds (amount limits, allowed environments, recipient caps) and articulate problem, objective, and tradeoffs before any agent action proceeds. The Gatekeeper enforces these bounds at runtime.
 
+**Live demo:** [agent-demo.humanagencyprotocol.org](https://agent-demo.humanagencyprotocol.org/)
+
+Uses the shared HAP Service Provider at [service.humanagencyprotocol.org](https://service.humanagencyprotocol.org/).
+
 ---
 
 ## Protocol Foundation
