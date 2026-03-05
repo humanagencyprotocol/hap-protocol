@@ -34,13 +34,7 @@ const version = siteConfig.version;
             </button>
             <ul id="nav-menu">
                 <li><a href="/protocol" class={currentPath.startsWith('/protocol') ? 'active' : ''}>Protocol</a></li>
-                <li class="nav-dropdown">
-                    <a href="/integration" class={currentPath.startsWith('/integration') ? 'active' : ''}>Integration</a>
-                    <ul class="dropdown-menu">
-                        <li><a href="/integration/demo-deploy">Deploy Gate Demo</a></li>
-                        <li><a href="/integration/demo-agent">Agent Demo</a></li>
-                    </ul>
-                </li>
+                <li><a href="/integration" class={currentPath.startsWith('/integration') ? 'active' : ''}>Integration</a></li>
                 <li><a href="/service" class={currentPath.startsWith('/service') ? 'active' : ''}>Service Providers</a></li>
                 <li><a href="/governance" class={currentPath.startsWith('/governance') ? 'active' : ''}>Governance</a></li>
             </ul>
@@ -65,8 +59,7 @@ const version = siteConfig.version;
                 <h4>Integration</h4>
                 <ul>
                     <li><a href="/integration">Overview</a></li>
-                    <li><a href="/integration/demo-deploy">Deploy Gate Demo</a></li>
-                    <li><a href="/integration/demo-agent">Agent Demo</a></li>
+                    <li><a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer">Demo</a></li>
                     <li><a href="/integration#core-modules">Core Modules</a></li>
                 </ul>
             </div>

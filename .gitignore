@@ -29,3 +29,5 @@ demo-sp/
 .env
 .env.local
 !.env.example
+
+prompts.md

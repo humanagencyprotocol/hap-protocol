@@ -8,7 +8,7 @@ A merge-blocking deployment gate built on **[Human Agency Protocol v0.3](https:/
 
 Before code ships, each required domain owner reviews the same deterministic execution context and takes explicit responsibility for what the change does, why, and at what cost. No rubber stamps — cryptographic proof that the right people bound themselves to the deployment.
 
-**Live demo:** [deploy-demo.humanagencyprotocol.org](https://deploy-demo.humanagencyprotocol.org/)
+**Live demo:** [deploy-demo.humanagencyprotocol.com](https://deploy-demo.humanagencyprotocol.com/)
 
 **GitHub:** [github.com/humanagencyprotocol/hap-deploy-gate-demo](https://github.com/humanagencyprotocol/hap-deploy-gate-demo)
 
@@ -298,7 +298,7 @@ demo/
 
 ### Option A: Use the Public Server (Recommended)
 
-A public Service Provider is available at **https://service.humanagencyprotocol.org** — no server setup required.
+A public Service Provider is available at **https://www.humanagencyprotocol.com** — no server setup required.
 
 ```bash
 pnpm install
@@ -309,7 +309,7 @@ pnpm dev:ui
 Create `apps/ui/.env.local`:
 ```
 GITHUB_TOKEN=<your personal access token with repo scope>
-NEXT_PUBLIC_SP_URL=https://service.humanagencyprotocol.org
+NEXT_PUBLIC_SP_URL=https://www.humanagencyprotocol.com
 ```
 
 ### Option B: Run Your Own Server

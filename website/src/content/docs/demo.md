@@ -298,7 +298,7 @@ demo/
 
 ### Option A: Use the Public Server (Recommended)
 
-A public Service Provider is available at **https://service.humanagencyprotocol.org** — no server setup required.
+A public Service Provider is available at **https://www.humanagencyprotocol.com** — no server setup required.
 
 ```bash
 pnpm install
@@ -309,7 +309,7 @@ pnpm dev:ui
 Create `apps/ui/.env.local`:
 ```
 GITHUB_TOKEN=<your personal access token with repo scope>
-NEXT_PUBLIC_SP_URL=https://service.humanagencyprotocol.org
+NEXT_PUBLIC_SP_URL=https://www.humanagencyprotocol.com
 ```
 
 ### Option B: Run Your Own Server

@@ -6,7 +6,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-        <h1>Protect the Real World <br><span class="highlight">from Rogue AI Actions.</span></h1>
+        <p class="hero-eyebrow">Open-Source Protocol</p>
+        <h1>Protect the Real World <br class="desktop-break"><span class="highlight">from Rogue AI Actions.</span></h1>
         <h2 class="hero-subtitle">Irreversible real-world actions execute only within Decision Owner–defined limits.</h2>
 
         <div class="hero-body">
@@ -347,8 +348,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         text-align: left;
     }
 
+    .hero-eyebrow {
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin-bottom: 1rem;
+    }
+
     .hero .highlight {
         color: var(--accent);
+    }
+
+    .desktop-break {
+        display: none;
+    }
+
+    @media (min-width: 769px) {
+        .desktop-break {
+            display: block;
+        }
     }
 
     .hero-subtitle {

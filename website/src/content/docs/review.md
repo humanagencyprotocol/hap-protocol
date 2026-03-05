@@ -1815,6 +1815,6 @@ HAP provides accountability infrastructure. Compliance requires additional organ
 
 The v0.3 execution context model is implemented in two live demos sharing a single Service Provider:
 
-- **Service Provider:** https://service.humanagencyprotocol.org/
+- **Service Provider:** https://www.humanagencyprotocol.com/
 - **Deploy Gate Demo:** https://deploy-demo.humanagencyprotocol.org/ — GitHub App integration for deployment attestation
 - **Agent Demo:** https://agent-demo.humanagencyprotocol.org/ — Agent authorization with `comms-send` and `payment-gate` profiles

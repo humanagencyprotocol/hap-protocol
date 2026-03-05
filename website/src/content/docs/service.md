@@ -204,7 +204,6 @@ Logical separation of attestation and execution logic MUST be maintained.
 | Data sink | SPs never store, log, or analyze requests |
 | Ethics enforcer | SPs validate structure only—not morality or legality |
 | Global authority | No SP can block others. No hierarchy exists |
-| Profile author | SPs enforce Profiles but do not define them |
 | Content inspector | SPs never see semantic content |
 
 ---
@@ -285,7 +284,7 @@ If Alex's scope was missing → no attestation → no deploy.
 
 A public reference Service Provider is available at:
 
-**https://service.humanagencyprotocol.org/**
+**https://www.humanagencyprotocol.com/**
 
 This SP serves two live demo applications:
 
