@@ -8,26 +8,122 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="hero-content">
         <p class="hero-eyebrow">Open-Source Protocol</p>
         <h1>Authorization Protocol <br class="desktop-break"><span class="highlight">for AI Agents.</span></h1>
-        <h2 class="hero-subtitle">Irreversible real-world actions execute only within human-defined bounds — cryptographically enforced before execution.</h2>
-
-        <div class="hero-body">
-  
-        </div>
+        <h2 class="hero-subtitle">Irreversible real-world actions execute only within human-defined bounds — enforced through cryptographic attestations and runtime verification.</h2>
 
         <div class="cta-group">
-            <button id="ask-ai-btn" class="btn btn-primary">Explore Use Cases</button>
-            <a href="#why-exists" class="btn btn-secondary">Read more</a>
+            <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
+            <a href="#architecture" class="btn btn-secondary">View Architecture</a>
+        </div>
+        </div>
+    </section>
+
+    <!-- How HAP Works -->
+    <section id="architecture" class="architecture-section">
+        <h2 class="section-title">How HAP Works</h2>
+        <p class="section-intro">HAP separates authorization from execution. Humans authorize actions through cryptographic attestations. Gatekeepers verify those attestations before any system is allowed to execute.</p>
+
+        <div class="flow-grid">
+            <!-- Row 1 -->
+            <div class="flow-cell flow-cell-box">
+                <div class="flow-step"><span class="flow-label">Human</span></div>
+            </div>
+            <div class="flow-cell flow-cell-line-h">
+                <div class="flow-line-h"></div>
+            </div>
+            <div class="flow-cell flow-cell-box">
+                <div class="flow-step"><span class="flow-label">AI Agent</span></div>
+            </div>
+            <!-- Row 2: vertical connectors -->
+            <div class="flow-cell flow-cell-line-v">
+                <div class="flow-line-v"></div>
+            </div>
+            <div class="flow-cell"></div>
+            <div class="flow-cell flow-cell-line-v">
+                <div class="flow-line-v"></div>
+            </div>
+            <!-- Row 3 -->
+            <div class="flow-cell flow-cell-box">
+                <div class="flow-step flow-step-accent"><span class="flow-label">Service Provider</span></div>
+            </div>
+            <div class="flow-cell flow-cell-line-h">
+                <div class="flow-line-h"></div>
+            </div>
+            <div class="flow-cell flow-cell-box">
+                <div class="flow-step flow-step-accent"><span class="flow-label">Gatekeeper</span></div>
+            </div>
+            <!-- Row 4: vertical connector right only -->
+            <div class="flow-cell"></div>
+            <div class="flow-cell"></div>
+            <div class="flow-cell flow-cell-line-v">
+                <div class="flow-line-v"></div>
+            </div>
+            <!-- Row 5: executor right only -->
+            <div class="flow-cell"></div>
+            <div class="flow-cell"></div>
+            <div class="flow-cell flow-cell-box">
+                <div class="flow-step"><span class="flow-label">Executor</span></div>
+            </div>
         </div>
 
-        <!-- Card Selector -->
-        <div id="card-section" class="card-section" style="display: none;">
+        <div class="architecture-grid">
+            <div class="architecture-card">
+                <h3>Service Provider</h3>
+                <p>Issues cryptographic attestations proving a human authorized an action within defined bounds.</p>
+            </div>
+            <div class="architecture-card">
+                <h3>Gatekeeper</h3>
+                <p>Verifies attestations before execution and blocks any action that exceeds authorized limits.</p>
+            </div>
+            <div class="architecture-card">
+                <h3>Executor</h3>
+                <p>Performs the action — but only after authorization has been validated.</p>
+            </div>
+        </div>
+
+        <p class="section-conclusion">HAP enforces authorization through two infrastructure components: Service Providers issue attestations. Gatekeepers verify them before execution.</p>
+    </section>
+
+    <!-- Problem Section -->
+    <section id="why-exists" class="consequences-section">
+        <h2 class="section-title">AI Executes. Humans Bear the Consequences.</h2>
+        <div class="consequences-body">
+            <p>Agents can deploy code, move money, grant access, and operate infrastructure. But they do not bear the consequences.</p>
+            <blockquote class="axiom-block">
+                HAP ensures that irreversible actions only occur within bounds defined by a responsible human.
+            </blockquote>
+        </div>
+    </section>
+
+    <!-- Core Principle -->
+    <section class="comparison-section">
+        <h2 class="section-title">Direction is human. Execution is machine.</h2>
+
+        <div class="comparison-grid">
+            <div class="comparison-card">
+                <h3>AI can:</h3>
+                <p>optimize, coordinate and execute.</p>
+            </div>
+
+            <div class="comparison-card highlight">
+                <h3>Humans must:</h3>
+                <p>define what to optimize, set objectives, accept tradeoffs and bear consequences.</p>
+            </div>
+        </div>
+
+        <p class="section-conclusion"><strong>HAP enforces that boundary.</strong></p>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="use-cases-section">
+        <h2 class="section-title">Explore Use Cases</h2>
+
+        <div id="card-section" class="card-section">
             <h2 class="card-section-title">Select a use case to generate a ready-to-paste prompt for your AI chat.</h2>
 
             <div class="cards-grid">
                 <button class="use-case-card" data-card="development">
                     <h3 class="card-title">Development / Deployments</h3>
                     <p class="card-description">No deployment until the right owners commit to what ships and why.</p>
-                    <span class="card-badge">Live demo</span>
                 </button>
 
                 <button class="use-case-card" data-card="agents">
@@ -84,11 +180,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <!-- Prompt Panel -->
             <div id="prompt-panel" class="prompt-display" style="display: none;">
                 <div class="prompt-content">
-                    <!-- Demo link (development card only) -->
-                    <div id="demo-link" class="demo-link" style="display: none;">
-                        <a href="https://demo.humanagencyprotocol.org/" target="_blank" rel="noopener noreferrer">Try the live demo — see HAP enforcement in a real deploy gate</a>
-                    </div>
-
                     <!-- Prompt preview -->
                     <div id="prompt-preview">
                         <p class="prompt-intro">Copy this prompt into your AI chat to learn how HAP applies to this use case:</p>
@@ -121,99 +212,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 </div>
             </div>
         </div>
-        </div>
     </section>
 
-    <!-- AI Does Not Feel Consequences -->
-    <section id="why-exists" class="consequences-section">
-        <h2 class="section-title">AI Does Not Feel Consequences</h2>
-        <div class="consequences-body">
-            <p>An agent can transfer funds, deploy to production, grant access, or publish externally in seconds.<br>It will never experience financial loss, regulatory penalties, reputational damage, or operational fallout.</p>
-
-            <p>That asymmetry creates new structural risks:</p>
-            <ul>
-                <li>Money moved beyond intended authority</li>
-                <li>Data exported beyond intended scope</li>
-                <li>Goals reinterpreted beyond intended direction</li>
-                <li>Commitments made without explicit human consent</li>
-            </ul>
-
-            <p>HAP enforces one rule:</p>
-            <blockquote class="axiom-block">
-                Irreversible real-world actions execute only within limits defined by a Decision Owner.
-            </blockquote>
-        </div>
-    </section>
-
-    <!-- Probabilistic vs Irreversible -->
-    <section class="consequences-section">
-        <h2 class="section-title">AI systems reason probabilistically</h2>
-        <div class="consequences-body">
-            <p>Real-world consequences are not probabilistic — money moves, access changes, data leaves.</p>
-            <blockquote class="axiom-block">
-                When probabilistic systems can trigger irreversible execution, authority must be predefined and bounded.
-            </blockquote>
-        </div>
-        <p class="section-conclusion"><strong>HAP enforces that boundary.</strong></p>
-    </section>
-
-    <!-- What AI Can Do vs. What Humans Must Do -->
-    <section class="comparison-section">
-        <h2 class="section-title">What AI Can Do vs. What Humans Must Do</h2>
-
-        <div class="comparison-grid">
-            <div class="comparison-card">
-                <h3>AI can:</h3>
-                <p>optimize, coordinate and execute.</p>
-            </div>
-
-            <div class="comparison-card highlight">
-                <h3>Humans must:</h3>
-                <p>define what to optimize, set objectives, accept tradeoffs and bear consequences.</p>
-            </div>
-        </div>
-
-        <p class="section-conclusion">
-            <strong>Direction is human.<br>
-            Execution is machine.<br>
-            HAP keeps the boundary intact.</strong>
-        </p>
-    </section>
-
-    <!-- Governance Enforced, Not Documented -->
+    <!-- Compliance Alignment -->
     <section class="compliance-section">
-        <h2 class="section-title">Governance Enforced, Not Documented</h2>
-        <h3 class="compliance-subtitle">Most AI governance frameworks share the same core requirement: humans must remain in control of consequential AI decisions.</h3>
-
-        <div class="section-body">
-            <p>The EU AI Act mandates it. ISO 42001 requires it. NIST AI RMF recommends it. But none of them say <strong>how</strong>.</p>
-            <p>HAP is the how. It enforces human oversight at the protocol level — not through policies that can be ignored, but through cryptographic gates that cannot be bypassed.</p>
-        </div>
+        <h2 class="section-title">Compliance Alignment</h2>
+        <p class="section-intro">HAP turns policy requirements into enforceable infrastructure.</p>
 
         <div class="compliance-grid">
             <div class="compliance-card">
-                <h3>Enforceable by Design</h3>
-                <p>Every AI action requires a human Decision Owner who has articulated the problem, objective, and tradeoffs. No attestation, no execution.</p>
-            </div>
-            <div class="compliance-card">
-                <h3>EU AI Act Ready</h3>
+                <h3>EU AI Act</h3>
                 <p>Article 14 mandates effective human oversight for high-risk AI. HAP satisfies this structurally — oversight is not a checkbox, it's the architecture.</p>
             </div>
             <div class="compliance-card">
-                <h3>Audit-Ready Infrastructure</h3>
+                <h3>ISO 42001</h3>
+                <p>Every AI action requires a human Decision Owner who has articulated the problem, objective, and tradeoffs. No attestation, no execution.</p>
+            </div>
+            <div class="compliance-card">
+                <h3>NIST AI RMF</h3>
                 <p>Every decision produces a cryptographic trail of authorship, tradeoffs, and commitments — tamper-proof and verifiable.</p>
             </div>
         </div>
-    </section>
-
-    <!-- Why This Matters Now -->
-    <section class="matters-now">
-        <h2 class="section-title">Why This Matters Now</h2>
-        <div class="matters-content">
-            <p class="key-insight">As AI accelerates, execution becomes cheap.<br>Unbounded execution becomes dangerous.<br>Direction must be explicit and enforceable.</p>
-            <p>When agents can initiate irreversible actions at machine speed, governance cannot rely on assumption or oversight.</p>
-        </div>
-        <p class="section-conclusion"><strong>HAP makes human direction a structural requirement of execution.</strong></p>
     </section>
 
     <!-- Build With HAP -->
@@ -224,35 +243,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <a href="/protocol" class="protocol-link">
                 <div class="label">Protocol</div>
                 <h3>Protocol</h3>
-                <p>How direction is described, measured, and enforced</p>
+                <p>Defines authorization structure and attestation format.</p>
                 <div class="arrow">Read the protocol →</div>
             </a>
 
             <a href="/service" class="protocol-link">
                 <div class="label">Service Providers</div>
                 <h3>Service Providers</h3>
-                <p>Attestation issuance and identity verification</p>
+                <p>Issue cryptographic attestations.</p>
                 <div class="arrow">View architecture →</div>
             </a>
 
             <a href="/gatekeeper" class="protocol-link">
                 <div class="label">Gatekeeper</div>
                 <h3>Gatekeeper</h3>
-                <p>Attestation verification and execution enforcement</p>
+                <p>Verifies authorization before execution.</p>
                 <div class="arrow">Read gatekeeper spec →</div>
             </a>
 
             <a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer" class="protocol-link">
                 <div class="label">Demo</div>
-                <h3>Live Demo</h3>
-                <p>Multi-person approval and bounded execution in action</p>
+                <h3>Demo</h3>
+                <p>Open-source gateway and live demo.</p>
                 <div class="arrow">Try the demo →</div>
             </a>
 
             <a href="/governance" class="protocol-link">
                 <div class="label">Governance</div>
                 <h3>Governance</h3>
-                <p>Transparent, federated oversight</p>
+                <p>Protocol governance and trust model.</p>
                 <div class="arrow">Read framework →</div>
             </a>
         </div>
@@ -271,7 +290,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center; /* Keep the 1200px container centered in viewport */
+        align-items: center;
         padding: 9rem 1.5rem 4rem;
     }
 
@@ -281,7 +300,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: flex-start; /* Force all children to the left */
+        align-items: flex-start;
     }
 
     @media (min-width: 1280px) {
@@ -289,7 +308,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         padding: 0 1.5rem;
         }
     }
-
 
     .hero h1 {
         font-size: clamp(2.2rem, 5vw, 4rem);
@@ -334,37 +352,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         text-align: left;
     }
 
-    .hero-tagline {
-        font-size: clamp(1rem, 1.8vw, 1.3rem);
-        font-weight: 600;
-        color: var(--accent);
-        max-width: 900px;
-        margin-bottom: 1.5rem;
-        line-height: 1.4;
-        text-align: left;
-    }
-
-    .hero-body {
-        max-width: 800px;
-        margin-bottom: 2.5rem;
-        text-align: left;
-    }
-
-    .hero-body p {
-        font-size: clamp(0.95rem, 1.6vw, 1.15rem);
-        line-height: 1.6;
-        margin-bottom: 1rem;
-        color: var(--text-primary);
-    }
-
-    .key-statement {
-        font-size: clamp(1.05rem, 1.8vw, 1.25rem);
-        font-weight: 600;
-        color: var(--text-primary);
-        margin: 1.2rem 0;
-        max-width: 600px;
-    }
-
     @media (max-height: 700px) {
         .hero {
             min-height: auto;
@@ -376,11 +363,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
     }
 
-    .emphasis {
-        font-weight: 600;
-        color: var(--accent);
-    }
-
     .cta-group {
         display: flex;
         gap: 1rem;
@@ -388,16 +370,106 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         justify-content: flex-start;
     }
 
-    .btn.clicked {
-        opacity: 0.7;
+    /* Architecture Section */
+    .architecture-section {
+        max-width: 1200px;
+        margin: 8rem auto;
+        padding: 0 1.5rem;
+    }
+
+    .flow-grid {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto auto auto auto auto;
+        justify-items: center;
+        align-items: center;
+        margin: 3rem auto;
+        max-width: 500px;
+    }
+
+    .flow-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .flow-cell-line-h {
+        width: 100%;
+    }
+
+    .flow-step {
+        background: var(--bg-elevated);
+        border: 2px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1.25rem 2rem;
+        text-align: center;
+        width: 100%;
+    }
+
+    .flow-step-accent {
+        border-color: var(--accent);
+        background: var(--accent-subtle);
+    }
+
+    .flow-label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+
+    .flow-line-h {
+        width: 100%;
+        height: 2px;
+        background: var(--border);
+    }
+
+    .flow-line-v {
+        width: 2px;
+        height: 1.5rem;
+        background: var(--border);
+    }
+
+    .architecture-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .architecture-card {
+        background: var(--bg-elevated);
+        border: 2px solid var(--border);
+        border-radius: 1rem;
+        padding: 2.5rem;
+    }
+
+    .architecture-card h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+    }
+
+    .architecture-card p {
+        color: var(--text-secondary);
+        line-height: 1.7;
+        font-size: clamp(1rem, 1.8vw, 1.1rem);
+        margin: 0;
     }
 
     /* Card Selector Styles */
+    .use-cases-section {
+        max-width: 1200px;
+        margin: 8rem auto;
+        padding: 0 1.5rem;
+    }
+
     .card-section {
         width: 100%;
         max-width: 1000px;
         margin-top: 2rem;
-        animation: slideDown 0.3s ease-out;
         text-align: left;
     }
 
@@ -418,7 +490,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         justify-content: center;
         align-items: stretch;
         width: 100%;
-        max-width: 1200px; /* Limit overall width */
+        max-width: 1200px;
         margin-left: auto;
         margin-right: auto;
     }
@@ -435,7 +507,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         width: 100%;
         max-width: 300px;
         margin: 0 auto;
-        justify-self: center; /* Actually center the item within its grid cell */
+        justify-self: center;
     }
 
     .use-case-card:hover {
@@ -447,10 +519,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .use-case-card.active {
         border-color: var(--accent);
         background: var(--bg);
-    }
-
-    .wildcard-card {
-        border-style: dashed;
     }
 
     /* Or Separator */
@@ -491,36 +559,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         margin: 0;
     }
 
-    .card-badge {
-        display: inline-block;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--accent);
-        border: 1px solid var(--accent);
-        border-radius: 0.25rem;
-        padding: 0.15rem 0.5rem;
-        margin-top: 0.75rem;
-    }
-
-    .demo-link {
-        background: var(--accent-subtle);
-        border: 1px solid var(--accent);
-        border-radius: 0.5rem;
-        padding: 0.75rem 1rem;
-        text-align: center;
-    }
-
-    .demo-link a {
-        color: var(--accent);
-        font-weight: 600;
-        text-decoration: none;
-    }
-
-    .demo-link a:hover {
-        text-decoration: underline;
-    }
 
     /* Wildcard Input */
     .wildcard-label {
@@ -587,44 +625,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         margin-bottom: 1.5rem;
     }
 
-    .prompt-note {
-        font-size: 0.9rem;
-        color: var(--text-tertiary);
-        text-align: center;
-        line-height: 1.6;
-        margin: 0;
-    }
-
-    .prominent-note {
-        background: var(--bg-elevated);
-        border: 2px solid var(--accent);
-        border-radius: 0.5rem;
-        padding: 1rem;
-        margin: 1.5rem 0;
-        font-weight: 500;
-        color: var(--text-primary);
-        font-size: clamp(1.05rem, 2vw, 1.2rem);
-        line-height: 1.6;
-    }
-
-    .prominent-note a {
-        color: var(--accent);
-        text-decoration: none;
-    }
-
-    .prominent-note a:hover {
-        text-decoration: underline;
-    }
-
-    .prompt-note a {
-        color: var(--accent);
-        text-decoration: none;
-    }
-
-    .prompt-note a:hover {
-        text-decoration: underline;
-    }
-
     .prompt-display {
         background: var(--bg-elevated);
         border: 2px solid var(--accent);
@@ -640,9 +640,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         gap: 1rem;
     }
 
-
     /* Content Sections */
-
     .section-body {
         max-width: 800px;
     }
@@ -664,13 +662,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         margin: 3rem 0;
         background: var(--bg-elevated);
         line-height: 1.5;
-    }
-
-    /* Comparison Section */
-    .content-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
     }
 
     /* AI Does Not Feel Consequences */
@@ -724,22 +715,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         color: var(--text-primary);
     }
 
-    .comparison-card ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .comparison-card li {
-        padding: 0.75rem 0;
-        border-bottom: 1px solid var(--border);
+    .comparison-card p {
         color: var(--text-primary);
         line-height: 1.6;
         font-size: clamp(1rem, 1.8vw, 1.1rem);
-    }
-
-    .comparison-card li:last-child {
-        border-bottom: none;
     }
 
     .section-conclusion {
@@ -751,13 +730,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         line-height: 1.6;
     }
 
-    /* Checkpoints Section */
-    .checkpoints-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
     .section-intro {
         font-size: clamp(1.05rem, 2vw, 1.2rem);
         color: var(--text-primary);
@@ -766,161 +738,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         line-height: 1.7;
     }
 
-    .checkpoints {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-        margin-top: 3rem;
-        max-width: 1200px;
-    }
-
-    .checkpoint {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 1rem;
-        padding: 2rem;
-        display: flex;
-        align-items: flex-start;
-        gap: 2rem;
-    }
-
-    .checkpoint-number {
-        width: 3rem;
-        height: 3rem;
-        background: var(--accent);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-
-    .checkpoint-content h4 {
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-        color: var(--text-primary);
-    }
-
-    .checkpoint-content p {
-        color: var(--text-secondary);
-        margin: 0;
-        line-height: 1.6;
-    }
-
-    /* How It Works */
-    .how-it-works {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .mechanism-title {
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        font-weight: 600;
-        color: var(--accent);
-        margin-bottom: 3rem;
-        text-align: center;
-    }
-
-    .steps {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 2rem;
-        margin-bottom: 3rem;
-    }
-
-    .step {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 1rem;
-        padding: 2.5rem 2rem;
-        text-align: center;
-    }
-
-    .step-number {
-        width: 3rem;
-        height: 3rem;
-        background: var(--accent);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0 auto 1.5rem;
-    }
-
-    .step h4 {
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: var(--text-primary);
-    }
-
-    .step p {
-        color: var(--text-secondary);
-        line-height: 1.6;
-        margin-bottom: 0;
-    }
-
-    .enforcement-statement {
-        font-size: clamp(1.2rem, 2vw, 1.4rem);
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-top: 2rem;
-        text-align: center;
-        line-height: 1.8;
-    }
-
     /* Compliance Section */
     .compliance-section {
         max-width: 1200px;
         margin: 8rem auto;
         padding: 0 1.5rem;
-    }
-
-    .compliance-subtitle {
-        font-size: clamp(1.3rem, 2.5vw, 1.8rem);
-        font-weight: 600;
-        color: var(--accent);
-        margin-bottom: 2rem;
-        max-width: 800px;
-        line-height: 1.3;
-    }
-
-    .compliance-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 2rem;
-        margin-top: 3rem;
-    }
-
-    .compliance-card {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 1rem;
-        padding: 2rem;
-    }
-
-    /* Compliance Section */
-    .compliance-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .compliance-subtitle {
-        font-size: clamp(1.3rem, 2.5vw, 1.8rem);
-        font-weight: 600;
-        color: var(--accent);
-        margin-bottom: 2rem;
-        max-width: 800px;
-        line-height: 1.3;
     }
 
     .compliance-grid {
@@ -949,96 +771,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         line-height: 1.7;
         font-size: clamp(1rem, 1.8vw, 1.1rem);
         margin: 0;
-    }
-
-    /* Why This Matters Now */
-    .matters-now {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .matters-content {
-        max-width: 800px;
-    }
-
-    .matters-content p {
-        font-size: clamp(1.05rem, 2vw, 1.2rem);
-        line-height: 1.8;
-        margin-bottom: 1.5rem;
-        color: var(--text-primary);
-    }
-
-    .key-insight {
-        font-size: clamp(1.15rem, 2.2vw, 1.35rem);
-        font-weight: 600;
-        color: var(--text-primary);
-        margin: 2rem 0;
-    }
-
-    .matters-content .emphasis {
-        font-size: clamp(1.2rem, 2.2vw, 1.4rem);
-        display: block;
-        margin: 2rem 0;
-    }
-
-    .conclusion {
-        font-size: clamp(1.2rem, 2.2vw, 1.4rem);
-        font-weight: 600;
-        color: var(--accent);
-        margin-top: 2rem;
-    }
-
-    /* What HAP Enables */
-    .enables-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .enables-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 2rem;
-        margin-top: 3rem;
-    }
-
-    .enable-card {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 1rem;
-        padding: 2.5rem;
-    }
-
-    .enable-card.highlight {
-        border-color: var(--accent);
-        background: var(--accent-subtle);
-    }
-
-    .enable-card h3 {
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: var(--accent);
-    }
-
-    .enable-card p {
-        color: var(--text-primary);
-        line-height: 1.7;
-        font-size: clamp(1rem, 1.8vw, 1.1rem);
-        margin: 0;
-    }
-
-    .enables-principles {
-        margin-top: 3rem;
-        padding-top: 2rem;
-        border-top: 2px solid var(--border);
-    }
-
-    .enables-principles .key-statement {
-        font-size: clamp(1.1rem, 2vw, 1.3rem);
-        margin-bottom: 1.5rem;
-        line-height: 1.6;
     }
 
     /* Shared Styles */
@@ -1113,13 +845,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         font-weight: 600;
     }
 
-    /* Responsive */
-    @media (max-width: 1024px) and (min-width: 769px) {
-        .checkpoints {
-            grid-template-columns: repeat(2, 1fr);
+    /* Animations */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
 
+    /* Responsive */
     @media (max-width: 768px) {
         .hero {
             padding-top: 8rem;
@@ -1134,30 +872,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             text-align: center;
         }
 
-        .content-section,
+        .consequences-section,
         .comparison-section,
-        .checkpoints-section,
-        .how-it-works,
-        .matters-now,
-        .enables-section {
+        .architecture-section,
+        .use-cases-section,
+        .compliance-section,
+        .protocol-nav {
             margin: 4rem auto;
-        }
-
-        .steps {
-            grid-template-columns: 1fr;
         }
 
         .comparison-grid {
             grid-template-columns: 1fr;
         }
 
-        .checkpoint {
-            flex-direction: column;
-            text-align: center;
+        .flow-grid {
+            max-width: 100%;
         }
 
-        .checkpoints {
-            grid-template-columns: 1fr;
+        .flow-step {
+            padding: 1rem 1.25rem;
         }
     }
 </style>
@@ -1165,7 +898,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <script>
     const prompts = {
         development: {
-            showDemo: true,
             prompt: `Explain how the Human Agency Protocol (HAP) can be used to prevent production deployments unless engineering and release owners explicitly commit to the problem being solved, the intended outcome, the deployment path, and the risks. Use concrete examples from a typical CI/CD pipeline.`
         },
         agents: {
@@ -1237,26 +969,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }, 3000);
     }
 
-    // Toggle card section
-    document.getElementById('ask-ai-btn')?.addEventListener('click', async () => {
-        const button = document.getElementById('ask-ai-btn');
-        const cardSection = document.getElementById('card-section');
-
-        if (cardSection.style.display === 'none' || !cardSection.style.display) {
-            button.classList.add('clicked');
-            cardSection.style.display = 'block';
-            fetchContext(); // pre-fetch in background
-
-            setTimeout(() => {
-                const headerHeight = 80;
-                const buttonTop = button.getBoundingClientRect().top + window.scrollY - headerHeight;
-                window.scrollTo({ top: buttonTop, behavior: 'smooth' });
-            }, 100);
-        } else {
-            button.classList.remove('clicked');
-            cardSection.style.display = 'none';
-        }
-    });
+    // Pre-fetch context
+    fetchContext();
 
     // Handle card selection
     document.querySelectorAll('[data-card]').forEach(card => {
@@ -1269,7 +983,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             card.classList.add('active');
 
             const panel = document.getElementById('prompt-panel');
-            const demoLink = document.getElementById('demo-link');
             const promptPreview = document.getElementById('prompt-preview');
             const promptText = document.getElementById('prompt-text');
             const contextLabel = document.getElementById('context-label');
@@ -1280,7 +993,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
             if (cardId === 'question') {
                 // Question mode: hide prompt preview, show question input
-                demoLink.style.display = 'none';
                 promptPreview.style.display = 'none';
                 contextLabel.style.display = 'none';
                 contextInput.style.display = 'none';
@@ -1290,7 +1002,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 const data = prompts[cardId];
                 questionSection.style.display = 'none';
 
-                demoLink.style.display = data.showDemo ? 'block' : 'none';
                 promptPreview.style.display = 'block';
                 promptText.textContent = data.prompt;
 

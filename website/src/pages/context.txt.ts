@@ -29,23 +29,36 @@ export async function GET() {
 
 ## Homepage
 
-### Authorization Infrastructure for Autonomous Systems.
+### Authorization Protocol for AI Agents.
 
-AI agents can now execute real-world actions.
-
-They can deploy code, move money, grant access, and operate infrastructure.
-
-But agents do not bear consequences.
-
-The Human Agency Protocol solves this by enforcing one rule:
-
-> Irreversible actions execute only within bounds defined by a responsible human.
-
-Those bounds are cryptographically committed in advance — enabling safe autonomous execution.
+Irreversible real-world actions execute only within human-defined bounds — enforced through cryptographic attestations and runtime verification.
 
 ---
 
-### What AI Can Do vs. What Humans Must Do
+### How HAP Works
+
+HAP separates authorization from execution. Humans authorize actions through cryptographic attestations. Gatekeepers verify those attestations before any system is allowed to execute.
+
+Authorization path: Human → Service Provider → Gatekeeper → Executor
+Execution request: AI Agent → Gatekeeper
+
+- **Service Provider** — Issues cryptographic attestations proving a human authorized an action within defined bounds.
+- **Gatekeeper** — Verifies attestations before execution and blocks any action that exceeds authorized limits.
+- **Executor** — Performs the action — but only after authorization has been validated.
+
+HAP enforces authorization through two infrastructure components: Service Providers issue attestations. Gatekeepers verify them before execution.
+
+---
+
+### AI Executes. Humans Bear the Consequences.
+
+Agents can deploy code, move money, grant access, and operate infrastructure. But they do not bear the consequences.
+
+> HAP ensures that irreversible actions only occur within bounds defined by a responsible human.
+
+---
+
+### Direction is human. Execution is machine.
 
 **AI can:**
 optimize, coordinate and execute.
@@ -53,80 +66,15 @@ optimize, coordinate and execute.
 **Humans must:**
 define what to optimize, set objectives, accept tradeoffs and bear consequences.
 
-**Direction is human.**
-**Execution is machine.**
-**HAP keeps the boundary intact.**
+**HAP enforces that boundary.**
 
 ---
 
-### The Six Human Gates
-
-AI can simulate a thousand paths, but it cannot open the gate to any of them. HAP enforces these mandatory preconditions before any execution begins.
-
-**Frame — The Boundary**
-Humans define what we are deciding. AI has no context until a human sets the decision boundary.
-
-**Problem — The Justification**
-Every action needs a reason. AI calculates solutions; only humans determine if the problem is worth solving.
-
-**Objective — The Optimization**
-AI optimizes for any metric. Only humans can choose which outcome actually matters.
-
-**Tradeoff — The Cost**
-Every choice abandons alternatives. Only humans can accept the loss of what is sacrificed.
-
-**Commitment — The Point of No Return**
-Commitment makes a choice binding. Only a human can make an AI action irreversible.
-
-**Decision Owner — The Responsibility**
-Authorship and Ownership are unified. No action is taken without an identifiable human who bears the consequences.
-
----
-
-### Authorization State vs Direction State
-
-HAP distinguishes between two classes of human input:
-
-**Authorization State** determines whether execution is allowed:
-- Frame, Commitment, Decision Owner, Domain authority
-
-**Direction State** informs how an AI system reasons within authorized bounds:
-- Problem, Objective, Tradeoff
-
-Authorization is structurally verifiable and enforceable.
-Direction remains local and private by default.
-
----
-
-### Governance Enforced, Not Documented
-
-Most AI governance frameworks share the same core requirement: humans must remain in control of consequential AI decisions. The EU AI Act mandates it. ISO 42001 requires it. NIST AI RMF recommends it. But none of them say **how**.
-
-HAP is the how. It enforces human oversight at the protocol level — not through policies that can be ignored, but through cryptographic gates that cannot be bypassed.
-
-- **Enforceable by Design** — Every AI action requires a human Decision Owner who has articulated the problem, objective, and tradeoffs. No attestation, no execution.
-- **EU AI Act Ready** — Article 14 mandates effective human oversight for high-risk AI. HAP satisfies this structurally — oversight is not a checkbox, it's the architecture.
-- **Audit-Ready Infrastructure** — Every decision produces a cryptographic trail of authorship, tradeoffs, and commitments — tamper-proof and verifiable.
-
----
-
-### Why This Matters Now
-
-As AI accelerates, execution becomes cheap.
-Unbounded execution becomes dangerous.
-Direction must be explicit and enforceable.
-
-When agents can initiate irreversible actions at machine speed, governance cannot rely on assumption or oversight.
-
-HAP makes human direction a structural requirement of execution.
-
----
-
-### Where Do You Need Human Direction Before Execution?
+### Explore Use Cases
 
 HAP applies wherever AI executes consequential actions:
 
-- **Development / Deployments** — No deployment until the right owners commit to what ships and why. (Live demo available)
+- **Development / Deployments** — No deployment until the right owners commit to what ships and why.
 - **AI Agents** — Agents execute within human-approved bounds; expansions require attestation.
 - **Infrastructure** — No production infrastructure change without domain owners signing off.
 - **Database & Data** — No schema change, destructive query, or export without a named human committing.
@@ -138,14 +86,23 @@ HAP applies wherever AI executes consequential actions:
 
 ---
 
+### Compliance Alignment
+
+HAP turns policy requirements into enforceable infrastructure.
+
+- **EU AI Act** — Article 14 mandates effective human oversight for high-risk AI. HAP satisfies this structurally — oversight is not a checkbox, it's the architecture.
+- **ISO 42001** — Every AI action requires a human Decision Owner who has articulated the problem, objective, and tradeoffs. No attestation, no execution.
+- **NIST AI RMF** — Every decision produces a cryptographic trail of authorship, tradeoffs, and commitments — tamper-proof and verifiable.
+
+---
+
 ### Build With HAP
 
-- **Protocol** — How direction is described, measured, and enforced
-- **Service Providers** — Attestation issuance and identity verification
-- **Gatekeeper** — Attestation verification and execution enforcement
-- **Governance** — Transparent, federated oversight
-- **Deploy Gate Demo** — Multi-person approval for GitHub PRs
-- **Agent Demo** — Bounded execution for AI agents via MCP
+- **Protocol** — Defines authorization structure and attestation format.
+- **Service Providers** — Issue cryptographic attestations.
+- **Gatekeeper** — Verifies authorization before execution.
+- **Demo** — Open-source gateway and live demo.
+- **Governance** — Protocol governance and trust model.
 
 **HAP turns human direction into the governing layer of intelligent systems.**
 
