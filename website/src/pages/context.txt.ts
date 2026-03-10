@@ -50,11 +50,11 @@ HAP enforces authorization through two infrastructure components: Service Provid
 
 ---
 
-### AI Executes. Humans Bear the Consequences.
+### AI Executes. Humans Own It.
 
-Agents can deploy code, move money, grant access, and operate infrastructure. But they do not bear the consequences.
+AI Agents can deploy code, move money, grant access, and operate infrastructure. But they cannot own it — because ownership requires bearing consequences, and AI cannot bear them.
 
-> HAP ensures that irreversible actions only occur within bounds defined by a responsible human.
+> HAP ensures that irreversible actions only execute within bounds set by a human who owns the outcome.
 
 ---
 
