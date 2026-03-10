@@ -10,61 +10,38 @@ export async function GET() {
   const contentPath = path.join(process.cwd(), `../content/${version}`);
   const protocolContent = fs.readFileSync(path.join(contentPath, 'protocol.md'), 'utf-8');
   const serviceContent = fs.readFileSync(path.join(contentPath, 'service.md'), 'utf-8');
-  const integrationContent = fs.readFileSync(path.join(contentPath, 'integration.md'), 'utf-8');
+  const gatekeeperContent = fs.readFileSync(path.join(contentPath, 'gatekeeper.md'), 'utf-8');
   const governanceContent = fs.readFileSync(path.join(contentPath, 'governance.md'), 'utf-8');
 
-  // Read demo documentation (not versioned, synced from demo repos if available)
-  const demoDeployPath = path.join(process.cwd(), 'src/content/docs/demo-deploy.md');
-  const demoDeployContent = fs.existsSync(demoDeployPath) ? fs.readFileSync(demoDeployPath, 'utf-8') : null;
-  const demoAgentPath = path.join(process.cwd(), 'src/content/docs/demo-agent.md');
-  const demoAgentContent = fs.existsSync(demoAgentPath) ? fs.readFileSync(demoAgentPath, 'utf-8') : null;
-
-  // Read v0.3 review/proposal document (conditional - only if it exists)
-  const reviewPath = path.join(contentPath, 'review.md');
-  const reviewContent = fs.existsSync(reviewPath) ? fs.readFileSync(reviewPath, 'utf-8') : null;
+  // Read implementation documentation (not versioned, synced from demo repos if available)
+  const gatewayPath = path.join(process.cwd(), 'src/content/docs/gateway.md');
+  const gatewayContent = fs.existsSync(gatewayPath) ? fs.readFileSync(gatewayPath, 'utf-8') : null;
+  const spPath = path.join(process.cwd(), 'src/content/docs/service-provider.md');
+  const spContent = fs.existsSync(spPath) ? fs.readFileSync(spPath, 'utf-8') : null;
 
   // Combine all content
   const combinedContent = `
 # Human Agency Protocol - Complete Context
 
-**Version ${version} — January 2026**
+**Version ${version} — March 2026**
 
 ---
 
 ## Homepage
 
-### Protect the Real World from Rogue AI Actions.
-### Irreversible real-world actions execute only within Decision Owner–defined limits.
+### Authorization Infrastructure for Autonomous Systems.
 
-Those limits are committed in advance and cryptographically enforced — enabling autonomous execution within clear bounds.
+AI agents can now execute real-world actions.
 
----
+They can deploy code, move money, grant access, and operate infrastructure.
 
-### AI Does Not Feel Consequences.
+But agents do not bear consequences.
 
-An agent can transfer funds, deploy to production, grant access, or publish externally in seconds.
-It will never experience financial loss, regulatory penalties, reputational damage, or operational fallout.
+The Human Agency Protocol solves this by enforcing one rule:
 
-That asymmetry creates new structural risks:
-- Money moved beyond intended authority
-- Data exported beyond intended scope
-- Goals reinterpreted beyond intended direction
-- Commitments made without explicit human consent
+> Irreversible actions execute only within bounds defined by a responsible human.
 
-Autonomy without consequence-bearing actors requires a new boundary.
-
-HAP enforces one rule:
-
-> Irreversible real-world actions execute only within limits defined by a Decision Owner.
-
----
-
-AI systems reason probabilistically.
-Real-world consequences are not probabilistic — money moves, access changes, data leaves.
-
-When probabilistic systems can trigger irreversible execution, authority must be predefined and bounded.
-
-HAP enforces that boundary.
+Those bounds are cryptographically committed in advance — enabling safe autonomous execution.
 
 ---
 
@@ -106,18 +83,18 @@ Authorship and Ownership are unified. No action is taken without an identifiable
 
 ---
 
-### How HAP Works
+### Authorization State vs Direction State
 
-**Stop → Ask → Confirm → Proceed**
+HAP distinguishes between two classes of human input:
 
-1. **Stop** — Execution is blocked if required decision states are unresolved.
-2. **Ask** — HAP triggers a structured question that forces human direction.
-3. **Confirm** — The human confirms the decision the AI must follow.
-4. **Proceed** — Only then does the system continue.
+**Authorization State** determines whether execution is allowed:
+- Frame, Commitment, Decision Owner, Domain authority
 
-**No skipping.**
-**No inference.**
-**No silent automation.**
+**Direction State** informs how an AI system reasons within authorized bounds:
+- Problem, Objective, Tradeoff
+
+Authorization is structurally verifiable and enforceable.
+Direction remains local and private by default.
 
 ---
 
@@ -164,11 +141,11 @@ HAP applies wherever AI executes consequential actions:
 ### Build With HAP
 
 - **Protocol** — How direction is described, measured, and enforced
-- **Integration** — How to integrate HAP into your systems
+- **Service Providers** — Attestation issuance and identity verification
+- **Gatekeeper** — Attestation verification and execution enforcement
+- **Governance** — Transparent, federated oversight
 - **Deploy Gate Demo** — Multi-person approval for GitHub PRs
 - **Agent Demo** — Bounded execution for AI agents via MCP
-- **Service Providers** — Verified infrastructure enforcing compliance
-- **Governance** — Transparent, federated oversight
 
 **HAP turns human direction into the governing layer of intelligent systems.**
 
@@ -178,11 +155,11 @@ ${protocolContent}
 
 ---
 
-${integrationContent}
+${serviceContent}
 
 ---
 
-${serviceContent}
+${gatekeeperContent}
 
 ---
 
@@ -190,13 +167,8 @@ ${governanceContent}
 
 ---
 
-${demoDeployContent ? `${demoDeployContent}\n\n---\n` : ''}
-${demoAgentContent ? `${demoAgentContent}\n` : ''}
-${reviewContent ? `
----
-
-${reviewContent}
-` : ''}
+${gatewayContent ? `${gatewayContent}\n\n---\n` : ''}
+${spContent ? `${spContent}\n` : ''}
 ---
 
 Repository: https://github.com/schadauer/human-agency-protocol

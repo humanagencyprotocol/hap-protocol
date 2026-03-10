@@ -1,14 +1,19 @@
 # Human Agency Protocol
 
-**Current: v0.2 — January 2026 | Proposal: v0.3**
+**Current: v0.3 — March 2026**
 
 > AI executes. Humans decide.
 
-A protocol that forces AI to ask humans for meaning and direction before acting.
+An authorization protocol for AI agents — cryptographic pre-authorization of bounded execution.
 
 ## What is HAP?
 
-The Human Agency Protocol ensures humans remain in control of high-stakes AI-assisted decisions. It defines **gates** — checkpoints where automation pauses until a human explicitly authorizes the next step.
+The Human Agency Protocol defines how humans cryptographically authorize consequential actions and how implementations preserve human-defined direction during execution — whether by AI agents, CI/CD pipelines, or automated systems.
+
+HAP distinguishes between:
+
+- **Authorization State** — what is permitted, by whom, and under what bounded frame (enforceable)
+- **Direction State** — the semantic intent that informs agent planning within those bounds (local, private)
 
 HAP doesn't evaluate the quality of human decisions. It guarantees that decisions were made by humans, under committed constraints, and creates a verifiable record of who decided what.
 
@@ -23,29 +28,30 @@ Attestations bind human identity to specific decisions. Gate content is hashed a
 ### Privacy by Design
 Semantic content stays local. Only structural signals and hashes leave the local environment. The protocol guarantees verifiability without requiring disclosure.
 
+### Bounded Execution
+Authorization frames define the boundaries within which agents may act. The Gatekeeper enforces that every execution request falls within those bounds.
+
 ## Documentation
 
-### Current Specification (v0.2)
-- **[Protocol](content/0.2/protocol.md)** — Core specification: frames, gates, attestations, profiles
-- **[Deploy Gate Profile](content/0.2/deploy-gate-profile.md)** — Reference profile for deployment authorization
-- **[Integration](content/0.2/integration.md)** — How to integrate HAP into existing workflows
-- **[Service Providers](content/0.2/service.md)** — Service layer specification
-- **[Governance](content/0.2/governance.md)** — Protocol governance and evolution
+### Specification (v0.3)
+- **[Protocol](content/0.3/protocol.md)** — Core specification: frames, gates, attestations, profiles, bounded execution
+- **[Service Providers](content/0.3/service.md)** — Attestation issuance and identity verification
+- **[Gatekeeper](content/0.3/gatekeeper.md)** — Attestation verification, connector model, bounded execution
+- **[Governance](content/0.3/governance.md)** — Protocol governance, invariants, and trust model
 
-### v0.3 Proposal
-- **[v0.3 Review](content/0.2/review.md)** — Multi-domain ownership, execution context binding, agent workflows
-
-### Foundation (v0.1)
-- **[Original Protocol](content/0.1/protocol.md)** — Foundational concepts and motivation
+### Previous Versions
+- **[v0.2](content/0.2/)** — Profiles, deploy gate, integration guide
+- **[v0.1](content/0.1/)** — Foundational concepts and motivation
 
 ## Demo
 
-The **Deploy Gate Demo** shows HAP in action for GitHub PR approvals:
+The **HAP Demo** shows the protocol in action:
 - 6-gate flow: Decision Owner → Frame → Problem → Objective → Tradeoffs → Commitment
 - Multi-person approval with domain-scoped attestations
-- Cryptographic binding of human decisions to code changes
+- Bounded execution for AI agents via MCP
+- Cryptographic binding of human decisions to actions
 
-Visit [humanagencyprotocol.org/demo](https://humanagencyprotocol.org/demo) for the live demo.
+Visit [humanagencyprotocol.com](https://www.humanagencyprotocol.com/) for the live demo.
 
 ## Website
 
@@ -61,11 +67,13 @@ npm run dev
 
 ## Why HAP Exists
 
-AI systems are increasingly capable of autonomous action. The question is no longer "can AI do this?" but "should AI do this without asking?"
+AI systems increasingly execute tasks, call tools, and trigger irreversible actions. The central risk is not only misalignment, but execution without valid human authorization and direction drift inside authorized bounds.
 
-HAP answers: **No.** For high-stakes decisions, AI must pause and ask. Humans must explicitly authorize. And that authorization must be verifiable.
+HAP solves this by enforcing one rule:
 
-This isn't about slowing down AI. It's about ensuring that when AI acts, it acts with human authorization — and that authorization is provable.
+> Irreversible real-world actions execute only within limits defined by a Decision Owner.
+
+This isn't about slowing down AI. It's about ensuring that when AI acts, it acts within human-defined bounds — and that authorization is provable.
 
 ## Repository Structure
 
@@ -73,16 +81,12 @@ This isn't about slowing down AI. It's about ensuring that when AI acts, it acts
 .
 ├── content/
 │   ├── 0.1/               # Foundation specification
-│   │   ├── protocol.md
-│   │   ├── service.md
-│   │   └── governance.md
-│   └── 0.2/               # Current specification
+│   ├── 0.2/               # Previous specification
+│   └── 0.3/               # Current specification
 │       ├── protocol.md
-│       ├── deploy-gate-profile.md
-│       ├── integration.md
 │       ├── service.md
-│       ├── governance.md
-│       └── review.md      # v0.3 proposal
+│       ├── gatekeeper.md
+│       └── governance.md
 ├── website/               # humanagencyprotocol.org
 └── README.md
 ```

@@ -9,11 +9,20 @@ CLAUDE.md
 sdk/
 nmd/
 
-# Demo agent (separate repository)
+# Demo repos (separate repositories)
 demo-agent/
+demo-deploy/
+demo-hap/
+demo-hap-deploy-gate/
 
 # Service provider demo (separate repository)
 demo-sp/
+
+# Profiles (separate repository)
+hap-profiles/
+
+# Misc
+style-guide.html
 
 # macOS
 .DS_Store

@@ -34,8 +34,8 @@ const version = siteConfig.version;
             </button>
             <ul id="nav-menu">
                 <li><a href="/protocol" class={currentPath.startsWith('/protocol') ? 'active' : ''}>Protocol</a></li>
-                <li><a href="/integration" class={currentPath.startsWith('/integration') ? 'active' : ''}>Integration</a></li>
                 <li><a href="/service" class={currentPath.startsWith('/service') ? 'active' : ''}>Service Providers</a></li>
+                <li><a href="/gatekeeper" class={currentPath.startsWith('/gatekeeper') ? 'active' : ''}>Gatekeeper</a></li>
                 <li><a href="/governance" class={currentPath.startsWith('/governance') ? 'active' : ''}>Governance</a></li>
             </ul>
         </div>
@@ -50,17 +50,7 @@ const version = siteConfig.version;
                 <ul>
                     <li><a href="/protocol">Overview</a></li>
                     <li><a href="/protocol#profiles">Profiles</a></li>
-                    <li><a href="/deploy-gate-profile">Deploy Gate Profile</a></li>
-                    <li><a href="/changelog">Changelog</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-section">
-                <h4>Integration</h4>
-                <ul>
-                    <li><a href="/integration">Overview</a></li>
-                    <li><a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer">Demo</a></li>
-                    <li><a href="/integration#core-modules">Core Modules</a></li>
+                    <li><a href="/protocol#bounded-execution">Bounded Execution</a></li>
                 </ul>
             </div>
 
@@ -68,9 +58,17 @@ const version = siteConfig.version;
                 <h4>Service Providers</h4>
                 <ul>
                     <li><a href="/service">Overview</a></li>
-                    <li><a href="/service#architecture">Architecture</a></li>
-                    <li><a href="/service#privacy">Privacy Model</a></li>
-                    <li><a href="/service#registry">Registry</a></li>
+                    <li><a href="/service#sp-workflow-in-practice">SP Workflow</a></li>
+                    <li><a href="/service#security-guarantees">Privacy Model</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Gatekeeper</h4>
+                <ul>
+                    <li><a href="/gatekeeper">Overview</a></li>
+                    <li><a href="/gatekeeper#connector-model">Connector Model</a></li>
+                    <li><a href="/gatekeeper#bounded-execution">Bounded Execution</a></li>
                 </ul>
             </div>
 
@@ -78,6 +76,7 @@ const version = siteConfig.version;
                 <h4>Community</h4>
                 <ul>
                     <li><a href="/governance">Governance</a></li>
+                    <li><a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer">Demo</a></li>
                     <li><a href="https://github.com/schadauer/human-agency-protocol">GitHub</a></li>
                 </ul>
             </div>

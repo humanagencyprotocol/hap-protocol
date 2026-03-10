@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, cpSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, cpSync, mkdirSync, existsSync, rmSync, readdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
 const contentRoot = join(rootDir, '..', 'content');
-const demoDeployRoot = join(rootDir, '..', 'demo-deploy');
-const demoAgentRoot = join(rootDir, '..', 'demo-agent');
+const gatewayRoot = join(rootDir, '..', 'demo-hap');
+const spRoot = join(rootDir, '..', 'demo-sp');
 
 // Read version from package.json
 const pkg = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
@@ -20,6 +20,12 @@ console.log(`Syncing content for HAP v${version}...`);
 const sourceDir = join(contentRoot, version);
 const targetDir = join(rootDir, 'src', 'content', 'docs');
 
+// Clean target directory to remove stale files from previous versions
+if (existsSync(targetDir)) {
+  rmSync(targetDir, { recursive: true });
+  console.log(`  Cleaned ${targetDir}`);
+}
+
 if (existsSync(sourceDir)) {
   mkdirSync(targetDir, { recursive: true });
   cpSync(sourceDir, targetDir, { recursive: true });
@@ -28,54 +34,54 @@ if (existsSync(sourceDir)) {
   console.error(`  Warning: Content directory not found: ${sourceDir}`);
 }
 
-// Sync Deploy Gate Demo README (with frontmatter injection)
-const deployReadme = join(demoDeployRoot, 'README.md');
-const deployTarget = join(targetDir, 'demo-deploy.md');
+// Sync HAP Agent Gateway README (with frontmatter injection)
+const gatewayReadme = join(gatewayRoot, 'README.md');
+const gatewayTarget = join(targetDir, 'gateway.md');
 
-if (existsSync(deployReadme)) {
-  let content = readFileSync(deployReadme, 'utf-8');
+if (existsSync(gatewayReadme)) {
+  let content = readFileSync(gatewayReadme, 'utf-8');
 
   // Remove the H1 title (will be in frontmatter)
-  content = content.replace(/^# HAP Deploy Gate Demo\n+/, '');
+  content = content.replace(/^# HAP Agent Gateway\n+/, '');
 
   // Add frontmatter
   const frontmatter = `---
-title: "Deploy Gate Demo"
+title: "HAP Agent Gateway"
 version: "Version ${version}"
-date: "January 2026"
+date: "March 2026"
 ---
 
 `;
 
-  writeFileSync(deployTarget, frontmatter + content);
-  console.log(`  Synced Deploy Demo README -> ${deployTarget}`);
+  writeFileSync(gatewayTarget, frontmatter + content);
+  console.log(`  Synced Gateway README -> ${gatewayTarget}`);
 } else {
-  console.error(`  Warning: Deploy Demo README not found: ${deployReadme}`);
+  console.error(`  Warning: Gateway README not found: ${gatewayReadme}`);
 }
 
-// Sync Agent Demo README (with frontmatter injection)
-const agentReadme = join(demoAgentRoot, 'README.md');
-const agentTarget = join(targetDir, 'demo-agent.md');
+// Sync HAP Service Provider README (with frontmatter injection)
+const spReadme = join(spRoot, 'README.md');
+const spTarget = join(targetDir, 'service-provider.md');
 
-if (existsSync(agentReadme)) {
-  let content = readFileSync(agentReadme, 'utf-8');
+if (existsSync(spReadme)) {
+  let content = readFileSync(spReadme, 'utf-8');
 
   // Remove the H1 title (will be in frontmatter)
-  content = content.replace(/^# HAP Agent Demo\n+/, '');
+  content = content.replace(/^# HAP Service Provider\n+/, '');
 
   // Add frontmatter
   const frontmatter = `---
-title: "Agent Demo"
+title: "HAP Service Provider"
 version: "Version ${version}"
-date: "January 2026"
+date: "March 2026"
 ---
 
 `;
 
-  writeFileSync(agentTarget, frontmatter + content);
-  console.log(`  Synced Agent Demo README -> ${agentTarget}`);
+  writeFileSync(spTarget, frontmatter + content);
+  console.log(`  Synced Service Provider README -> ${spTarget}`);
 } else {
-  console.error(`  Warning: Agent Demo README not found: ${agentReadme}`);
+  console.error(`  Warning: Service Provider README not found: ${spReadme}`);
 }
 
 console.log('Done.');
