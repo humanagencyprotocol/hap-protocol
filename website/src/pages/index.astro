@@ -121,49 +121,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <h2 class="card-section-title">Select a use case to generate a ready-to-paste prompt for your AI chat.</h2>
 
             <div class="cards-grid">
-                <button class="use-case-card" data-card="development">
-                    <h3 class="card-title">Development / Deployments</h3>
-                    <p class="card-description">No deployment until the right owners commit to what ships and why.</p>
-                </button>
-
                 <button class="use-case-card" data-card="agents">
-                    <h3 class="card-title">AI Agents</h3>
-                    <p class="card-description">Agents execute within human-approved bounds; expansions require attestation.</p>
+                    <h3 class="card-title">Bounded AI Agents</h3>
+                    <p class="card-description">Agents operate under cryptographically enforced authority bounds. Any attempt to widen scope requires new human attestation.</p>
                 </button>
 
-                <button class="use-case-card" data-card="infrastructure">
-                    <h3 class="card-title">Infrastructure</h3>
-                    <p class="card-description">No production infrastructure change without domain owners signing off.</p>
+                <button class="use-case-card" data-card="deployments">
+                    <h3 class="card-title">Deployment Authorization</h3>
+                    <p class="card-description">Deployments execute only when domain owners cryptographically attest to the exact code revision and execution context.</p>
                 </button>
 
-                <button class="use-case-card" data-card="database">
-                    <h3 class="card-title">Database &amp; Data</h3>
-                    <p class="card-description">No schema change, destructive query, or export without a named human committing.</p>
+                <button class="use-case-card" data-card="crossdomain">
+                    <h3 class="card-title">Cross-Domain Decisions</h3>
+                    <p class="card-description">Actions requiring multiple organizational domains proceed only when all required domain owners attest to the same execution frame.</p>
                 </button>
 
                 <button class="use-case-card" data-card="financial">
-                    <h3 class="card-title">Financial Operations</h3>
-                    <p class="card-description">No money movement without explicit human commitment.</p>
+                    <h3 class="card-title">Financial Automation</h3>
+                    <p class="card-description">Automated payments execute within pre-authorized bounds set by a human domain owner.</p>
                 </button>
 
-                <button class="use-case-card" data-card="access">
-                    <h3 class="card-title">Access &amp; Identity</h3>
-                    <p class="card-description">No permission grant or role escalation without a named owner signing off.</p>
+                <button class="use-case-card" data-card="infrastructure">
+                    <h3 class="card-title">Infrastructure Governance</h3>
+                    <p class="card-description">Infrastructure changes execute only when the attested configuration hash matches the state being applied.</p>
                 </button>
 
-                <button class="use-case-card" data-card="security">
-                    <h3 class="card-title">Security-Sensitive Changes</h3>
-                    <p class="card-description">No security-impacting change without security owner attestation.</p>
-                </button>
-
-                <button class="use-case-card" data-card="product">
-                    <h3 class="card-title">Customer-Facing Product</h3>
-                    <p class="card-description">No user-impacting change without product owner commitment.</p>
-                </button>
-
-                <button class="use-case-card" data-card="compliance">
-                    <h3 class="card-title">Compliance &amp; Regulated</h3>
-                    <p class="card-description">Cryptographic proof of required human oversight before execution.</p>
+                <button class="use-case-card" data-card="supplychain">
+                    <h3 class="card-title">Supply Chain Integrity</h3>
+                    <p class="card-description">Software artifacts carry cryptographic proof linking them to human-authorized source revisions.</p>
                 </button>
 
                 <!-- Or separator -->
@@ -560,6 +545,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
 
+
     /* Wildcard Input */
     .wildcard-label {
         display: block;
@@ -896,33 +882,28 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </style>
 
 <script>
+    const preamble = `Start with a brief summary: The Human Agency Protocol (HAP) is an open-source authorization protocol for AI agents. It solves the problem of AI systems executing irreversible real-world actions (deploying code, moving money, changing infrastructure) without verified human authorization. HAP works by requiring cryptographic attestations — signed proof that a named human authorized a specific action within defined bounds — verified by a Gatekeeper before any executor is allowed to proceed.
+
+Then explain the following use case in clear, practical terms:\n\n`;
+
     const prompts = {
-        development: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can be used to prevent production deployments unless engineering and release owners explicitly commit to the problem being solved, the intended outcome, the deployment path, and the risks. Use concrete examples from a typical CI/CD pipeline.`
-        },
         agents: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can be used to define and enforce human-approved bounds for AI agents, where agents operate freely inside those bounds but must obtain new human attestation before expanding scope or performing higher-risk actions.`
+            prompt: preamble + `Bounded AI Agents: Explain how HAP enforces authority bounds on AI agents. An agent receives a cryptographic attestation defining exactly what it can do — which tools, which domains, what time window. The Gatekeeper intercepts every tool call and verifies the attestation before the call reaches the external service. If the agent tries to act outside its bounds, the request is blocked. Expanding scope requires a new human attestation. Give a concrete example of an AI coding agent that has authorization to read and write code in a specific repository, but is blocked when it tries to access production infrastructure.`
         },
-        infrastructure: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can gate infrastructure automation (Terraform, Kubernetes, DNS, IAM) so that production changes cannot execute unless the appropriate domain owners explicitly commit and accept responsibility.`
+        deployments: {
+            prompt: preamble + `Deployment Authorization: Explain how HAP gates code deployments. Before any deployment can execute, the domain owner must create an attestation that binds to the exact code revision (commit hash), the target environment, and the deployment context. The Gatekeeper verifies this attestation — checking the signature, the domain authority, and that the attested revision matches what is actually being deployed. If anything diverges, the deployment is blocked. Walk through a pull request merge flow where engineering and release owners must both attest before code ships to production.`
         },
-        database: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can be applied to database migrations, destructive queries, and sensitive data exports so these actions are blocked until a named human explicitly commits and accepts the tradeoffs.`
+        crossdomain: {
+            prompt: preamble + `Cross-Domain Decisions: Explain how HAP handles actions that require authorization from multiple organizational domains. Some actions — like shipping a feature that affects billing, compliance, and user experience — cannot proceed with a single sign-off. HAP requires attestations from all relevant domain owners, each attesting to the same execution frame. The Gatekeeper collects and verifies all required attestations before allowing execution. Give an example where a product change requires attestations from engineering (code correctness), security (no vulnerabilities introduced), and product (user impact accepted).`
         },
         financial: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can be used to gate financial operations such as payments, refunds, transfers, and spending limits so that automation cannot move money without human attestation.`
+            prompt: preamble + `Financial Automation: Explain how HAP authorizes automated financial operations. A human domain owner creates an attestation that defines bounds — maximum amount, allowed recipients, time window, transaction type. Automated systems (AI agents, payment processors, batch jobs) can execute transactions within those bounds without per-transaction approval. But any transaction that exceeds the attested bounds is blocked by the Gatekeeper. Give a concrete example of an AI agent processing refunds up to $500 per customer within a 24-hour window, and what happens when it tries to process a $2,000 refund.`
         },
-        access: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can be used to control access and identity changes (permission grants, role escalations, account creation) so they require explicit human commitment before execution.`
+        infrastructure: {
+            prompt: preamble + `Infrastructure Governance: Explain how HAP gates infrastructure changes. Before a Terraform apply, Kubernetes deployment, or DNS change can execute, the infrastructure owner must attest to the exact configuration state — including a hash of the configuration being applied. The Gatekeeper verifies that the attested configuration hash matches the actual state being applied. If someone modifies the configuration after attestation, the hash won't match and execution is blocked. Walk through a production infrastructure change where the platform team attests to a Terraform plan, and explain how drift between plan and apply is caught.`
         },
-        security: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can be applied to security-sensitive actions (firewall changes, secret rotation, auth configuration, vulnerability mitigations) so execution requires explicit security owner commitment.`
-        },
-        product: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can be used to gate customer-facing product changes so that features, behavior changes, and large experiments cannot ship without a product owner explicitly committing to the outcome and risks.`
-        },
-        compliance: {
-            prompt: `Explain how the Human Agency Protocol (HAP) can provide cryptographic, audit-ready proof that humans exercised required oversight for high-risk AI and automation actions in regulated environments.`
+        supplychain: {
+            prompt: preamble + `Supply Chain Integrity: Explain how HAP provides cryptographic provenance for software artifacts. Every build artifact — container image, package, binary — carries an attestation linking it back to the human-authorized source revision. This creates a verifiable chain: a named human attested to the source code, the CI system produced the artifact from that exact revision, and the attestation proves the link. Downstream consumers can verify that any artifact they deploy was built from human-authorized source. Give an example of how a container image in a registry carries proof that it was built from an attested commit, and how a deployment pipeline verifies this before pulling the image.`
         }
     };
 

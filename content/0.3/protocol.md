@@ -19,39 +19,7 @@ The protocol distinguishes between:
 The protocol does not generate decisions.
 It defines the conditions under which human-authorized execution may occur.
 
----
-
-## Why Human Direction Must Remain Distinct from Machine Execution
-
-Automation makes execution abundant.
-AI can generate options, simulate outcomes, and operate at machine speed.
-
-What AI cannot originate legitimately is human authority.
-What AI also cannot safely infer without risk is human direction.
-
-HAP protects both, but in different ways:
-
-- **Authorization** is made enforceable through frames, commitments, ownership, profiles, attestations, and Gatekeeper verification.
-- **Direction** is preserved locally through problem, objective, and tradeoff state that can guide reasoning without leaving local custody.
-
-This separation allows autonomous systems to act within bounds without collapsing human intent into either pure access control or uncontrolled semantic drift.
-
----
-
-## Limitations of Existing Approaches to AI Control
-
-Most approaches to controlling advanced AI systems focus on behavior, oversight, or access, but fail to enforce **human authorship of consequential decisions**. They regulate how systems act, how organizations review outcomes, or who may initiate actions—without ensuring that irreversible execution is explicitly directed, justified, and owned by a human decision-maker. As AI systems operate at machine speed, these gaps allow direction to drift silently from humans to automation.
-
-### Comparison with the Human Agency Protocol
-
-| Approach | Primary Focus | Point of Intervention | Structural Limitation | How HAP Addresses It |
-|---|---|---|---|---|
-| **Alignment & Safety** | Model behavior | After objectives are set | Does not enforce who chose the objective or accepted consequences | **Objective & Tradeoff Gates** require explicit human choice before execution |
-| **Governance & Policy** | Oversight and accountability | After harm occurs | Cannot block irreversible execution at machine speed | **Commitment Gate** blocks execution until a human makes a binding decision |
-| **Access Control & Permissions** | Authorization | Before action, not justification | Allows actions without owned consequences | **Decision Owner Gate (+ Scope)** requires named, scoped human responsibility |
-| **Sandboxing & Capability Limits** | Capability containment | System boundaries | Delays power without governing use or intent | **Frame Gate** enforces explicit decision boundaries and prevents context drift |
-| **Human-Centered Design / "Slow AI"** | User reflection | Optional interaction points | Pauses are bypassed under pressure | **Stop → Ask → Confirm** makes direction checks mandatory |
-| **Responsible AI Platforms** | Compliance documentation | Post-execution review | Creates audit trails without binding responsibility | **Cryptographic Attestation** proves gate closure before execution |
+AI cannot originate human authority, and it cannot safely infer human direction. Authorization is made enforceable through cryptographic attestations and Gatekeeper verification. Direction is preserved locally and never leaves local custody by default.
 
 ---
 
@@ -104,13 +72,7 @@ Execution context represents the structured constraints binding an executor. It 
 
 Any semantic content used to reach a decision (AI analysis, deliberation, reasoning) remains local and out of protocol scope.
 
-### Terminology Changes
-
-#### Executor Proxy → Gatekeeper
-
-The v0.2 role "Executor Proxy" is renamed to **Gatekeeper** in v0.3. The old name implied transparent forwarding; the actual role is enforcement — it verifies attestations and blocks execution if validation fails. "Gatekeeper" describes what it does: it guards the gate between human-attested direction and machine execution. The Gatekeeper is a mandatory protocol component — every attested action MUST pass through attestation verification before execution proceeds.
-
-#### Action vs. Execution
+### Action vs. Execution
 
 The protocol uses two related but distinct terms:
 
@@ -147,47 +109,36 @@ The protocol must remain abstract. Context-specific bindings belong in profiles.
 
 ---
 
-## Direction State vs Authorization State
+## Privacy Invariant
 
-HAP distinguishes between two classes of human input:
+> **No semantic content leaves local custody by default or by protocol design.**
 
-### Authorization State
+This includes (but is not limited to): source code, diffs, commit messages, natural language descriptions, rendered previews, and risk summaries.
 
-Authorization State determines whether execution is allowed.
+HAP MAY transmit cryptographic commitments (e.g., hashes), structural metadata, and signatures, but MUST NOT transmit semantic evidence to Service Providers or Executors.
 
-It includes:
+Any disclosure of semantic content MUST be an explicit, human-initiated action outside the protocol. The protocol makes authorship verifiable without exposing content.
 
-- **Frame** — the action being authorized
-- **Commitment** — explicit approval to proceed
-- **Decision Owner** — the human accountable for the authorization
-- **Domain authority** — which domains are covered by valid attestation
+---
 
-Authorization State is structurally verifiable and forms the basis of attestation and Gatekeeper enforcement.
+## Threat Model
 
-### Direction State
+Implementations MUST assume:
 
-Direction State is the semantic payload that informs how an AI system reasons and acts within an authorized frame.
+- compromised Local App (blind-signing risk),
+- malicious or buggy Executor,
+- malicious or negligent Service Provider,
+- profile and supply-chain attacks.
 
-It includes:
-
-- **Problem** — why action is justified
-- **Objective** — what outcome matters
-- **Tradeoff** — what cost or risk is accepted
-
-Direction State may contain semantic content. It is therefore local by default, may be encrypted at rest or in use by the implementation, and MUST NOT be transmitted to Service Providers, Gatekeepers, or Executors as semantic plaintext.
-
-The protocol may attest to cryptographic commitments to Direction State (via `gate_content_hashes`), but does not require its disclosure.
-
-### Design Principle
-
-Authorization determines whether execution may occur.
-Direction determines how an agent should act within authorized bounds.
+HAP does **not** assume trusted UIs, trusted executors, or honest automation.
 
 ---
 
 ## Decision States
 
-HAP distinguishes between two categories of decision state: authorization state and direction state. They are not exposed or enforced in the same way.
+HAP distinguishes between two categories of decision state: **Authorization State** and **Direction State**. They are not exposed or enforced in the same way.
+
+Authorization determines whether execution may occur. Direction determines how an agent should act within authorized bounds.
 
 ### Authorization States
 
@@ -217,6 +168,8 @@ The intended result that should guide system behavior.
 
 The boundary conditions under which the objective may be pursued.
 
+Direction State may contain semantic content. It is local by default, may be encrypted by the implementation, and MUST NOT be transmitted to Service Providers, Gatekeepers, or Executors as semantic plaintext. The protocol may attest to cryptographic commitments to Direction State (via `gate_content_hashes`), but does not require its disclosure.
+
 ### Normative Distinction
 
 Authorization States are required for attestation and Gatekeeper enforcement.
@@ -229,9 +182,7 @@ No skipping, no inference, no automated assumption.
 
 ## Decision Ownership & Consequence Domains
 
-> "No consequential action may be taken in a human system without an identifiable human who has explicitly authorized it, understood its tradeoffs, and accepted responsibility for its outcomes."
-
-Ownership is not just a state — it is a **gate for valid decision-making**.
+Ownership is a **gate for valid decision-making**, not just a state.
 
 ### The Decision Owner
 A **Decision Owner** is any actor who:
@@ -288,49 +239,13 @@ Systems should respond by prompting users to:
 
 This ensures drift is replaced by explicit divergence, preserving both autonomy and honesty. No shared action proceeds on unratified consensus.
 
-#### Example: Product Release Decision
-
-- **Frame:** "Release Feature X this quarter"
-- **Engineering:** "I accept the cost of increased on-call load to ship by the deadline."
-- **Legal:** "I accept the cost of delaying release until compliance review is complete."
-- **Marketing:** "I accept the cost of reduced launch scope to meet campaign timing."
-
-These tradeoffs are incompatible under the same Frame.
-Shipping this quarter, delaying for compliance, and reducing scope imply mutually exclusive execution paths that cannot coexist. HAP detects this as tradeoff collision across consequence domains and blocks shared execution.
+When a domain owner disagrees — whether due to wrong execution path, incomplete context, or inaccurate constraints — they refuse to attest. The proposer must update the declaration and start a new attestation cycle. No one can unilaterally override — all required domains must attest to the same frame.
 
 ---
 
 ## Core Protocol Principle
 
-HAP requires that required decision states be resolved before consequential execution.
-
-Implementations MAY satisfy this through different interaction patterns, including:
-
-- Interactive questioning
-- Approval workflows
-- Bounded pre-authorization
-- Staged review flows
-- Local decision capture prior to agent execution
-
-A common interaction pattern is:
-
-**Stop → Ask → Confirm → Proceed**
-
-1. **Stop** — Execution is blocked when required decision states are unresolved.
-2. **Ask** — A structured inquiry is triggered to obtain missing direction.
-3. **Confirm** — The human resolves the checkpoint by providing clarity.
-4. **Proceed** — Only once commitment is resolved and validated may the system act.
-
-This is a valid and common implementation pattern, but not the only valid runtime model.
-
-What is normative:
-
-- Unresolved required states MUST block attestation or execution.
-- Validly resolved required states MAY enable bounded execution.
-- Gatekeepers MUST reject execution that lacks valid attestation or exceeds authorized bounds.
-
-Every commitment is logged.
-Every action traces back to human authorization and direction.
+**Required decision states MUST be resolved before consequential execution.** Unresolved required states MUST block attestation or execution. Gatekeepers MUST reject execution that lacks valid attestation or exceeds authorized bounds. Implementations may satisfy this through any interaction pattern — approval workflows, bounded pre-authorization, staged review, or local decision capture — as long as the invariant holds.
 
 ---
 
@@ -542,7 +457,7 @@ Predefined gate questions are defined in the Profile:
 }
 ```
 
-Questions are used as guidance — placeholders, not enforcement. The protocol enforces that gate content exists, not its quality (see AI Constraints & Gate Resolution).
+Questions are used as guidance — placeholders, not enforcement. The protocol enforces that gate content exists, not its quality.
 
 ### Profile-Defined TTL Policy
 
@@ -604,15 +519,6 @@ The specific fields depend on the profile's execution context schema. Governance
 }
 ```
 
-### Two Parts, One Context
-
-| Part | Source | Example Fields |
-|------|--------|----------------|
-| **Governance choices** | Declared by proposer (profile-specific mechanism) | `profile`, `execution_path` |
-| **Action facts** | Resolved by system | Profile-specific (e.g., `repo`, `sha`, `changed_paths`) |
-
-Both parts are deterministic, verifiable, and persistent. Together they form the complete execution context that gets hashed and attested to.
-
 ### Binding Requirements
 
 The execution context MUST be:
@@ -622,45 +528,6 @@ The execution context MUST be:
 **Bound to action** — How binding works is profile-specific. For deploy-gate, declared fields live in `.hap/binding.json` in the commit.
 
 **Verifiable** — Anyone can re-resolve the execution context and compare to the attested hash.
-
-### Proposal Flow
-
-```
-1. PROPOSER declares governance choices
-   - Declares profile + execution_path
-   - Binds to action through profile-specific mechanism
-                                   |
-                                   v
-2. SYSTEM resolves execution context
-   - Reads declared fields from bound declaration
-   - Computes action facts from deterministic sources
-   - Presents complete execution context to domain owners
-                                   |
-                                   v
-3. DOMAIN OWNERS review execution context
-   - See complete context (governance choices + action facts)
-   - Validate: Is this the right governance level?
-   - If they agree -> attest
-   - If they disagree -> don't attest, request changes
-                                   |
-                                   v
-4. ALL REQUIRED DOMAINS attest to the same frame
-   - Frame derived from action + execution context
-   - All attestations share same frame_hash
-   - Attestation includes execution_context_hash
-```
-
-### Disagreement Handling
-
-If a domain owner disagrees with the proposal:
-
-1. **Wrong execution path** — Domain owner refuses to attest. Proposer must update the declared execution context with the corrected path. New frame, new attestation cycle.
-
-2. **Incomplete execution context** — Domain owner refuses to attest. Proposer must update the declared execution context with complete constraints.
-
-3. **Inaccurate execution context** — Domain owner refuses to attest. Proposer must fix the issue and update the declared fields.
-
-**No one can unilaterally override** — All required domains must attest to the same frame.
 
 ---
 
@@ -711,17 +578,13 @@ The canonical frame string is hashed to produce `frame_hash`.
 
 ### No Condition Fields
 
-v0.3 does **not** add condition fields to the frame.
-
-Self-declared conditions (e.g., "is this security-relevant?") are meaningless — the person who might want to skip oversight decides whether oversight is required. This is circular.
-
-Instead, required domains are determined by **execution path** in the execution context — an explicit proposal validated by domain owners.
+v0.3 does not include condition fields in the frame. Self-declared conditions are circular — the person who might want to skip oversight would decide whether oversight is required. Instead, required domains are determined by the **execution path**, which is an explicit governance choice validated by domain owners.
 
 ---
 
 ## Attestations: Cryptographic Proof of Direction
 
-An attestation is a short-lived, cryptographically signed proof that:
+An attestation is a time-limited, cryptographically signed proof that:
 
 - A specific Frame (identified by frame_hash) was ratified
 - All gates required by the Profile were closed
@@ -778,72 +641,15 @@ Each domain owner can independently prove:
 
 ## Gate Content Verifiability
 
-### Problem
-
-The protocol requires human articulation at gates 3-5 (Problem, Objective, Tradeoffs). But if that content is never hashed or published, the requirement is unenforceable after the fact. The attestation says "I committed" but not "here's what I committed to."
-
-### Principle
-
-> The protocol guarantees verifiability, not publication.
-> The decision to publish is the owner's.
+> The protocol guarantees verifiability, not publication. The decision to publish is the owner's.
 
 Gate content is private by default. But if the owner chooses to publish, anyone can verify it is the authentic content that was attested to.
 
-### Local Direction Payload
-
-Problem, Objective, and Tradeoff together form the **local direction payload** — the semantic payload that informs agent planning and action selection within authorized bounds.
-
-Without direction state, an agent operates blindly inside bounds — authorization without intent. The direction payload is what prevents HAP from reducing to pure access control.
-
-This payload:
-
-- Informs local agent planning, reasoning, and action selection
-- May be encrypted by the implementation
-- MUST remain outside protocol disclosure by default
-- MAY be hashed for attestation or audit verifiability
-- MUST NOT be transmitted as semantic plaintext to Service Providers, Gatekeepers, or remote Executors unless explicitly disclosed by the human
-
-The protocol treats this payload as private semantic guidance, not as externally inspectable authorization data.
-
-### Gate Content Is Commitment, Not Comprehension
-
-Gate content (problem, objective, tradeoffs) represents what the human committed to articulating. It does NOT prove:
-
-- They understood the implications
-- They thought carefully
-- They wrote it themselves (vs. AI-assisted)
-- The content is correct or complete
-
-The protocol hashes what was committed. Publication makes that commitment visible. Neither guarantees quality of thought.
+Gate content represents what the human committed to articulating — not that they understood the implications, thought carefully, or wrote it themselves. The protocol verifies commitment, not comprehension.
 
 ### Gate Content Hashes in Attestation
 
-At attestation time, the content of each gate is hashed and included in the attestation:
-
-```json
-{
-  "attestation_id": "uuid",
-  "version": "0.3",
-  "profile_id": "deploy-gate@0.3",
-  "frame_hash": "sha256:...",
-  "execution_context_hash": "sha256:...",
-  "resolved_domains": [
-    {
-      "domain": "engineering",
-      "did": "did:key:..."
-    }
-  ],
-  "gate_content_hashes": {
-    "problem": "sha256:...",
-    "objective": "sha256:...",
-    "tradeoffs": "sha256:..."
-  },
-  "issued_at": 1735888000,
-  "expires_at": 1735891600
-}
-```
-
-This happens automatically at attestation time. The owner does not need to opt in — the hashes are always computed and included.
+At attestation time, the content of each gate is hashed and included in the attestation's `gate_content_hashes` field (see Attestation Payload). This happens automatically — the owner does not need to opt in.
 
 ### Publication is Optional
 
@@ -864,15 +670,6 @@ If gate content is published, anyone can verify it:
 2. Compare against `gate_content_hashes` in the attestation
 3. Match = verified authentic content
 4. Mismatch = content was tampered with after attestation
-
-### Properties
-
-| Property | Guarantee |
-|----------|-----------|
-| **Private by default** | Gate content stays with the owner unless they choose to share |
-| **Verifiable on demand** | If published, hashes prove authenticity |
-| **Tamper-evident** | Cannot publish different content than what was hashed |
-| **Non-repudiable** | Owner cannot deny what they wrote — the hash is in their signed attestation |
 
 ### Normative Rules
 
@@ -912,17 +709,7 @@ The execution context is **computed at processing time**, not stored in the decl
    - This IS the auditable record
 ```
 
-### What Gets Resolved
-
-Each field in the execution context has a source type:
-
-| Source | Resolved By | Deterministic? | Example |
-|--------|-------------|----------------|---------|
-| `declared` | Proposer (bound to action) | Yes | `profile`, `execution_path` |
-| `action` | Derived from the action itself | Yes | Action identifier (e.g., `repo`, `sha`) |
-| `computed` | System computes from deterministic inputs | Yes | Derived data, constructed references |
-
-All resolved values MUST be deterministic — given the same action state, the system always computes the same values. The specific fields and resolution methods are defined by the profile's execution context schema.
+All resolved values MUST be deterministic — given the same action state, the system always computes the same values. Field sources (`declared`, `action`, `computed`) are defined by the profile's execution context schema.
 
 ### Execution Context Hash
 
@@ -1129,61 +916,15 @@ Actions require different state resolution based on risk:
 
 This enforces human leadership at the point of irreversibility while permitting useful autonomy within authorized bounds.
 
----
+### The Decision Closure Loop
 
-## AI Constraints & Gate Resolution
+1. **State gap detected** — AI identifies missing or ambiguous decision state
+2. **Targeted inquiry** — Request for specific state resolution
+3. **Human resolves** — Human provides missing direction
+4. **Closure evaluated** — System checks if all required states are resolved
+5. **Execute or continue** — If closure achieved, AI proceeds; otherwise, loop continues
 
-The protocol enforces only what it can verify cryptographically and structurally.
-
-### Enforceable Guarantees
-
-1. **Authorization requires explicit human action** — A human must explicitly close required authorization gates and trigger attestation.
-
-2. **Direction State may remain local** — Problem, Objective, and Tradeoff may guide local agent reasoning without leaving local custody.
-
-3. **Presence is enforceable; quality is not** — Profiles may require direction fields to exist or be hashed, but the protocol does not judge their adequacy or correctness.
-
-4. **Bounds are enforceable where profiles define constraints** — Gatekeepers verify that execution remains within attested bounds.
-
-### What the Protocol Does Not Enforce
-
-- The quality of reasoning
-- The truth of semantic content
-- Whether an agent perfectly interpreted the direction payload
-- Whether human-entered direction was strategically optimal
-
-### Simplified Signal Detection Guides
-
-Signal Detection Guides are reduced to structural checks only:
-
-- `deploy/missing_decision_owner@1.0` — Hard stop
-- `deploy/commitment_mismatch@1.0` — Hard stop
-- `deploy/tradeoff_execution_mismatch@1.0` — Hard stop
-- `deploy/objective_diff_mismatch@1.0` — Warning only
-
-No SDG evaluates free-form text for correctness. Semantic rules are removed.
-
----
-
-## Feedback Blueprints
-
-Feedback Blueprints allow systems to report structural outcomes without revealing any semantic content.
-
-Example:
-
-```json
-{
-  "profile_id": "deploy-gate@0.3",
-  "resolved_states": ["frame", "problem", "objective", "tradeoff", "commitment"],
-  "missing_states": [],
-  "execution_allowed": true,
-  "stop_resolved": true
-}
-```
-
-If `stop_resolved` is false, the AI may not proceed.
-
-Feedback is strictly structural — counts, confirmations, transitions — never content.
+Order doesn't matter. Only closure matters.
 
 ---
 
@@ -1270,36 +1011,6 @@ This is the genesis. All subsequent attestations link back to it.
 
 ---
 
-## Privacy Invariant
-
-> **No semantic content leaves local custody by default or by protocol design.**
-
-This includes (but is not limited to):
-- source code
-- diffs
-- commit messages
-- natural language descriptions
-- rendered previews
-- risk summaries
-
-HAP MAY transmit cryptographic commitments (e.g., hashes), structural metadata, and signatures, but MUST NOT transmit semantic evidence to Service Providers or Executors.
-
-Any disclosure of semantic content MUST be an explicit, human-initiated action outside the protocol.
-
-Protocol data includes only:
-- structural transitions
-- confirmation counts
-- stage completions
-- commitment metadata
-
-**No transcripts**
-**No intent extraction**
-**No user profiling**
-
-The protocol makes authorship verifiable without exposing content.
-
----
-
 ## Roles
 
 | Role | Responsibility |
@@ -1311,12 +1022,6 @@ The protocol makes authorship verifiable without exposing content.
 | **Gatekeeper** | Enforces HAP validation before execution |
 
 Executors are always treated as **fully untrusted**.
-
-### Decision Owner Authentication
-
-Decision Owner authentication is out of scope for HAP Core. Implementations MUST establish identity through external mechanisms (e.g., OAuth, WebAuthn, hardware tokens, passkeys).
-
-The Service Provider MUST NOT issue attestations without verifying Decision Owner identity through a trusted authentication channel.
 
 ### Gatekeeper
 
@@ -1331,55 +1036,6 @@ The Gatekeeper obligation may be satisfied by:
 All three are equally valid. The protocol makes no architectural preference. What matters is that the verification steps execute completely and that execution is blocked on a negative result.
 
 A system that has attestations but skips verification is in violation — the attestation alone is not proof of compliance; verified attestation is.
-
----
-
-## Threat Model
-
-Implementations MUST assume:
-
-- compromised Local App (blind-signing risk),
-- malicious or buggy Executor,
-- malicious or negligent Service Provider,
-- profile and supply-chain attacks.
-
-HAP does **not** assume trusted UIs, trusted executors, or honest automation.
-
----
-
-## The Decision Closure Loop
-
-1. **State gap detected** — AI identifies missing or ambiguous decision state
-2. **Targeted inquiry** — Request for specific state resolution
-3. **Human resolves** — Human provides missing direction
-4. **Closure evaluated** — System checks if all required states are resolved
-5. **Execute or continue** — If closure achieved, AI proceeds; otherwise, loop continues
-6. **Feedback emitted** — Structural confirmation logged
-
-Order doesn't matter. Only closure matters.
-Every action is traceable to complete human direction.
-
----
-
-## Example Stop Event
-
-**User:** "Help me deploy to production."
-
-AI detects: unclear Problem, missing Objective, no Commitment → **Stop**
-
-**AI:**
-"What problem are you trying to solve — and what outcome matters most?"
-
-**User:** "We need to ship the security fix before the deadline. I want to prevent the vulnerability from being exploited."
-
-Problem and Objective confirmed.
-
-**AI:**
-"What path will you commit to — and what cost are you willing to accept?"
-
-**User:** "I'll deploy to canary first. I accept that it might cause brief service degradation."
-
-Tradeoff and Commitment recorded → **Proceed**
 
 ---
 
@@ -1441,45 +1097,6 @@ No human involvement for requests 1 and 2.
 Requests 3 and 4 are blocked by the Gatekeeper.
 ```
 
-### What v0.3 Does Not Address
-
-**High-frequency re-attestation**
-- Real-time constraint updates at machine speed
-- Batch attestation for thousands of micro-decisions
-
-**Regulated Industry Requirements**
-- Mandatory retention periods
-- Informed consent verification
-- Jurisdiction and data residency
-- Industry-specific audit formats
-
-**Advanced Multi-SP Scenarios**
-- SP federation and trust anchors
-- Cross-SP conflict resolution
-- Decentralized trust models
-
-### Guidance for Regulated Industries
-
-Organizations in regulated industries (healthcare, finance, safety-critical) should layer additional controls on top of HAP:
-
-- **Retention:** The protocol defines baseline retention via profile `retention_minimum`. Regulated industries may require longer periods. Organizations SHOULD configure retention to meet their regulatory obligations
-- **Disclosure:** If mandatory disclosure is required, do not rely on optional publication
-- **Training:** Document that signers received appropriate training (outside HAP scope)
-- **AI disclosure:** If regulations require AI involvement disclosure, track this separately
-
-HAP provides accountability infrastructure. Compliance requires additional organizational controls.
-
-### Future Considerations (v0.4+)
-
-| Topic | Description |
-|-------|-------------|
-| **Delegation model** | Human pre-authorizes AI/agent to act within bounds |
-| **Batch attestation** | Attest to a class of actions, not each individual action |
-| **Machine-readable schemas** | Formal JSON Schema for execution context validation |
-| **Standing authority** | Long-lived attestations for repeated decision types |
-| **SP federation** | Multiple SPs coordinating trust and authority |
-| **Cross-org decisions** | Multi-organization projects with shared domains |
-
 ---
 
 ## Error Codes
@@ -1510,76 +1127,8 @@ HAP provides accountability infrastructure. Compliance requires additional organ
 
 ---
 
-## Summary: What HAP Protects
+## Summary
 
-In an automated world:
+HAP ensures automation serves human direction — not the reverse.
 
-- AI is a powerful engine
-- Options are infinite
-- **But only humans can set the direction**
-
-HAP protects the human role in defining direction by enforcing:
-
-- **Frame** (decision boundary)
-- **Problem** (justification)
-- **Objective** (optimization target)
-- **Tradeoff** (accepted cost)
-- **Commitment** (binding choice)
-- **Decision Owner** (responsibility)
-
-These are not steps. They are closure conditions.
-
-AI executes.
-Humans decide what execution is for.
-
-**HAP ensures automation serves human direction — not the reverse.**
-
----
-
-## What's New in v0.3
-
-- **Authorization vs Direction State** — Explicit separation of authorization primitives (Frame, Commitment, Decision Owner) from direction semantics (Problem, Objective, Tradeoff)
-- **Local Direction Payload** — Problem, Objective, and Tradeoff named as a unit; private by default, may guide local agent reasoning
-- **Protocol Scope** — Explicit definition of what the protocol verifies and does not verify
-- **Execution Context** — Structured, deterministic context replacing disclosure; declared by proposer, resolved by system
-- **Execution Context Schema** — Profile-defined schema for execution context fields with source types
-- **Field Constraints** — Profile-defined constraint types enabling bounded execution for agent workflows
-- **Gate Questions** — Predefined gate questions in Profile (moved from SDGs)
-- **Gate Content Verifiability** — Hashes of gate content included in attestation for tamper-evident verification
-- **Gatekeeper** — Mandatory verification obligation replacing Executor Proxy; enforcement, not forwarding
-- **Bounded Execution** — Authorization frames define bounds; agents execute within; Gatekeeper enforces
-- **Required Domains per Execution Path** — Explicit domain requirements per path, replacing conditions
-- **Identity & Authorization** — DID-based identity, authorization mapping, immutability rule
-- **Decision Streams** — Optional chained attestations for project-level decision history
-- **Output Provenance** — Optional `output_ref` and `frame_hash` binding for verifiable outputs
-- **Retention Policy** — Profiles define `retention_minimum` alongside TTL
-- **SP Attestation Records** — SPs retain append-only records of all attestations issued
-- **Simplified SDGs** — Structural checks only; semantic rules removed
-- **Error Codes** — Extended with domain, execution context, and bound-related errors
-- **Connector Model** — Environment-specific Gatekeeper implementations
-- **Refined Core Principle** — Stop → Ask → Confirm → Proceed is now one of several valid interaction patterns; normative rule is resolution before execution
-- **Agent-Compatible Actions** — AI may infer intermediate steps and optimize within authorized bounds
-
-## Backward Compatibility
-
-### What changes
-
-- "Executor Proxy" renamed to **Gatekeeper** — reflects its actual role as enforcement point
-- Gatekeeper is now a **mandatory** protocol component — every execution must pass through attestation verification
-- Frame no longer includes `execution_context_hash`
-- Attestations include `execution_context_hash` at top level (shared context, not per-domain)
-- Attestations include `resolved_domains` for domain authority (domain, did)
-- Attestations include `gate_content_hashes` for verifiable gate content
-- Execution paths explicitly define `requiredDomains`
-- Execution context declared in committed file, resolved by system (binding is profile-specific)
-- Profiles MAY define field-level constraint types on execution context fields
-- New Gatekeeper verification mode: bounded execution — authorization frame defines bounds, execution requests are checked against them
-- A single authorization frame MAY be used for multiple agent execution requests within TTL
-- Profiles without constraint types continue to use exact-match verification only
-
-### Migration path
-
-- v0.2 attestations remain valid for v0.2 profiles
-- v0.3 profiles require v0.3 attestations
-- Gatekeeper checks `version` field and applies appropriate validation
-- v0.3 requires declared execution context bound to action
+Every consequential action traces back to a human who defined the frame, articulated the reasoning, accepted the tradeoffs, and committed to proceed. The protocol makes this structurally enforceable through cryptographic attestations and Gatekeeper verification.

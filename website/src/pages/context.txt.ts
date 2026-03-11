@@ -74,15 +74,12 @@ define what to optimize, set objectives, accept tradeoffs and bear consequences.
 
 HAP applies wherever AI executes consequential actions:
 
-- **Development / Deployments** — No deployment until the right owners commit to what ships and why.
-- **AI Agents** — Agents execute within human-approved bounds; expansions require attestation.
-- **Infrastructure** — No production infrastructure change without domain owners signing off.
-- **Database & Data** — No schema change, destructive query, or export without a named human committing.
-- **Financial Operations** — No money movement without explicit human commitment.
-- **Access & Identity** — No permission grant or role escalation without a named owner signing off.
-- **Security-Sensitive Changes** — No security-impacting change without security owner attestation.
-- **Customer-Facing Product** — No user-impacting change without product owner commitment.
-- **Compliance & Regulated** — Cryptographic proof of required human oversight before execution.
+- **Bounded AI Agents** — Agents operate under cryptographically enforced authority bounds. Any attempt to widen scope requires new human attestation.
+- **Deployment Authorization** — Deployments execute only when domain owners cryptographically attest to the exact code revision and execution context.
+- **Cross-Domain Decisions** — Actions requiring multiple organizational domains proceed only when all required domain owners attest to the same execution frame.
+- **Financial Automation** — Automated payments execute within pre-authorized bounds set by a human domain owner.
+- **Infrastructure Governance** — Infrastructure changes execute only when the attested configuration hash matches the state being applied.
+- **Supply Chain Integrity** — Software artifacts carry cryptographic proof linking them to human-authorized source revisions.
 
 ---
 
