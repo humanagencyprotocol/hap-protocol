@@ -376,6 +376,29 @@ The **profile defines the execution context schema**. Each profile specifies:
 | `declared` | Developer specifies in committed file | `execution_path` |
 | `action` | Derived from the action being authorized | `repo`, `sha` |
 | `computed` | System computes from deterministic sources | `changed_paths`, `diff_url` |
+| `cumulative` | Resolved from execution log (running total within a time window) | `amount_daily`, `deploy_count_daily` |
+
+**Cumulative fields** enable stateful limits — constraints that apply across multiple executions rather than per-call. A cumulative field definition specifies:
+
+- `cumulativeField`: which declared field to aggregate (use `_count` for plain execution counting)
+- `window`: time window for aggregation (`daily`, `weekly`, or `monthly`)
+
+The Gatekeeper resolves cumulative fields by querying the execution log before checking bounds. The resolved value = running total within the window + current call's contribution.
+
+```json
+{
+  "amount_daily": {
+    "source": "cumulative",
+    "cumulativeField": "amount",
+    "window": "daily",
+    "description": "Running daily spend total",
+    "required": true,
+    "constraint": { "type": "number", "enforceable": ["max"] }
+  }
+}
+```
+
+The corresponding frame field uses the convention `{cumulative_field_name}_max` (e.g., `amount_daily_max`) to set the bound.
 
 **Normative rules:**
 
@@ -384,6 +407,8 @@ The **profile defines the execution context schema**. Each profile specifies:
 3. The execution context is hashed and included in the attestation.
 4. Semantic content (problem, objective, tradeoffs) is entered by humans in gates, not in the execution context.
 5. The `profile` field bootstraps everything — it determines which schema applies.
+6. Cumulative fields are resolved by the Gatekeeper at verification time. The execution log MUST be available to the Gatekeeper for profiles that define cumulative fields. The log MUST be durable across restarts.
+7. Cumulative field resolution is deterministic: given the same execution log state and current call values, the result is always the same.
 
 ### Field Constraints
 
@@ -503,11 +528,11 @@ The `profile` field is the bootstrap — it determines which schema defines the 
 
 The specific fields depend on the profile's execution context schema. Governance choices are common to all profiles; action facts are profile-specific.
 
-**Example (deploy-gate profile for git-based workflows):**
+**Example (ship profile for git-based workflows):**
 
 ```json
 {
-  "profile": "deploy-gate@0.3",
+  "profile": "ship@0.3",
   "execution_path": "deploy-prod-canary",
 
   "repo": "https://github.com/owner/repo",
@@ -525,7 +550,7 @@ The execution context MUST be:
 
 **Immutable** — The declared fields are committed with the action. The resolved fields are deterministic for a given action state.
 
-**Bound to action** — How binding works is profile-specific. For deploy-gate, declared fields live in `.hap/binding.json` in the commit.
+**Bound to action** — How binding works is profile-specific. For ship, declared fields live in `.hap/binding.json` in the commit.
 
 **Verifiable** — Anyone can re-resolve the execution context and compare to the attested hash.
 
@@ -541,7 +566,7 @@ A frame uniquely identifies an action and its governance context. The frame fiel
 
 | Field | Source |
 |-------|--------|
-| Profile-specific action fields | From the action itself (e.g. `repo`, `sha` for deploy-gate) |
+| Profile-specific action fields | From the action itself (e.g. `repo`, `sha` for ship) |
 | `profile` | From execution context |
 | `path` | From execution context |
 
@@ -602,7 +627,7 @@ Attestations do not contain semantic content. `gate_content_hashes` commit to th
 {
   "attestation_id": "uuid",
   "version": "0.3",
-  "profile_id": "deploy-gate@0.3",
+  "profile_id": "ship@0.3",
   "frame_hash": "sha256:...",
   "execution_context_hash": "sha256:...",
   "resolved_domains": [
@@ -1077,14 +1102,14 @@ The authorization frame IS the pre-authorization. The agent is bound by the valu
 
 **Example:**
 ```
-Profile (payment-gate@0.3) defines:
+Profile (spend@0.3) defines:
   amount: number, enforceable: [max]
   currency: string, enforceable: [enum]
 
 Human attests (authorization frame):
   amount_max: 80
   currency: ["EUR"]
-  path: "payment-routine"
+  path: "spend-routine"
   -> frame_hash signed by finance domain owner
 
 Agent executes freely within bounds:
