@@ -7,8 +7,8 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
 const contentRoot = join(rootDir, '..', 'content');
-const gatewayRoot = join(rootDir, '..', 'demo-hap');
-const spRoot = join(rootDir, '..', 'demo-sp');
+const gatewayRoot = join(rootDir, '..', 'hap-gateway');
+const spRoot = join(rootDir, '..', 'hap-sp');
 
 // Read version from package.json
 const pkg = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));

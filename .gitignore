@@ -12,11 +12,11 @@ nmd/
 # Demo repos (separate repositories)
 demo-agent/
 demo-deploy/
-demo-hap/
 demo-hap-deploy-gate/
+hap-gateway/
 
-# Service provider demo (separate repository)
-demo-sp/
+# Service provider (separate repository)
+hap-sp/
 
 # Profiles (separate repository)
 hap-profiles/
