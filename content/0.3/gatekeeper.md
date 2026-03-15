@@ -8,7 +8,7 @@ The Gatekeeper is the enforcement point between human-attested authorization and
 
 The Gatekeeper is not a prescribed component or deployment topology — it is the guarantee that attestation verification has occurred before any consequential action proceeds.
 
-Reference implementation: <a href="https://github.com/humanagencyprotocol/hap-demo" target="_blank" rel="noopener noreferrer">HAP Agent Gateway</a>
+Reference implementation: <a href="https://github.com/humanagencyprotocol/hap-gateway" target="_blank" rel="noopener noreferrer">HAP Agent Gateway</a>
 
 ---
 
