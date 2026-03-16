@@ -9,6 +9,7 @@ const rootDir = join(__dirname, '..');
 const contentRoot = join(rootDir, '..', 'content');
 const gatewayRoot = join(rootDir, '..', 'hap-gateway');
 const spRoot = join(rootDir, '..', 'hap-sp');
+const profilesRoot = join(rootDir, '..', 'hap-profiles');
 
 // Read version from package.json
 const pkg = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
@@ -82,6 +83,31 @@ date: "March 2026"
   console.log(`  Synced Service Provider README -> ${spTarget}`);
 } else {
   console.error(`  Warning: Service Provider README not found: ${spReadme}`);
+}
+
+// Sync HAP Authority Profiles README (with frontmatter injection)
+const profilesReadme = join(profilesRoot, 'README.md');
+const profilesTarget = join(targetDir, 'profiles.md');
+
+if (existsSync(profilesReadme)) {
+  let content = readFileSync(profilesReadme, 'utf-8');
+
+  // Remove the H1 title (will be in frontmatter)
+  content = content.replace(/^# HAP Authority Profiles\n+/, '');
+
+  // Add frontmatter
+  const frontmatter = `---
+title: "HAP Authority Profiles"
+version: "Version ${version}"
+date: "March 2026"
+---
+
+`;
+
+  writeFileSync(profilesTarget, frontmatter + content);
+  console.log(`  Synced Profiles README -> ${profilesTarget}`);
+} else {
+  console.error(`  Warning: Profiles README not found: ${profilesReadme}`);
 }
 
 console.log('Done.');

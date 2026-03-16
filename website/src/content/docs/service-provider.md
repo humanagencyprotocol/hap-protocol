@@ -6,7 +6,7 @@ date: "March 2026"
 
 The cloud authority infrastructure for the [Human Agency Protocol](https://humanagencyprotocol.org). It manages accounts, teams, domains, profiles, and attestation signing — everything organizations need to establish and verify human authority over AI agent actions.
 
-The [HAP Agent Gateway](https://github.com/humanagencyprotocol/hap-demo) connects to this service for cryptographic attestation signing and domain verification. The SP holds the Ed25519 signing key; the gateway holds no signing authority.
+The [HAP Agent Gateway](https://github.com/humanagencyprotocol/hap-gateway) connects to this service for cryptographic attestation signing and domain verification. The SP holds the Ed25519 signing key; the gateway holds no signing authority.
 
 > **Alpha** — Under active development.
 

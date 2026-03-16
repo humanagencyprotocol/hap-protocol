@@ -18,6 +18,8 @@ export async function GET() {
   const gatewayContent = fs.existsSync(gatewayPath) ? fs.readFileSync(gatewayPath, 'utf-8') : null;
   const spPath = path.join(process.cwd(), 'src/content/docs/service-provider.md');
   const spContent = fs.existsSync(spPath) ? fs.readFileSync(spPath, 'utf-8') : null;
+  const profilesPath = path.join(process.cwd(), 'src/content/docs/profiles.md');
+  const profilesContent = fs.existsSync(profilesPath) ? fs.readFileSync(profilesPath, 'utf-8') : null;
 
   // Combine all content
   const combinedContent = `
@@ -122,7 +124,8 @@ ${governanceContent}
 ---
 
 ${gatewayContent ? `${gatewayContent}\n\n---\n` : ''}
-${spContent ? `${spContent}\n` : ''}
+${spContent ? `${spContent}\n\n---\n` : ''}
+${profilesContent ? `${profilesContent}\n` : ''}
 ---
 
 Repository: https://github.com/schadauer/human-agency-protocol

@@ -436,9 +436,9 @@ The profile defines the **constraint types** that fields support. Constraint typ
           "enforceable": ["enum"]
         }
       },
-      "target_env": {
+      "action_type": {
         "source": "declared",
-        "description": "Target environment for execution",
+        "description": "Authorized action type",
         "required": true,
         "constraint": {
           "type": "string",

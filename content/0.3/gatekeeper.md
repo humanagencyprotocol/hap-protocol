@@ -237,7 +237,7 @@ AUTHORIZATION FRAME (human attests)
 
   amount: { max: 80 }
   currency: { enum: ["EUR"] }
-  target_env: { enum: ["production"] }
+  action_type: { enum: ["charge"] }
 
   -> hashed into frame_hash, signed by domain owners
 
@@ -248,7 +248,7 @@ EXECUTION REQUEST (agent submits)
 
   amount: 5                          -> 5 <= 80
   currency: "EUR"                    -> in ["EUR"]
-  target_env: "production"           -> in ["production"]
+  action_type: "charge"              -> in ["charge"]
 
   -> Gatekeeper checks values against authorization frame bounds
 ```
@@ -272,7 +272,7 @@ The Gatekeeper performs:
   "frame": {
     "amount_max": 80,
     "currency": "EUR",
-    "target_env": "production",
+    "action_type": "charge",
     "profile": "spend@0.3",
     "path": "spend-routine"
   },
@@ -282,8 +282,7 @@ The Gatekeeper performs:
   "execution": {
     "amount": 5,
     "currency": "EUR",
-    "target_env": "production",
-    "recipient": "supplier-x"
+    "action_type": "charge"
   }
 }
 ```

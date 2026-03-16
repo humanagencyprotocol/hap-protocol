@@ -39,7 +39,7 @@ The client submits the frame fields and attestations. The Gatekeeper only accept
   "frame": {
     "repo": "https://github.com/owner/repo",
     "sha": "a1b2c3...",
-    "profile": "deploy-gate@0.3",
+    "profile": "ship@0.3",
     "path": "deploy-prod-user-facing"
   },
   "attestations": [
@@ -49,7 +49,7 @@ The client submits the frame fields and attestations. The Gatekeeper only accept
 }
 ```
 
-The frame fields are profile-specific. For deploy-gate, they are `repo`, `sha`, `profile`, and `path`. The Gatekeeper reconstructs `frame_hash` from these fields and verifies it matches every attestation. No unattested parameters are accepted.
+The frame fields are profile-specific. For ship, they are `repo`, `sha`, `profile`, and `path`. The Gatekeeper reconstructs `frame_hash` from these fields and verifies it matches every attestation. No unattested parameters are accepted.
 
 ---
 
@@ -115,7 +115,7 @@ Every connector MUST implement the `verify` operation:
   "frame": {
     "repo": "https://github.com/owner/repo",
     "sha": "a1b2c3...",
-    "profile": "deploy-gate@0.3",
+    "profile": "ship@0.3",
     "path": "deploy-prod-user-facing"
   },
   "attestations": [
@@ -124,7 +124,7 @@ Every connector MUST implement the `verify` operation:
 }
 ```
 
-Frame fields are profile-specific. The fields above are for `deploy-gate`. Other profiles define their own frame fields.
+Frame fields are profile-specific. The fields above are for `ship`. Other profiles define their own frame fields.
 
 **Success response:**
 
@@ -133,7 +133,7 @@ Frame fields are profile-specific. The fields above are for `deploy-gate`. Other
   "approved": true,
   "frame_hash": "sha256-hex...",
   "verified_domains": ["engineering", "marketing"],
-  "profile": "deploy-gate@0.3"
+  "profile": "ship@0.3"
 }
 ```
 
@@ -237,7 +237,7 @@ AUTHORIZATION FRAME (human attests)
 
   amount: { max: 80 }
   currency: { enum: ["EUR"] }
-  target_env: { enum: ["production"] }
+  action_type: { enum: ["charge"] }
 
   -> hashed into frame_hash, signed by domain owners
 
@@ -248,7 +248,7 @@ EXECUTION REQUEST (agent submits)
 
   amount: 5                          -> 5 <= 80
   currency: "EUR"                    -> in ["EUR"]
-  target_env: "production"           -> in ["production"]
+  action_type: "charge"              -> in ["charge"]
 
   -> Gatekeeper checks values against authorization frame bounds
 ```
@@ -272,9 +272,9 @@ The Gatekeeper performs:
   "frame": {
     "amount_max": 80,
     "currency": "EUR",
-    "target_env": "production",
-    "profile": "payment-gate@0.3",
-    "path": "payment-routine"
+    "action_type": "charge",
+    "profile": "spend@0.3",
+    "path": "spend-routine"
   },
   "attestations": [
     "base64-attestation-blob..."
@@ -282,8 +282,7 @@ The Gatekeeper performs:
   "execution": {
     "amount": 5,
     "currency": "EUR",
-    "target_env": "production",
-    "recipient": "supplier-x"
+    "action_type": "charge"
   }
 }
 ```

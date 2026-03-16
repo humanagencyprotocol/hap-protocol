@@ -50,7 +50,7 @@ A human creates an authorization through a structured gate flow — defining bou
 Requires [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
-docker run -d --name hap-gateway -p 3000:3000 -p 3030:3030 -v hap-data:/app/data ghcr.io/humanagencyprotocol/hap-demo
+docker run -d --name hap-gateway -p 3000:3000 -p 3030:3030 -v hap-data:/app/data ghcr.io/humanagencyprotocol/hap-gateway
 ```
 
 Open `http://localhost:3000`. The MCP server is available at `http://localhost:3030`.

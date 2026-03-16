@@ -51,7 +51,7 @@ An SP is any system that implements the HAP SP Protocol to:
 
 ```json
 {
-  "profile_id": "deploy-gate@0.3",
+  "profile_id": "ship@0.3",
   "path": "deploy-prod-user-facing",
   "frame_hash": "sha256:...",
   "execution_context_hash": "sha256:...",
@@ -113,7 +113,7 @@ On valid request, return:
   "payload": {
     "attestation_id": "uuid",
     "version": "0.3",
-    "profile_id": "deploy-gate@0.3",
+    "profile_id": "ship@0.3",
     "frame_hash": "sha256:...",
     "execution_context_hash": "sha256:...",
     "resolved_domains": [
@@ -242,7 +242,7 @@ If an executor ignores the attestation, it acts outside HAP—and is liable.
 
 ## Example: Multi-Domain Attestation
 
-**Profile:** `deploy-gate@0.3`, path `deploy-prod-full` requiring `engineering` + `release_management`
+**Profile:** `ship@0.3`, path `deploy-prod-full` requiring `engineering` + `release_management`
 
 1. Engineer and Release Manager each attest via SP (one attestation per domain)
 2. SP verifies identity, domain authority, and profile compliance before signing each attestation

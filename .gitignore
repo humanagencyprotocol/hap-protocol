@@ -13,6 +13,7 @@ nmd/
 demo-agent/
 demo-deploy/
 demo-hap-deploy-gate/
+demo-sp/
 hap-gateway/
 
 # Service provider (separate repository)
