@@ -1,5 +1,6 @@
 ---
 title: "v0.3 Review — Findings and v0.4 Proposal"
+version: "Version 0.3"
 date: "March 2026"
 ---
 
