@@ -83,6 +83,37 @@ v0.3 treats the frame as a single object that goes to the SP in full. This viola
 
 ---
 
+## Finding 5: Domain Requirements Are Policy, Not Protocol
+
+v0.3 profiles define `requiredDomains` per execution path:
+
+```json
+{
+  "executionPaths": {
+    "spend-routine": {
+      "requiredDomains": ["finance"],
+      "ttl": { "default": 86400, "max": 86400 }
+    },
+    "spend-reviewed": {
+      "requiredDomains": ["finance", "compliance"],
+      "ttl": { "default": 14400, "max": 86400 }
+    }
+  }
+}
+```
+
+This creates three problems:
+
+1. **Org structures vary.** Acme Corp's finance person might be "treasury." A bank might require "risk" + "treasury" + "cfo." The profile author cannot anticipate every org's governance structure.
+
+2. **Personal use breaks.** A solo developer has no groups, no domains, no one to attest. But `spend-routine` demands `finance` domain coverage — there is no way to create a personal authorization.
+
+3. **Governance changes require profile changes.** If an org adds a compliance requirement to routine spending, they must fork the profile to add a domain. This conflates protocol structure with organizational policy.
+
+The root cause: **domain requirements are organizational policy, not protocol semantics.** "Who must approve a $100 payment" is a governance decision that differs by org. The profile should define *what* is bounded, not *who* must approve.
+
+---
+
 ## Immediate v0.3 Fix
 
 Until v0.4, the spend profile should only list tools that move money in its `toolGating.overrides`. All other tools should be excluded by setting the `default` gating to reject, and only explicitly overridden tools are accessible:
@@ -97,7 +128,7 @@ This means `create_customer`, `create_product`, `create_price`, `search_customer
 
 ## Proposal for v0.4
 
-v0.4 addresses three issues: frame privacy (Finding 4), execution accountability, and revocation. Multi-profile integration scoping (Findings 1-3) is deferred to v0.5 — it is architecturally sound but introduces significant complexity in tool resolution and conflict handling that requires separate design work.
+v0.4 addresses four issues: frame privacy (Finding 4), domain governance (Finding 5), execution accountability, and revocation. Multi-profile integration scoping (Findings 1-3) is deferred to v0.5 — it is architecturally sound but introduces significant complexity in tool resolution and conflict handling that requires separate design work.
 
 ### Replace Frame with Bounds + Context
 
@@ -230,6 +261,62 @@ The SP enforces both:
 
 Group limits are optional. If not configured, the SP enforces only what the human authorized. Group limits constrain what humans can authorize — they do not override human decisions.
 
+### Move Domain Requirements from Profiles to SP
+
+Profiles no longer define `requiredDomains`. Execution paths keep their `description` and `ttl`, but domain requirements move to the SP as group-level configuration.
+
+**Profile (v0.4):**
+
+```json
+{
+  "executionPaths": {
+    "spend-routine": {
+      "description": "Day-to-day financial transactions within authorized bounds",
+      "ttl": { "default": 86400, "max": 86400 }
+    },
+    "spend-reviewed": {
+      "description": "Large or unusual transactions requiring dual authorization",
+      "ttl": { "default": 14400, "max": 86400 }
+    }
+  }
+}
+```
+
+**SP group configuration:**
+
+```json
+{
+  "group": "acme-corp",
+  "pathDomains": {
+    "spend@0.4": {
+      "spend-routine": ["treasury"],
+      "spend-reviewed": ["treasury", "cfo"]
+    }
+  }
+}
+```
+
+The profile defines *what* paths exist. The group admin defines *who* must attest for each.
+
+### Two Modes of Operation
+
+**Personal mode** (no group):
+- All execution paths are available
+- No domain requirements — the single user attests directly
+- The SP skips domain authority checks
+- The attestation's `resolved_domains` records the user's self-claimed domain (for audit)
+
+**Group mode:**
+- Only paths with configured domain requirements are available
+- The group admin must assign at least one domain to each path they enable
+- A path with no domain configuration is not available (cannot be selected in the UI)
+- The SP validates domain authority: the attesting user must hold the required domain in the group
+
+This separation means:
+- **Profiles are universal** — the same `spend@0.4` profile works for a solo developer and a 500-person enterprise
+- **Governance is organizational** — configured per group on the SP, alongside group limits
+- **Personal mode just works** — no groups, no domains, no configuration required
+
 ### Execution Receipts
 
 v0.3 attestations prove authorization but nothing proves execution. The gateway's execution log is unsigned and unverifiable. If the gateway claims "I only allowed 5 transactions," there is no cryptographic proof.
@@ -277,12 +364,13 @@ The attestation remains cryptographically valid for audit, but the SP refuses to
 
 ### Impact on Current Implementation
 
-1. **hap-profiles** — replace `frameSchema` with `boundsSchema` + `contextSchema`
-2. **hap-sp** — store bounds + `bounds_hash` + `context_hash`, never store context content
-3. **hap-gateway** — store context locally (encrypted), only send bounds to SP
-4. **Attestation payload** — replace `frame_hash` with `bounds_hash` + `context_hash`
-5. **Gatekeeper** — verify `bounds_hash` and `context_hash` separately
-6. **hap-core** — update `computeFrameHash()` to `computeBoundsHash()` + `computeContextHash()`
+1. **hap-profiles** — replace `frameSchema` with `boundsSchema` + `contextSchema`; remove `requiredDomains` from `executionPaths`
+2. **hap-sp** — store bounds + `bounds_hash` + `context_hash`, never store context content; add per-group path domain configuration; attest route checks domains from group config (group mode) or skips (personal mode)
+3. **hap-gateway** — store context locally (encrypted), only send bounds to SP; `requiredDomains` comes from SP response, not profile; personal mode sends no domain requirements
+4. **hap-gateway UI** — personal mode: no domain selector, all paths available; group mode: only paths with configured domains shown
+5. **Attestation payload** — replace `frame_hash` with `bounds_hash` + `context_hash`
+6. **Gatekeeper** — verify `bounds_hash` and `context_hash` separately
+7. **hap-core** — update `computeFrameHash()` to `computeBoundsHash()` + `computeContextHash()`
 
 Existing v0.3 attestations with `frame_hash` remain valid under a migration path: treat `frame_hash` as `bounds_hash` with empty context.
 
@@ -324,6 +412,7 @@ This is deferred because the current `action_type` + `toolGating` model works fo
 - **Cross-SP multi-domain** — Not supported in v0.4. Single SP per deployment.
 - **Context evolution** — Context cannot be updated after attestation. Changing context invalidates `context_hash`, requiring re-attestation. This is intentional: the human's operational scope is part of what was committed to.
 - **Empty context hash** — Always included. `context_hash` of `{}` explicitly proves "there was no context." Uniform attestation structure, no conditional parsing, forward compatible if context fields are added later.
+- **Domain requirements are policy** — Profiles define what paths exist. The SP (group admin) defines who must attest for each path. In personal mode, no domain requirements — single user attests directly. In group mode, paths without configured domains are unavailable. At least one domain must be assigned to enable a path for a group.
 
 ## Open Questions (v0.5)
 
