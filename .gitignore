@@ -25,6 +25,9 @@ hap-profiles/
 # CRM MCP server (separate repository)
 hap-crm-mcp/
 
+# Records MCP server (separate repository)
+hap-records-mcp/
+
 # E2E tests (separate repository)
 hap-e2e/
 
