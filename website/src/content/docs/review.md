@@ -114,6 +114,49 @@ The root cause: **domain requirements are organizational policy, not protocol se
 
 ---
 
+## Finding 6: Profile Design Principles for AI-Native Operations
+
+**Observation:** End-to-end testing with Stripe and Gmail integrations, combined with analysis of what small AI-native businesses (1–10 people) need to operate, surfaced four principles for profile design that should guide v0.4 and beyond.
+
+**Principle 1: One profile per authority domain, not per tool.**
+A profile represents a category of consequential action — spending money, managing customers, publishing content. Multiple MCP tools and integrations map to one profile via integration manifests. Stripe and PayPal both map to `charge`. Notion and Airtable both map to `records`. This keeps profiles stable while allowing unlimited tool integrations.
+
+**Principle 2: Integration manifests do the heavy lifting.**
+Profiles define abstract bounds and execution context. Manifests map concrete tool arguments to those abstractions (e.g., Stripe's `unit_amount` in cents to the profile's `amount` in currency units, or Gmail's `to` field to `recipient_count` via a `length` transform). Adding a new payment provider requires only a new manifest, not a new profile.
+
+**Principle 3: Profiles should be stable, manifests should be numerous.**
+A team should never need to modify a profile. Profiles are infrastructure — defined once, versioned, immutable once published. Growth happens in manifests. A company with three Stripe accounts and two Gmail accounts doesn't need more profiles — they need more integration instances with the same profiles.
+
+**Principle 4: Execution paths map to trust levels, not business processes.**
+`customers-read` vs `customers-write` vs `customers-delete` reflects escalating trust requirements (24h / 8h / 2h TTL). They are not workflow stages. Do not create paths like `email-customer-support` and `email-sales-outreach` — the business context belongs in the human's gate answers, not in the path structure.
+
+**Revised profile set for AI-native small businesses:**
+
+| Profile | Authority Domain | Direction |
+|---------|-----------------|-----------|
+| `charge` | Receive money from customers | Money in |
+| `purchase` | Spend company money | Money out |
+| `email` | Communicate with specific people | Communication |
+| `customers` | CRM: contacts, activities, deals, tasks | Customer data |
+| `schedule` | Calendar: read, draft, book events | Time management |
+| `publish` | Post public content: social media, blogs | Public presence |
+| `records` | Personal structured data (renamed from `data`) | Personal data |
+
+Seven profiles cover the full operational surface of a small business. They handle the operational work that drains time but isn't the team's core craft.
+
+**Separation decisions:**
+
+- **`schedule` is separate from `email`** — sending an email and booking a meeting are different consequential actions with different risk profiles, different bounds (recipients vs. duration/lookahead), and often different tools (Gmail vs. Google Calendar vs. Calendly). Folding them together forces combined authorization that nobody thinks about as one decision.
+
+- **`data` split into `customers` (shared CRM) and `records` (personal data)** — a team CRM with contacts, deals, and activities is a shared authority domain with different access patterns than personal structured data. The `customers` profile defines a standardized CRM schema (contacts, activities, deals, tasks) that any MCP server can implement, enabling interoperable CRM tools. The `records` profile covers personal databases and spreadsheet replacements.
+
+- **`purchase` is separate from `charge`** — spending company money and charging customers are opposite directions of money flow with different risk vectors. `charge` risks overcharging a customer (reputational + legal). `purchase` risks overspending company funds (financial).
+
+**CRM as a HAP-native concept:**
+The `customers` profile introduces a standardized CRM schema: contacts (with type, stage, tags), activities (email, call, meeting, note, purchase), deals (pipeline stages, values), and tasks (linked to contacts or deals). Any MCP server that implements this schema works with the `customers` profile — whether backed by SQLite, Postgres, Notion, or Airtable. This is different from wrapping an existing CRM API (Salesforce, HubSpot); those would get their own integration manifests mapping to the same `customers` profile.
+
+---
+
 ## Immediate v0.3 Fix
 
 Until v0.4, the spend profile should only list tools that move money in its `toolGating.overrides`. All other tools should be excluded by setting the `default` gating to reject, and only explicitly overridden tools are accessible:

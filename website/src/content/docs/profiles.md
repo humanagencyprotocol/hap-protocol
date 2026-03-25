@@ -6,7 +6,7 @@ date: "March 2026"
 
 Authorization templates for the [Human Agency Protocol](https://humanagencyprotocol.org). Each profile defines what an AI agent is allowed to do within a specific domain — the bounds a human sets, and the Gatekeeper enforces.
 
-> **Version 0.3** — March 2026
+> **Version 0.4** — March 2026
 
 ---
 
@@ -14,125 +14,186 @@ Authorization templates for the [Human Agency Protocol](https://humanagencyproto
 
 A profile is a complete authorization schema. It specifies:
 
-- **Frame schema** — the bounds a human commits to (e.g., max amount, allowed currencies)
+- **Bounds schema** — the limits a human commits to (e.g., max amount, allowed currencies)
+- **Context schema** — local parameters that stay encrypted (e.g., allowed services, environment)
 - **Execution context** — what the Gatekeeper checks at runtime, including cumulative limits
 - **Execution paths** — governance tiers with required domain owners and TTLs
 - **Gates** — the structured questions a human must answer before authorization
-- **Tool gating** — how MCP tool arguments map to execution context fields
 
-Profiles are referenced by ID (e.g., `spend@0.3`) and are immutable once published.
+Profiles are referenced by ID (e.g., `charge@0.4`) and are immutable once published.
 
 ---
 
 ## Profiles
 
-### spend — Financial Authority
+### charge — Charge Authority
 
-Governs committing company money: charges, refunds, subscriptions.
+Governs charging customers: payments, refunds, subscriptions.
 
 | Bound | Type | Purpose |
 |-------|------|---------|
 | `amount_max` | per-transaction | Maximum monetary amount |
-| `currency` | enum | Permitted currencies |
-| `action_type` | enum | charge, refund, subscribe |
-| `amount_daily_max` | cumulative | Daily spend cap |
-| `amount_monthly_max` | cumulative | Monthly spend cap |
+| `amount_daily_max` | cumulative | Daily charge cap |
+| `amount_monthly_max` | cumulative | Monthly charge cap |
 | `transaction_count_daily_max` | cumulative | Daily transaction limit |
 
-| Path | Required Domains | Default TTL |
-|------|-----------------|-------------|
-| `spend-routine` | finance | 24h |
-| `spend-reviewed` | finance, compliance | 4h |
+| Context | Type | Purpose |
+|---------|------|---------|
+| `currency` | enum | Permitted currencies |
+| `action_type` | enum | charge, refund, subscribe |
 
-Tool gating maps Stripe MCP tools — `create_payment_link`, `create_invoice_item`, `create_refund` — to the execution context. Read-only tools (`list_customers`, `retrieve_balance`) are ungated.
-
----
-
-### ship — Deployment Authority
-
-Governs what runs in production: merges, deployments, rollbacks.
-
-| Bound | Type | Purpose |
-|-------|------|---------|
-| `repository` | enum | Authorized repositories |
-| `scope` | enum | external (production) or internal (staging) |
-| `action_type` | enum | merge, deploy, rollback |
-| `deploy_count_daily_max` | cumulative | Daily deployment limit |
-
-| Path | Required Domains | Default TTL |
-|------|-----------------|-------------|
-| `ship-internal` | engineering | 8h |
-| `ship-external` | engineering, release_management | 2h |
-
-Tool gating maps GitHub MCP tools — `merge_pull_request`, `create_or_update_file` — to the execution context. Read-only tools (`list_issues`, `get_file_contents`) are ungated.
+| Path | Default TTL |
+|------|-------------|
+| `charge-routine` | 24h |
+| `charge-reviewed` | 4h |
 
 ---
 
-### publish — Communication Authority
+### purchase — Purchase Authority
 
-Governs sending anything externally as the company: emails, notifications, webhooks.
+Governs spending company money: subscriptions, supplies, services, advertising.
 
 | Bound | Type | Purpose |
 |-------|------|---------|
-| `channel` | enum | email, webhook, notification |
-| `audience` | enum | individual, segment, all |
-| `recipient_max` | per-operation | Maximum recipients per send |
-| `scope` | enum | external (real customers) or internal (test accounts) |
-| `send_count_daily_max` | cumulative | Daily send limit |
-| `send_count_monthly_max` | cumulative | Monthly send limit |
+| `spend_max` | per-transaction | Maximum spend amount |
+| `spend_daily_max` | cumulative | Daily spend cap |
+| `spend_monthly_max` | cumulative | Monthly spend cap |
+| `transaction_count_daily_max` | cumulative | Daily transaction limit |
 
-| Path | Required Domains | Default TTL |
-|------|-----------------|-------------|
-| `publish-transactional` | engineering | 24h |
-| `publish-marketing` | marketing, product | 2h |
-| `publish-all-users` | marketing, product, compliance | 1h |
+| Context | Type | Purpose |
+|---------|------|---------|
+| `currency` | enum | Permitted currencies |
+| `category` | enum | subscription, supply, service, advertising |
+| `allowed_vendors` | subset | Approved vendor names |
+
+| Path | Default TTL |
+|------|-------------|
+| `purchase-routine` | 24h |
+| `purchase-reviewed` | 4h |
 
 ---
 
-### data — Data Authority
+### email — Email Authority
 
-Governs accessing and modifying business data: queries, schema changes, exports.
+Governs sending, drafting, and reading email via Gmail.
 
 | Bound | Type | Purpose |
 |-------|------|---------|
-| `access_level` | enum | read, write, admin |
-| `data_scope` | enum | public, internal, pii |
-| `scope` | enum | external (production) or internal (sandbox) |
+| `recipient_max` | per-email | Maximum recipients |
+| `send_daily_max` | cumulative | Daily send/draft limit |
+| `read_max_age_days` | per-query | Max email age for search |
+| `read_daily_max` | cumulative | Daily read limit |
+
+| Context | Type | Purpose |
+|---------|------|---------|
+| `allowed_recipients` | subset | Permitted email addresses |
+| `allowed_domains` | subset | Permitted recipient domains |
+
+| Path | Default TTL |
+|------|-------------|
+| `email-draft` | 24h |
+| `email-send` | 4h |
+| `email-read` | 24h |
+
+---
+
+### customers — Customer Management
+
+Governs CRM operations: contacts, activities, deals, tasks.
+
+| Bound | Type | Purpose |
+|-------|------|---------|
+| `contact_create_daily_max` | cumulative | Daily new contacts |
+| `contact_modify_daily_max` | cumulative | Daily contact updates |
+| `activity_create_daily_max` | cumulative | Daily activity logs |
+| `deal_create_daily_max` | cumulative | Daily new deals |
+
+| Context | Type | Purpose |
+|---------|------|---------|
+| `contact_type` | subset | customer, lead, partner, vendor |
+| `access_level` | enum | read, write |
+
+| Path | Default TTL |
+|------|-------------|
+| `customers-read` | 24h |
+| `customers-write` | 8h |
+| `customers-delete` | 2h |
+
+---
+
+### schedule — Scheduling Authority
+
+Governs calendar access: reading, drafting, and booking events.
+
+| Bound | Type | Purpose |
+|-------|------|---------|
+| `booking_daily_max` | cumulative | Daily new bookings |
+| `booking_duration_max` | per-event | Max event duration (minutes) |
+| `lookahead_days_max` | per-event | Max days into the future |
+
+| Context | Type | Purpose |
+|---------|------|---------|
+| `allowed_calendars` | subset | Permitted calendar names |
+| `allowed_attendees` | subset | Permitted attendee emails |
+| `allowed_domains` | subset | Permitted attendee domains |
+
+| Path | Default TTL |
+|------|-------------|
+| `schedule-read` | 24h |
+| `schedule-draft` | 24h |
+| `schedule-book` | 4h |
+
+---
+
+### publish — Content Publishing
+
+Governs posting public content to social media, blogs, and other platforms.
+
+| Bound | Type | Purpose |
+|-------|------|---------|
+| `post_daily_max` | cumulative | Daily post limit |
+| `post_monthly_max` | cumulative | Monthly post limit |
+
+| Context | Type | Purpose |
+|---------|------|---------|
+| `allowed_platforms` | subset | twitter, linkedin, instagram, blog, medium |
+| `content_type` | enum | text, image, link, thread |
+| `audience` | enum | public, followers, connections |
+
+| Path | Default TTL |
+|------|-------------|
+| `publish-draft` | 24h |
+| `publish-post` | 4h |
+
+---
+
+### records — Records Authority
+
+Governs accessing and modifying personal structured data: queries, schema changes, exports. Renamed from `data` — for personal databases and spreadsheet replacements, not shared CRM data.
+
+| Bound | Type | Purpose |
+|-------|------|---------|
 | `row_limit_max` | per-query | Maximum rows returned |
 | `query_count_daily_max` | cumulative | Daily query limit |
 | `export_row_count_daily_max` | cumulative | Daily exported row limit |
 
-| Path | Required Domains | Default TTL |
-|------|-----------------|-------------|
-| `data-read` | engineering | 8h |
-| `data-write` | engineering, data_owner | 2h |
-| `data-export` | data_owner, compliance | 1h |
+| Context | Type | Purpose |
+|---------|------|---------|
+| `access_level` | enum | read, write, admin |
+| `data_scope` | enum | public, internal, pii |
+| `scope` | enum | external (production), internal (sandbox) |
 
----
-
-### provision — Infrastructure Authority
-
-Governs creating, modifying, or destroying infrastructure: DNS, compute, storage, secrets.
-
-| Bound | Type | Purpose |
-|-------|------|---------|
-| `resource_type` | enum | dns, compute, storage, secret |
-| `action_type` | enum | create, modify, delete |
-| `scope` | enum | external (production) or internal (dev/sandbox) |
-| `blast_radius` | enum | single, service, global |
-| `change_count_daily_max` | cumulative | Daily change limit |
-
-| Path | Required Domains | Default TTL |
-|------|-----------------|-------------|
-| `provision-internal` | engineering | 8h |
-| `provision-external` | platform, engineering | 2h |
-| `provision-destructive` | platform, engineering, security | 1h |
+| Path | Default TTL |
+|------|-------------|
+| `records-read` | 8h |
+| `records-write` | 2h |
+| `records-export` | 1h |
 
 ---
 
 ## How Profiles Work
 
-A human creates an authorization by selecting a profile and execution path, setting the bounds (frame), and answering the gate questions. Domain owners cryptographically attest to the frame. The Gatekeeper then enforces those bounds on every tool call:
+A human creates an authorization by selecting a profile and execution path, setting the bounds, and answering the gate questions. Domain owners cryptographically attest to the bounds. The Gatekeeper then enforces those bounds on every tool call:
 
 ```
 Human sets bounds          Agent requests execution        Gatekeeper checks
@@ -143,7 +204,7 @@ amount_daily_max: 500      amount_daily: 423 (from log)   423 + 5 <= 500, approv
 
 If any bound is exceeded, the Gatekeeper blocks execution.
 
-All profiles require the same six gates: frame, problem, objective, tradeoff, commitment, and decision owner.
+All profiles require the same six gates: bounds, problem, objective, tradeoff, commitment, and decision owner.
 
 ---
 
