@@ -22,6 +22,12 @@ hap-sp/
 # Profiles (separate repository)
 hap-profiles/
 
+# CRM MCP server (separate repository)
+hap-crm-mcp/
+
+# E2E tests (separate repository)
+hap-e2e/
+
 # Misc
 style-guide.html
 
