@@ -103,15 +103,11 @@ Governs CRM operations: contacts, activities, deals, tasks.
 
 | Bound | Type | Purpose |
 |-------|------|---------|
-| `contact_create_daily_max` | cumulative | Daily new contacts |
-| `contact_modify_daily_max` | cumulative | Daily contact updates |
-| `activity_create_daily_max` | cumulative | Daily activity logs |
-| `deal_create_daily_max` | cumulative | Daily new deals |
+| `write_daily_max` | cumulative | Daily write operations |
 
 | Context | Type | Purpose |
 |---------|------|---------|
 | `contact_type` | subset | customer, lead, partner, vendor |
-| `access_level` | enum | read, write |
 
 | Path | Default TTL |
 |------|-------------|
