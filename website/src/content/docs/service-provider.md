@@ -4,69 +4,61 @@ version: "Version 0.3"
 date: "March 2026"
 ---
 
-The cloud authority infrastructure for the [Human Agency Protocol](https://humanagencyprotocol.org). It manages accounts, teams, domains, profiles, and attestation signing — everything organizations need to establish and verify human authority over AI agent actions.
+Part of [humanagencyprotocol.com](https://humanagencyprotocol.com) — the first service applying the [Human Agency Protocol](https://humanagencyprotocol.org).
 
-The [HAP Agent Gateway](https://github.com/humanagencyprotocol/hap-gateway) connects to this service for cryptographic attestation signing and domain verification. The SP holds the Ed25519 signing key; the gateway holds no signing authority.
+AI systems are probabilistic — flexible, adaptive, powerful. Real-world actions are deterministic — irreversible, accountable. You can't safely let a probabilistic system directly control deterministic consequences.
+
+HAP separates intelligence from authority and enforces that boundary at execution. The Service Provider is the authority and accountability layer — it manages who can authorize what, signs the cryptographic proof of human commitment, and issues receipts for every action an agent takes.
+
+Without this separation, more AI capability means more risk, and organizations restrict their agents. With it, organizations can safely grant agents real authority — because the proof is structural, not behavioral.
 
 > **Alpha** — Under active development.
 
 ---
 
-## What It Provides
+## What It Does
 
-**Accounts** — Register with name and email. Receive a single API key (shown once, never retrievable). No passwords. Session cookies for browser access.
+**Authority management** — Organizations create teams and assign domain authority (finance, compliance, engineering) to members. A person's authority is contextual to their team — the same person can hold different domains in different teams.
 
-**Teams** — Create teams, invite members via shareable codes, assign domain authority per member. A user's authority is always contextual to their team — the same person can have different domains in different teams.
+**Attestation signing** — When a human authorizes an action through the [Agent Gateway](https://github.com/humanagencyprotocol/hap-gateway), the SP verifies their domain authority and signs the attestation with its Ed25519 key. Two modes of commitment:
 
-**Domains** — Freeform authority labels (e.g., `finance`, `compliance`, `security`) assigned by team admins. Profiles define which domains are required; teams define who fills them.
+- **Fully committed** — The human commits to bounds upfront. The agent executes autonomously within those bounds. The SP validates each action against the attested bounds and issues a signed receipt.
+- **Committed per action** — The human defines bounds but defers full commitment. Each agent action becomes a proposal. Domain owners review and commit or reject in the gateway UI before execution proceeds.
 
-**Profiles** — Browsable catalog of authorization templates. Protocol profiles are pre-loaded and immutable. Community profiles can be created by any user and are immutable once published.
+**Execution receipts** — Every action an agent takes produces a signed receipt at the SP — cryptographic proof of what was done, when, under which authorization, with cumulative consumption state. Full audit trail, append-only, queryable, third-party verifiable.
 
-**Attestation Signing** — Two modes:
-- **Team-managed** — SP verifies the caller has the required domain in the specified team before signing
-- **External** — SP authenticates the caller but delegates domain verification to an external system (e.g., GitHub repo ownership)
+**Profile catalog** — Browsable catalog of authorization templates defining bounds schemas, required domains, and execution paths. Protocol profiles are immutable. Community profiles can be published by any user.
 
-**Verification** — Public endpoints to retrieve the SP's public key and verify any attestation blob.
+**Verification** — Public endpoints to retrieve the SP's public key and verify any attestation or receipt. Third parties can independently verify that an action was human-authorized and that execution stayed within bounds.
 
----
-
-## API Surface
-
-### Auth
-- `POST /api/auth/register` — Create account, receive API key
-- `POST /api/auth/session` — Exchange API key for session cookie
-- `POST /api/auth/renew-key` — Rotate API key
-
-### Attestations
-- `POST /api/sp/attest` — Sign attestation (team-managed or external mode)
-- `GET /api/sp/pubkey` — SP Ed25519 public key
-- `POST /api/sp/verify` — Verify attestation blob
-- `GET /api/attestations/mine` — User's own attestations (active/pending/expired)
-
-### Teams
-- `POST /api/groups` — Create team
-- `POST /api/groups/join` — Join via invite code
-- `PUT /api/groups/{id}/members/{userId}` — Assign domains (admin)
-- `POST /api/groups/{id}/invite` — Regenerate invite code
-
-### Profiles
-- `GET /api/profiles` — Browse/search all profiles
-- `POST /api/profiles` — Publish a community profile
-- `GET /api/profiles/{id}` — Profile detail
+The SP proves two things: that a human authorized an action, and that the action was executed within those bounds. Authorization and accountability in one service.
 
 ---
 
 ## Relationship to the Gateway
 
 ```
-HAP Service Provider (cloud)          HAP Agent Gateway (local)
+Service Provider (cloud)              Agent Gateway (local)
 ┌───────────────────────┐             ┌───────────────────────┐
 │  Accounts & teams     │             │  Vault (credentials)  │
 │  Domain authority     │◄───────────►│  Gate content (local) │
 │  Profile catalog      │  API calls  │  Gatekeeper           │
 │  Ed25519 signing      │             │  MCP tool proxy       │
-│  Attestation storage  │             │  Agent connection      │
+│  Attestation storage  │             │  Agent connection     │
+│  Execution receipts   │             │  Proposal review UI   │
 └───────────────────────┘             └───────────────────────┘
 ```
 
-The SP answers "who has authority to authorize what." The gateway answers "is this specific tool call authorized right now."
+The SP answers "who has authority to authorize what." The gateway answers "is this specific tool call authorized right now." The receipt proves it happened within bounds.
+
+Together they turn AI from an uncontrolled actor into a bounded executor of human decisions — enabling high autonomy without losing accountability.
+
+---
+
+## Technical Documentation
+
+See [docs/api.md](docs/api.md) for the full API surface, authentication, and integration details.
+
+---
+
+Protocol specification: [humanagencyprotocol.org](https://humanagencyprotocol.org)
