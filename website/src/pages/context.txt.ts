@@ -13,7 +13,7 @@ export async function GET() {
   const gatekeeperContent = fs.readFileSync(path.join(contentPath, 'gatekeeper.md'), 'utf-8');
   const governanceContent = fs.readFileSync(path.join(contentPath, 'governance.md'), 'utf-8');
 
-  // Read implementation documentation (not versioned, synced from demo repos if available)
+  // Read implementation documentation (not versioned, synced from repos if available)
   const gatewayPath = path.join(process.cwd(), 'src/content/docs/gateway.md');
   const gatewayContent = fs.existsSync(gatewayPath) ? fs.readFileSync(gatewayPath, 'utf-8') : null;
   const spPath = path.join(process.cwd(), 'src/content/docs/service-provider.md');
@@ -100,7 +100,7 @@ HAP turns policy requirements into enforceable infrastructure.
 - **Protocol** — Defines authorization structure and attestation format.
 - **Service Providers** — Issue cryptographic attestations.
 - **Gatekeeper** — Verifies authorization before execution.
-- **Demo** — Open-source gateway and live demo.
+- **Gateway** — Open-source local gateway for runtime enforcement.
 - **Governance** — Protocol governance and trust model.
 
 **HAP turns human direction into the governing layer of intelligent systems.**
@@ -128,7 +128,7 @@ ${spContent ? `${spContent}\n\n---\n` : ''}
 ${profilesContent ? `${profilesContent}\n` : ''}
 ---
 
-Repository: https://github.com/schadauer/human-agency-protocol
+Repository: https://github.com/humanagencyprotocol/hap-protocol
 Website: https://humanagencyprotocol.org
 `.trim();
 
