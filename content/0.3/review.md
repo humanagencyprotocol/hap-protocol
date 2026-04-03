@@ -602,6 +602,65 @@ This is deferred because the current `action_type` + `toolGating` model works fo
 - **Empty context hash** — Always included. `context_hash` of `{}` explicitly proves "there was no context." Uniform attestation structure, no conditional parsing, forward compatible if context fields are added later.
 - **Domain requirements are policy** — Profiles define what paths exist. The SP (group admin) defines who must attest for each path. In personal mode, no domain requirements — single user attests directly. In group mode, paths without configured domains are unavailable. At least one domain must be assigned to enable a path for a group.
 
+## Finding 7: Execution Paths Are Redundant
+
+**Observation:** With the introduction of commitment mode (Automatic vs Review Each Action), execution paths no longer serve a purpose that isn't already covered by other mechanisms.
+
+v0.3 execution paths defined different "modes" of operation under the same profile — e.g., `spend-routine` vs `spend-reviewed`, or `publish-draft` vs `publish-post`. Each path could have different TTLs and different required domains.
+
+**What made them redundant:**
+
+1. **Commitment mode replaces risk-level paths.** `publish-draft` (human reviews before posting) and `publish-post` (agent posts directly) are now commitment mode choices — "Review Each Action" vs "Automatic." This works for every integration without profiles pre-defining draft/post paths.
+
+2. **Tool gating already controls what the agent can do.** Integration manifests define which tools are gated and how. The gatekeeper enforces bounds per tool call, not per path.
+
+3. **TTL is a per-authorization choice.** The user selects TTL during authorization. Different paths having different TTL defaults adds complexity — the human should decide based on their situation, not based on what the profile author pre-defined.
+
+4. **Bounds already constrain scope.** `post_daily_max: 3` limits the agent regardless of path. The enforcement layer doesn't need paths to enforce limits.
+
+5. **Paths confuse users.** "Choose an execution path" is protocol jargon. The real user decisions are: what can the agent do (bounds), for how long (TTL), and do I review each action (commitment mode).
+
+### Proposal: Remove Execution Paths in v0.4
+
+**Remove from protocol:**
+- `execution_path` field from the attestation frame
+- `path` field from bounds schema
+- `path=<execution-path>` from frame canonicalization
+
+**Remove from profiles:**
+- `executionPaths` object — TTL stays at profile level: `ttl: { default, max }`
+
+**Simplify SP group configuration:**
+- Replace `pathDomains` with `profileDomains` — domain requirements per profile, not per path
+- "Who can authorize spend" not "who can authorize spend-routine vs spend-reviewed"
+
+**What replaces what:**
+
+| Execution Path Feature | Replacement |
+|---|---|
+| Different TTLs per path | User selects TTL at authorization time |
+| Draft vs post paths | Commitment mode: Review vs Automatic |
+| Different domains per path | Domains per profile in group config |
+| Path as governance level | Commitment mode + bounds + TTL |
+
+**Add to attestation:**
+- `commitment_mode`: `"automatic"` or `"review"` — explicitly records the human's choice
+
+**Migration:**
+- v0.3 attestations with `execution_path` remain valid — field is ignored during verification
+- Profiles with `executionPaths` continue to work — field is ignored
+- SP `pathDomains` configs collapse into `profileDomains` (union of all path domains per profile)
+
+**Impact:**
+1. hap-profiles — remove `executionPaths`, keep `ttl` at profile level
+2. hap-sp — replace `pathDomains` with `profileDomains`
+3. hap-gateway UI — remove path selector, keep TTL selector and commitment mode
+4. hap-core — remove `path` from frame computation
+5. Gatekeeper — stop validating `execution_path`
+6. Attestation schema — remove `execution_path`, add `commitment_mode`
+
+---
+
 ## Open Questions (v0.5)
 
 1. **Receipt batching** — For high-frequency agent operations, per-execution SP calls add latency. Should the protocol support batched receipt requests?
