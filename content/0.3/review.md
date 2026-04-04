@@ -661,8 +661,95 @@ v0.3 execution paths defined different "modes" of operation under the same profi
 
 ---
 
+## Finding 8: Collapse Direction Gates to Single Intent Field
+
+**Observation:** The three direction gates (Problem, Objective, Tradeoff) are protocol-correct but user-hostile. Users don't naturally decompose intent into these categories. The distinction between "why is this justified" and "what should the agent achieve" is blurry — most users write the same thing in both. Three separate screens of text input creates friction without improving accountability.
+
+**What the three gates were designed to do:**
+
+Force the user to think about *why*, *what outcome*, and *what risks* separately. This produces structured direction state for agent planning and structured hashes for audit.
+
+**Why it doesn't work in practice:**
+
+1. Users don't think in these categories. They think: "I want my agent to do X because of Y, and be careful about Z."
+2. The distinctions are blurry. "Process refunds" is simultaneously the problem and the objective.
+3. Three text screens feel like bureaucracy, not useful reflection.
+4. Users write the minimum to proceed — defeating the purpose.
+
+**The accountability argument doesn't hold:** The cryptographic guarantee is that the user committed to *something* before execution. Whether that's three separate hashes or one hash over a single text block, the proof is equivalent. The user is accountable for what they wrote either way.
+
+**What matters for the agent:** The agent needs context — why this authorization exists and what to be careful about. One well-written paragraph provides more useful intent than three reluctant one-liners.
+
+### Proposal: Single Intent Gate in v0.4
+
+Replace the three direction gates with one `intent` gate.
+
+**Protocol changes:**
+
+- `gate_content_hashes` changes from `{ problem, objective, tradeoffs }` to `{ intent }`
+- Single hash, single field, single gate
+- `requiredGates` in profiles: replace `problem`, `objective`, `tradeoff` with `intent`
+- Remove `gateQuestions` from profiles entirely — the intent prompt is universal, defined in the gateway UI
+
+**UX:**
+
+One field with guidance prompts (not required sections):
+
+> **What should your agent know?**
+>
+> Help your agent understand your intent. Consider:
+> - **Why** — What's the situation? Why does this need to happen?
+> - **Goal** — What should the agent try to achieve?
+> - **Watch out** — What should the agent avoid or be careful about?
+
+The user writes naturally. The prompts guide completeness without forcing categories. Integration manifests may optionally provide a contextual hint (e.g., "For payment authorizations, consider mentioning your refund policy").
+
+**AI assistant role:** One advisory call instead of three. "Based on your bounds and what you've written, here are some things to consider — risks you haven't mentioned, edge cases."
+
+**Attestation payload:**
+
+```json
+{
+  "gate_content_hashes": {
+    "intent": "sha256:..."
+  }
+}
+```
+
+**Profile schema:**
+
+```json
+{
+  "requiredGates": ["bounds", "intent", "commitment", "decision_owner"]
+}
+```
+
+No `gateQuestions`. The intent prompt is universal. Integration manifests may optionally include an `intentHint` string for context-specific guidance.
+
+**Migration:**
+- v0.3 attestations with `{ problem, objective, tradeoffs }` remain valid — hashes are still verifiable
+- v0.4 attestations use `{ intent }` — single hash
+- Profiles with `requiredGates: ["problem", "objective", "tradeoff"]` mapped to `["intent"]`
+
+**Impact:**
+1. hap-core — update `gate_content_hashes` type, hash computation
+2. hap-sp — accept `{ intent }` in attestation requests, validate single gate
+3. hap-gateway UI — replace three gate screens with one intent field
+4. hap-gateway MCP — mandate brief includes `Intent:` instead of separate `Problem:/Objective:/Tradeoffs:`
+5. hap-profiles — remove `gateQuestions`, replace three direction gates with `intent` in `requiredGates`
+6. Integration manifests — optional `intentHint` field for context-specific guidance
+
+**Authorization title:** v0.4 also introduces a required `title` field — a human-readable label for the authorization (e.g., "Daily refund processing"). The title is stored as metadata, not part of the attestation hash.
+
+---
+
 ## Open Questions (v0.5)
 
 1. **Receipt batching** — For high-frequency agent operations, per-execution SP calls add latency. Should the protocol support batched receipt requests?
 2. **Multi-profile integrations** — Tool scoping, conflict resolution, cross-profile dependencies (see Deferred to v0.5 section).
 3. **Profile actions and provider mapping** — Canonical actions vs. provider-specific tool names (see Future section).
+
+
+
+
+Steps generation - they will be newls generated each time the users come back. - it should be 
