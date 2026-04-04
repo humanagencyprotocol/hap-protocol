@@ -15,6 +15,7 @@ demo-deploy/
 demo-hap-deploy-gate/
 demo-sp/
 hap-gateway/
+hap-core/
 
 # Service provider (separate repository)
 hap-sp/
@@ -27,6 +28,9 @@ hap-crm-mcp/
 
 # Records MCP server (separate repository)
 hap-records-mcp/
+
+# LinkedIn MCP server (separate repository)
+hap-linkedin-mcp/
 
 # E2E tests (separate repository)
 hap-e2e/
@@ -50,3 +54,6 @@ style-guide.html
 !.env.example
 
 prompts.md
+
+# MCP config (local)
+.mcp.json
