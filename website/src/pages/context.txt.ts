@@ -66,7 +66,7 @@ AI Agents can deploy code, move money, grant access, and operate infrastructure.
 optimize, coordinate and execute.
 
 **Humans must:**
-define what to optimize, set objectives, accept tradeoffs and bear consequences.
+set the bounds, articulate the intent, and bear the consequences.
 
 **HAP enforces that boundary.**
 
@@ -90,8 +90,8 @@ HAP applies wherever AI executes consequential actions:
 HAP turns policy requirements into enforceable infrastructure.
 
 - **EU AI Act** — Article 14 mandates effective human oversight for high-risk AI. HAP satisfies this structurally — oversight is not a checkbox, it's the architecture.
-- **ISO 42001** — Every AI action requires a human Decision Owner who has articulated the problem, objective, and tradeoffs. No attestation, no execution.
-- **NIST AI RMF** — Every decision produces a cryptographic trail of authorship, tradeoffs, and commitments — tamper-proof and verifiable.
+- **ISO 42001** — Every AI action requires a human Decision Owner who has set the bounds and articulated the intent. No attestation, no execution.
+- **NIST AI RMF** — Every decision produces a cryptographic trail of authorship, bounds, and commitments — tamper-proof and verifiable.
 
 ---
 

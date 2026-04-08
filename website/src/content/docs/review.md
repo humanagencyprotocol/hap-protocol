@@ -748,8 +748,3 @@ No `gateQuestions`. The intent prompt is universal. Integration manifests may op
 1. **Receipt batching** — For high-frequency agent operations, per-execution SP calls add latency. Should the protocol support batched receipt requests?
 2. **Multi-profile integrations** — Tool scoping, conflict resolution, cross-profile dependencies (see Deferred to v0.5 section).
 3. **Profile actions and provider mapping** — Canonical actions vs. provider-specific tool names (see Future section).
-
-
-
-
-Steps generation - they will be newls generated each time the users come back. - it should be 

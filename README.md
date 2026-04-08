@@ -20,7 +20,7 @@ HAP doesn't evaluate the quality of human decisions. It guarantees that decision
 ## Core Principles
 
 ### Human-First Direction
-AI may surface information, but humans supply intent. Every commitment — problem statements, objectives, tradeoffs — must originate from human action.
+AI may surface information, but humans supply intent. Every commitment — the bounds of what an agent may do and the intent behind the authorization — must originate from human action.
 
 ### Verifiable Accountability
 Attestations bind human identity to specific decisions. Gate content is hashed at signing time, making published decisions tamper-evident and auditable.
@@ -43,15 +43,14 @@ Authorization frames define the boundaries within which agents may act. The Gate
 - **[v0.2](content/0.2/)** — Profiles, deploy gate, integration guide
 - **[v0.1](content/0.1/)** — Foundational concepts and motivation
 
-## Demo
+## Implementation
 
-The **HAP Demo** shows the protocol in action:
-- 6-gate flow: Decision Owner → Frame → Problem → Objective → Tradeoffs → Commitment
-- Multi-person approval with domain-scoped attestations
-- Bounded execution for AI agents via MCP
-- Cryptographic binding of human decisions to actions
+HAP is implemented as two open-source components:
 
-Visit [humanagencyprotocol.com](https://www.humanagencyprotocol.com/) for the live demo.
+- **Service Provider** — Issues cryptographic attestations after a human has set the bounds and articulated the intent for an authorization.
+- **Agent Gateway** — Runs locally. Verifies attestations at runtime and enforces bounded execution when AI agents call tools via MCP.
+
+Both are available at [github.com/humanagencyprotocol](https://github.com/humanagencyprotocol).
 
 ## Website
 
