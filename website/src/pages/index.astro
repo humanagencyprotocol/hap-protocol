@@ -94,25 +94,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
     </section>
 
-    <!-- Core Principle -->
-    <section class="comparison-section">
-        <h2 class="section-title">Direction is human. Execution is machine.</h2>
-
-        <div class="comparison-grid">
-            <div class="comparison-card">
-                <h3>AI can:</h3>
-                <p>optimize, coordinate and execute.</p>
-            </div>
-
-            <div class="comparison-card highlight">
-                <h3>Humans must:</h3>
-                <p>set the bounds, articulate the intent, and bear the consequences.</p>
-            </div>
-        </div>
-
-        <p class="section-conclusion"><strong>HAP enforces that boundary.</strong></p>
-    </section>
-
     <!-- Use Cases -->
     <section class="use-cases-section">
         <h2 class="section-title">Explore Use Cases</h2>
@@ -121,34 +102,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <h2 class="card-section-title">Select a use case to generate a ready-to-paste prompt for your AI chat.</h2>
 
             <div class="cards-grid">
-                <button class="use-case-card" data-card="agents">
-                    <h3 class="card-title">Bounded AI Agents</h3>
-                    <p class="card-description">Agents operate under cryptographically enforced authority bounds. Any attempt to widen scope requires new human attestation.</p>
+                <button class="use-case-card" data-card="payments">
+                    <h3 class="card-title">Payment Agents</h3>
+                    <p class="card-description">Agents charge customers, process refunds, and manage subscriptions within bounds you set. Every transaction produces a signed receipt linking it to your authorization.</p>
                 </button>
 
-                <button class="use-case-card" data-card="deployments">
-                    <h3 class="card-title">Deployment Authorization</h3>
-                    <p class="card-description">Deployments execute only when domain owners cryptographically attest to the exact code revision and execution context.</p>
+                <button class="use-case-card" data-card="email">
+                    <h3 class="card-title">Email &amp; Communication</h3>
+                    <p class="card-description">Agents draft and send emails on your behalf with clear bounds — who, what topics, which tone. High-stakes replies pause for your review.</p>
                 </button>
 
-                <button class="use-case-card" data-card="crossdomain">
-                    <h3 class="card-title">Cross-Domain Decisions</h3>
-                    <p class="card-description">Actions requiring multiple organizational domains proceed only when all required domain owners attest to the same execution frame.</p>
+                <button class="use-case-card" data-card="crm">
+                    <h3 class="card-title">CRM &amp; Data Agents</h3>
+                    <p class="card-description">Agents manage contacts, leads, and customer records within scoped bounds — read here, write limits there, no deletes. Every action traceable.</p>
                 </button>
 
-                <button class="use-case-card" data-card="financial">
-                    <h3 class="card-title">Financial Automation</h3>
-                    <p class="card-description">Automated payments execute within pre-authorized bounds set by a human domain owner.</p>
+                <button class="use-case-card" data-card="devops">
+                    <h3 class="card-title">Infrastructure &amp; DevOps</h3>
+                    <p class="card-description">Agents ship code and manage infrastructure under your named authority. High-risk operations require explicit human review before execution.</p>
                 </button>
 
-                <button class="use-case-card" data-card="infrastructure">
-                    <h3 class="card-title">Infrastructure Governance</h3>
-                    <p class="card-description">Infrastructure changes execute only when the attested configuration hash matches the state being applied.</p>
+                <button class="use-case-card" data-card="multistakeholder">
+                    <h3 class="card-title">Multi-Stakeholder Actions</h3>
+                    <p class="card-description">When one signature isn't enough. Critical decisions require attestations from multiple domain owners before the agent can act.</p>
                 </button>
 
-                <button class="use-case-card" data-card="supplychain">
-                    <h3 class="card-title">Supply Chain Integrity</h3>
-                    <p class="card-description">Software artifacts carry cryptographic proof linking them to human-authorized source revisions.</p>
+                <button class="use-case-card" data-card="compliance">
+                    <h3 class="card-title">Compliance &amp; Audit</h3>
+                    <p class="card-description">Prove human oversight to regulators, auditors, and insurers. EU AI Act, ISO 42001, NIST AI RMF — satisfied structurally, not through policy documents.</p>
                 </button>
 
                 <!-- Or separator -->
@@ -262,7 +243,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
 
         <p class="section-conclusion" style="margin-top: 3rem; text-align: left;">
-            <strong>HAP turns human direction into the governing layer of intelligent systems.</strong>
+            <strong>HAP is the open protocol for human authority over AI agents. Verifiable, interoperable, and infrastructure-free.</strong>
         </p>
     </section>
 
@@ -887,23 +868,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 Then explain the following use case in clear, practical terms:\n\n`;
 
     const prompts = {
-        agents: {
-            prompt: preamble + `Bounded AI Agents: Explain how HAP enforces authority bounds on AI agents. An agent receives a cryptographic attestation defining exactly what it can do — which tools, which domains, what time window. The Gatekeeper intercepts every tool call and verifies the attestation before the call reaches the external service. If the agent tries to act outside its bounds, the request is blocked. Expanding scope requires a new human attestation. Give a concrete example of an AI coding agent that has authorization to read and write code in a specific repository, but is blocked when it tries to access production infrastructure.`
+        payments: {
+            prompt: preamble + `Payment Agents: Explain how HAP authorizes AI agents handling financial transactions. A human creates an authorization with bounds — max charge per transaction, daily and monthly limits, allowed action types (charge, refund, subscribe). The agent operates autonomously within those bounds. Each transaction produces a signed receipt that proves who authorized the scope, when, and within which limits. If the agent tries to exceed any bound, the action is blocked. Give a concrete example: a customer service AI processing refunds up to $50 per customer with a $500 daily cap, and what happens when it tries a $200 refund or hits the daily limit.`
         },
-        deployments: {
-            prompt: preamble + `Deployment Authorization: Explain how HAP gates code deployments. Before any deployment can execute, the domain owner must create an attestation that binds to the exact code revision (commit hash), the target environment, and the deployment context. The Gatekeeper verifies this attestation — checking the signature, the domain authority, and that the attested revision matches what is actually being deployed. If anything diverges, the deployment is blocked. Walk through a pull request merge flow where engineering and release owners must both attest before code ships to production.`
+        email: {
+            prompt: preamble + `Email & Communication Agents: Explain how HAP gives users control over AI agents that send email on their behalf. The user authorizes the agent with bounds — which recipients, which topics, daily send limit, allowed actions (draft, send, reply). For high-stakes operations, the user can require review-each-action mode where the agent proposes and the human approves before sending. Give a concrete example: a sales follow-up agent authorized to email leads in a specific CRM segment, with a daily limit of 20 emails and review mode enabled for any reply marked urgent.`
         },
-        crossdomain: {
-            prompt: preamble + `Cross-Domain Decisions: Explain how HAP handles actions that require authorization from multiple organizational domains. Some actions — like shipping a feature that affects billing, compliance, and user experience — cannot proceed with a single sign-off. HAP requires attestations from all relevant domain owners, each attesting to the same execution frame. The Gatekeeper collects and verifies all required attestations before allowing execution. Give an example where a product change requires attestations from engineering (code correctness), security (no vulnerabilities introduced), and product (user impact accepted).`
+        crm: {
+            prompt: preamble + `CRM & Data Agents: Explain how HAP scopes AI agent access to customer relationship data. The user authorizes specific operations — read access (list, get, search), bounded write access (max records per day), and explicit toggles for delete or archive (default off). The agent operates within those scopes; every action produces a receipt linking it back to the human authorization. Give a concrete example: a sales operations agent authorized to read all contacts, create up to 10 new leads per day, with delete access disabled — preventing the agent from removing records under any circumstance.`
         },
-        financial: {
-            prompt: preamble + `Financial Automation: Explain how HAP authorizes automated financial operations. A human domain owner creates an attestation that defines bounds — maximum amount, allowed recipients, time window, transaction type. Automated systems (AI agents, payment processors, batch jobs) can execute transactions within those bounds without per-transaction approval. But any transaction that exceeds the attested bounds is blocked by the Gatekeeper. Give a concrete example of an AI agent processing refunds up to $500 per customer within a 24-hour window, and what happens when it tries to process a $2,000 refund.`
+        devops: {
+            prompt: preamble + `Infrastructure & DevOps Agents: Explain how HAP gates AI agents that deploy code and manage infrastructure. Routine operations (like running tests or deploying to staging) execute automatically within bounds. High-risk operations (production deploys, cost changes, secret rotations) require explicit per-action human review. Every action produces a signed receipt for the audit trail. Give a concrete example: an infrastructure agent authorized to deploy to staging automatically, but required to wait for human approval before any production deploy or change to billing-related resources.`
         },
-        infrastructure: {
-            prompt: preamble + `Infrastructure Governance: Explain how HAP gates infrastructure changes. Before a Terraform apply, Kubernetes deployment, or DNS change can execute, the infrastructure owner must attest to the exact configuration state — including a hash of the configuration being applied. The Gatekeeper verifies that the attested configuration hash matches the actual state being applied. If someone modifies the configuration after attestation, the hash won't match and execution is blocked. Walk through a production infrastructure change where the platform team attests to a Terraform plan, and explain how drift between plan and apply is caught.`
+        multistakeholder: {
+            prompt: preamble + `Multi-Stakeholder Actions: Explain how HAP handles AI agent actions that require approval from multiple humans. For high-stakes operations, the protocol allows authorizations to require attestations from multiple domain owners — engineering, finance, compliance, legal — each with their own scope. The agent waits until all required humans have attested before proceeding. Give a concrete example: an AI agent attempting to launch a marketing campaign that requires sign-off from marketing (content approved), finance (budget approved), and legal (claims compliant) — and what happens when one stakeholder rejects or delays.`
         },
-        supplychain: {
-            prompt: preamble + `Supply Chain Integrity: Explain how HAP provides cryptographic provenance for software artifacts. Every build artifact — container image, package, binary — carries an attestation linking it back to the human-authorized source revision. This creates a verifiable chain: a named human attested to the source code, the CI system produced the artifact from that exact revision, and the attestation proves the link. Downstream consumers can verify that any artifact they deploy was built from human-authorized source. Give an example of how a container image in a registry carries proof that it was built from an attested commit, and how a deployment pipeline verifies this before pulling the image.`
+        compliance: {
+            prompt: preamble + `Compliance & Audit: Explain how HAP satisfies regulatory requirements for AI agent oversight. Every agent action produces a cryptographically signed receipt linking it to a named human, a specific authorization scope, and the human's stated intent. This is verifiable by any third party with the SP's public key — auditors, regulators, insurers, or courts. Compare this to policy-based audit trails (which prove the system was configured a certain way) versus signed receipts (which prove a specific human authorized a specific action). Walk through how this satisfies EU AI Act Article 14 (human oversight), ISO 42001 (AI management system), and NIST AI RMF (governance).`
         }
     };
 

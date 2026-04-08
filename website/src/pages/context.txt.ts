@@ -60,28 +60,16 @@ AI Agents can deploy code, move money, grant access, and operate infrastructure.
 
 ---
 
-### Direction is human. Execution is machine.
-
-**AI can:**
-optimize, coordinate and execute.
-
-**Humans must:**
-set the bounds, articulate the intent, and bear the consequences.
-
-**HAP enforces that boundary.**
-
----
-
 ### Explore Use Cases
 
-HAP applies wherever AI executes consequential actions:
+HAP applies wherever AI agents take consequential action:
 
-- **Bounded AI Agents** — Agents operate under cryptographically enforced authority bounds. Any attempt to widen scope requires new human attestation.
-- **Deployment Authorization** — Deployments execute only when domain owners cryptographically attest to the exact code revision and execution context.
-- **Cross-Domain Decisions** — Actions requiring multiple organizational domains proceed only when all required domain owners attest to the same execution frame.
-- **Financial Automation** — Automated payments execute within pre-authorized bounds set by a human domain owner.
-- **Infrastructure Governance** — Infrastructure changes execute only when the attested configuration hash matches the state being applied.
-- **Supply Chain Integrity** — Software artifacts carry cryptographic proof linking them to human-authorized source revisions.
+- **Payment Agents** — Agents charge customers, process refunds, and manage subscriptions within bounds you set. Every transaction produces a signed receipt linking it to your authorization.
+- **Email & Communication** — Agents draft and send emails on your behalf with clear bounds — who, what topics, which tone. High-stakes replies pause for your review.
+- **CRM & Data Agents** — Agents manage contacts, leads, and customer records within scoped bounds — read here, write limits there, no deletes. Every action traceable.
+- **Infrastructure & DevOps** — Agents ship code and manage infrastructure under your named authority. High-risk operations require explicit human review before execution.
+- **Multi-Stakeholder Actions** — When one signature isn't enough. Critical decisions require attestations from multiple domain owners before the agent can act.
+- **Compliance & Audit** — Prove human oversight to regulators, auditors, and insurers. EU AI Act, ISO 42001, NIST AI RMF — satisfied structurally, not through policy documents.
 
 ---
 
@@ -103,7 +91,7 @@ HAP turns policy requirements into enforceable infrastructure.
 - **Gateway** — Open-source local gateway for runtime enforcement.
 - **Governance** — Protocol governance and trust model.
 
-**HAP turns human direction into the governing layer of intelligent systems.**
+**HAP is the open protocol for human authority over AI agents. Verifiable, interoperable, and infrastructure-free.**
 
 ---
 
