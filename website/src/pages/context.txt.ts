@@ -33,7 +33,7 @@ export async function GET() {
 
 ### Authorization Layer for AI Agents.
 
-Irreversible real-world actions execute only within human-defined bounds — enforced through cryptographic attestations and runtime verification.
+Every agent action — authorized by a human, bounded, and cryptographically proven. No policy engines. No role hierarchies. A protocol for accountability that scales without scaling IT.
 
 ---
 
