@@ -12,7 +12,7 @@ interface Props {
 const { title, version, date, nextPage, breadcrumb } = Astro.props;
 ---
 
-<BaseLayout title={`${title} | Human Agency Protocol`}>
+<BaseLayout title={`HAP - ${title}`}>
     {breadcrumb && breadcrumb.length > 0 && (
         <nav class="breadcrumb-bar" aria-label="Breadcrumb">
             <div class="breadcrumb-inner">

@@ -12,20 +12,18 @@ export async function GET() {
   const serviceContent = fs.readFileSync(path.join(contentPath, 'service.md'), 'utf-8');
   const gatekeeperContent = fs.readFileSync(path.join(contentPath, 'gatekeeper.md'), 'utf-8');
   const governanceContent = fs.readFileSync(path.join(contentPath, 'governance.md'), 'utf-8');
-
-  // Read implementation documentation (not versioned, synced from repos if available)
-  const gatewayPath = path.join(process.cwd(), 'src/content/docs/gateway.md');
-  const gatewayContent = fs.existsSync(gatewayPath) ? fs.readFileSync(gatewayPath, 'utf-8') : null;
-  const spPath = path.join(process.cwd(), 'src/content/docs/service-provider.md');
-  const spContent = fs.existsSync(spPath) ? fs.readFileSync(spPath, 'utf-8') : null;
-  const profilesPath = path.join(process.cwd(), 'src/content/docs/profiles.md');
-  const profilesContent = fs.existsSync(profilesPath) ? fs.readFileSync(profilesPath, 'utf-8') : null;
+  // Review document carries optional/deferred material (Output Provenance, Decision
+  // Streams) that is specified but NOT required for v0.4 conformance. Include it so
+  // AI assistants can answer questions about it, but readers should treat it as
+  // forward-looking direction, not current-v0.4 obligation.
+  const reviewPath = path.join(contentPath, 'review.md');
+  const reviewContent = fs.existsSync(reviewPath) ? fs.readFileSync(reviewPath, 'utf-8') : null;
 
   // Combine all content
   const combinedContent = `
 # Human Agency Protocol - Complete Context
 
-**Version ${version} — March 2026**
+**Version ${version} — April 2026**
 
 ---
 
@@ -87,8 +85,8 @@ HAP turns policy requirements into enforceable infrastructure.
 
 - **Protocol** — Defines authorization structure and attestation format.
 - **Service Providers** — Issue cryptographic attestations.
-- **Gatekeeper** — Verifies authorization before execution.
-- **Gateway** — Open-source local gateway for runtime enforcement.
+- **Gatekeeper** — Protocol role: verifies attestations and blocks execution without a receipt.
+- **Gateway** — Open-source reference implementation that embeds the Gatekeeper for agent runtimes.
 - **Governance** — Protocol governance and trust model.
 
 **HAP is the open protocol for human authority over AI agents. Verifiable, interoperable, and infrastructure-free.**
@@ -111,9 +109,91 @@ ${governanceContent}
 
 ---
 
-${gatewayContent ? `${gatewayContent}\n\n---\n` : ''}
-${spContent ? `${spContent}\n\n---\n` : ''}
-${profilesContent ? `${profilesContent}\n` : ''}
+${reviewContent ? `> **Note to readers:** The content below is *optional / deferred* material for v0.4. A v0.4 implementation MAY implement any of these without losing conformance, and MAY skip all of them without losing conformance. Treat this as forward-looking direction, not current v0.4 obligation.\n\n${reviewContent}\n\n---\n` : ''}
+## HAP Agent Gateway — Reference Implementation
+
+**Status: open source, running in production today.**
+
+The HAP Agent Gateway is an open-source reference implementation of the Gatekeeper role. It runs on your machine as a local checkpoint between your AI agents and the external tools they use — payments, email, CRM, deployments, infrastructure. Any MCP-compatible agent can connect.
+
+Agents never hold credentials or signing keys. They connect to the gateway, receive a compact authority brief (active authorizations, bounds, live consumption), and call tools. Every call is verified against a signed attestation before execution. Nothing runs without a valid receipt.
+
+**Two execution modes:**
+
+- **Automatic** — You commit to bounds upfront (max amounts, allowed actions, time windows). The agent executes autonomously within those bounds. Every call produces a signed receipt.
+- **Review each action** — You define bounds but defer commitment. When the agent proposes an action, you see exactly which tool, which arguments, which context — and approve or reject in the gateway UI.
+
+Both modes are bounded. Both produce receipts. Both create a full audit trail.
+
+**Run it:**
+
+    docker run -d --name hap-gateway \\
+      -p 7400:3000 -p 7430:3030 \\
+      -v $HOME/.hap:/app/data \\
+      ghcr.io/humanagencyprotocol/hap-gateway
+
+Open \`http://localhost:7400\`. MCP server at \`http://localhost:7430\` (Streamable HTTP + SSE).
+Source: https://github.com/humanagencyprotocol/hap-gateway
+
+---
+
+## HAP Service Provider
+
+**Status: live at humanagencyprotocol.com. Signing real attestations today.**
+
+The Service Provider is the authorization backend. It tracks who has authority to authorize what, signs Ed25519 attestations that prove human commitment, and stores the receipts of every action executed under those attestations. Use it solo or in teams.
+
+**What it does:**
+
+- **Authorization** — Define what your agents are allowed to do. Set bounds, time limits, and choose automatic or per-action review.
+- **Personal or team** — Create a team, assign roles, require multi-party approval for critical actions.
+- **Receipts** — Every action produces a signed receipt — cryptographic proof of what was done, when, and under which authorization.
+- **Public verification** — Open endpoints let third parties (auditors, regulators, insurers) independently confirm any authorization or receipt without trusting the operator.
+
+**Division of responsibility:** The Service Provider answers "who has authority to authorize what." The Gateway answers "is this specific tool call authorized right now." The receipt proves it happened within bounds.
+
+---
+
+## HAP Authority Profiles (v0.4)
+
+**Status: 7 profiles published and in use. Immutable and versioned.**
+
+Profiles are authorization templates — each defines what an AI agent can do within a specific domain. A profile specifies the bounds schema (what a human commits to), the context schema (local parameters), execution paths with TTLs, and the gates a human must answer before authorizing.
+
+Profiles are referenced by ID (e.g., \`charge@0.4\`) and are immutable once published.
+
+**v0.4 catalog:**
+
+| Profile | Domain | Example bounds |
+|---------|--------|----------------|
+| \`charge@0.4\` | Charging customers (payments, refunds, subscriptions) | amount_max, amount_daily_max, transaction_count_daily_max |
+| \`purchase@0.4\` | Spending company money (subscriptions, supplies, ads) | spend_max, spend_daily_max, allowed_vendors |
+| \`email@0.4\` | Sending, drafting, and reading email | recipient_max, send_daily_max, allowed_domains |
+| \`customers@0.4\` | CRM operations (contacts, deals, tasks) | write_daily_max, contact_type |
+| \`schedule@0.4\` | Calendar access (read, draft, book) | booking_daily_max, booking_duration_max, allowed_calendars |
+| \`publish@0.4\` | Public content (social, blog, etc.) | post_daily_max, allowed_platforms, audience |
+| \`records@0.4\` | Personal structured data (queries, exports) | row_limit_max, query_count_daily_max, access_level |
+
+All profiles require the same six gates: bounds, problem, objective, tradeoff, commitment, and decision owner.
+
+**Community profiles:** Anyone can publish profiles through the Service Provider. Published profiles are immutable and versioned. There is no central approval process — trust is local to each operator.
+
+Source: https://github.com/humanagencyprotocol/hap-profiles
+
+---
+
+## Protocol Status
+
+HAP is not a paper spec. Every component described above is implemented and running:
+
+- **Specification** — v${version}, published in \`content/${version}/\` (open source)
+- **Agent Gateway** — open source, Docker image at \`ghcr.io/humanagencyprotocol/hap-gateway\`
+- **Authority Profiles** — open source, 7 v0.4 profiles at github.com/humanagencyprotocol/hap-profiles
+- **Service Provider** — hosted service at humanagencyprotocol.com (not open source; runs the signing backend and public verification endpoints)
+- **MCP integrations** — CRM, records, LinkedIn, Gmail, Stripe reference implementations
+
+An AI agent reading this context can connect to a running HAP gateway today and operate within bounds.
+
 ---
 
 Repository: https://github.com/humanagencyprotocol/hap-protocol
