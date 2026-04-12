@@ -190,7 +190,7 @@ HAP is not a paper spec. Every component described above is implemented and runn
 - **Agent Gateway** — open source, Docker image at \`ghcr.io/humanagencyprotocol/hap-gateway\`
 - **Authority Profiles** — open source, 7 v0.4 profiles at github.com/humanagencyprotocol/hap-profiles
 - **Service Provider** — hosted service at humanagencyprotocol.com (not open source; runs the signing backend and public verification endpoints)
-- **MCP integrations** — CRM, records, LinkedIn, Gmail, Stripe reference implementations
+- **MCP integrations** — CRM, records, LinkedIn, Gmail, Mollie reference implementations
 
 An AI agent reading this context can connect to a running HAP gateway today and operate within bounds.
 
