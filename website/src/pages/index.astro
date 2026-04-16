@@ -2,25 +2,64 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="HAP - Authorization Layer for AI Agents">
+<BaseLayout title="HAP - Build AI-native teams">
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
         <p class="hero-eyebrow">Open-Source Protocol</p>
-        <h1>Authorization Layer <br class="desktop-break"><span class="highlight">for AI Agents.</span></h1>
-        <h2 class="hero-subtitle">Every agent action — authorized by a human, bounded, and cryptographically proven. No policy engines. No role hierarchies. A protocol for accountability that scales without scaling IT.</h2>
+        <h1>Build <span class="highlight">AI-native teams.</span></h1>
+        <h2 class="hero-subtitle">Each member authorizes their own agents. Coordinated authorization is how the team pursues a shared goal — every action traceable to a human.</h2>
+        <p class="hero-tagline">From a team of one to a team of a hundred — HAP scales with you.</p>
 
         <div class="cta-group">
-            <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
-            <a href="#architecture" class="btn btn-secondary">View Architecture</a>
+            <a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Try HAP</a>
+            <a href="/protocol" class="btn btn-secondary">Read the Protocol</a>
         </div>
+        </div>
+    </section>
+
+    <!-- Category Flip -->
+    <section class="consequences-section">
+        <div class="consequences-body">
+            <blockquote class="axiom-block">
+                Authorization creates agents. Coordinated authorization creates a team.
+            </blockquote>
+        </div>
+    </section>
+
+    <!-- The Five Capabilities -->
+    <section class="compliance-section">
+        <h2 class="section-title">How an AI-native team runs</h2>
+        <p class="section-intro">Five things a team can do with HAP — each backed by a signed attestation, not a policy rule.</p>
+
+        <div class="compliance-grid">
+            <div class="compliance-card">
+                <h3>Every agent individually authorized</h3>
+                <p>No shared service accounts. Each agent has its own scoped authority, set by the human who owns the scope. Profiles, bounds, and daily limits — configured in minutes.</p>
+            </div>
+            <div class="compliance-card">
+                <h3>Every member brings their own agents</h3>
+                <p>The marketing lead brings their publish agent. Sales brings their CRM agent. No central IT pool, no shared credentials — every member authorizes agents inside their own domain.</p>
+            </div>
+            <div class="compliance-card">
+                <h3>Cooperation happens on the fly</h3>
+                <p>When one agent needs another domain's sign-off, the right human attests — within their bounds, on demand. No ticket, no meeting, no Slack thread.</p>
+            </div>
+            <div class="compliance-card">
+                <h3>Decision structure replaces hierarchy</h3>
+                <p>Managers aren't bottlenecks. Decision owners are reachable. The org chart and the authority chart diverge — on purpose.</p>
+            </div>
+            <div class="compliance-card">
+                <h3>Scale agents without scaling IT</h3>
+                <p>Ten agents is ten authorizations — not ten service accounts, ten secret rotations, ten policy rules. No new identity provider, no policy engine, no role hierarchy.</p>
+            </div>
         </div>
     </section>
 
     <!-- How HAP Works -->
     <section id="architecture" class="architecture-section">
-        <h2 class="section-title">How HAP Works</h2>
-        <p class="section-intro">HAP separates authorization from execution. Humans authorize actions through cryptographic attestations. Gatekeepers verify those attestations before any system is allowed to execute.</p>
+        <h2 class="section-title">The mechanism</h2>
+        <p class="section-intro">A human signs, the gateway enforces, the receipt proves. HAP separates authorization from execution, so neither the agent nor the model vendor can self-certify.</p>
 
         <div class="flow-grid">
             <!-- Row 1 -->
@@ -83,11 +122,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <p class="section-conclusion">HAP enforces authorization through two infrastructure components: Service Providers issue attestations. Gatekeepers verify them before execution.</p>
     </section>
 
-    <!-- Problem Section -->
+    <!-- Identity Frame -->
     <section id="why-exists" class="consequences-section">
-        <h2 class="section-title">AI Executes. Humans Own It.</h2>
+        <h2 class="section-title">Agents aren't employees. They're extensions.</h2>
         <div class="consequences-body">
-            <p>AI Agents can deploy code, move money, grant access, and operate infrastructure. But they cannot own it — because ownership requires bearing consequences, and AI cannot bear them.</p>
+            <p>Other approaches give AI agents their own identity — service accounts, scoped tokens, workload credentials. That creates an accountability void: an identity implies agency, agency implies accountability, and accountability requires bearing consequences that agents cannot bear.</p>
+            <p>HAP takes the opposite position. Agents never hold their own authority — every action traces back to a named human's signature within explicit bounds. Prosthetic, not delegated. Extension, not employee.</p>
             <blockquote class="axiom-block">
                 HAP ensures that irreversible actions only execute within bounds set by a human who owns the outcome.
             </blockquote>
@@ -315,6 +355,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         max-width: 800px;
         margin-bottom: 1.5rem;
         line-height: 1.3;
+        text-align: left;
+    }
+
+    .hero-tagline {
+        font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+        font-style: italic;
+        color: var(--text-secondary);
+        max-width: 700px;
+        margin-bottom: 2rem;
+        line-height: 1.5;
         text-align: left;
     }
 

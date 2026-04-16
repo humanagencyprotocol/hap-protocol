@@ -29,15 +29,31 @@ export async function GET() {
 
 ## Homepage
 
-### Authorization Layer for AI Agents.
+### Build AI-native teams.
 
-Every agent action — authorized by a human, bounded, and cryptographically proven. No policy engines. No role hierarchies. A protocol for accountability that scales without scaling IT.
+Each member authorizes their own agents. Coordinated authorization is how the team pursues a shared goal — every action traceable to a human.
+
+*From a team of one to a team of a hundred — HAP scales with you.*
+
+> Authorization creates agents. Coordinated authorization creates a team.
 
 ---
 
-### How HAP Works
+### How an AI-native team runs
 
-HAP separates authorization from execution. Humans authorize actions through cryptographic attestations. Gatekeepers verify those attestations before any system is allowed to execute.
+Five things a team can do with HAP — each backed by a signed attestation, not a policy rule.
+
+- **Every agent individually authorized** — No shared service accounts. Each agent has its own scoped authority, set by the human who owns the scope. Profiles, bounds, and daily limits — configured in minutes.
+- **Every member brings their own agents** — The marketing lead brings their publish agent. Sales brings their CRM agent. No central IT pool, no shared credentials — every member authorizes agents inside their own domain.
+- **Cooperation happens on the fly** — When one agent needs another domain's sign-off, the right human attests — within their bounds, on demand. No ticket, no meeting, no Slack thread.
+- **Decision structure replaces hierarchy** — Managers aren't bottlenecks. Decision owners are reachable. The org chart and the authority chart diverge — on purpose.
+- **Scale agents without scaling IT** — Ten agents is ten authorizations — not ten service accounts, ten secret rotations, ten policy rules. No new identity provider, no policy engine, no role hierarchy.
+
+---
+
+### The mechanism
+
+A human signs, the gateway enforces, the receipt proves. HAP separates authorization from execution, so neither the agent nor the model vendor can self-certify.
 
 Authorization path: Human → Service Provider → Gatekeeper → Executor
 Execution request: AI Agent → Gatekeeper
@@ -50,9 +66,11 @@ HAP enforces authorization through two infrastructure components: Service Provid
 
 ---
 
-### AI Executes. Humans Own It.
+### Agents aren't employees. They're extensions.
 
-AI Agents can deploy code, move money, grant access, and operate infrastructure. But they cannot own it — because ownership requires bearing consequences, and AI cannot bear them.
+Other approaches give AI agents their own identity — service accounts, scoped tokens, workload credentials. That creates an accountability void: an identity implies agency, agency implies accountability, and accountability requires bearing consequences that agents cannot bear.
+
+HAP takes the opposite position. Agents never hold their own authority — every action traces back to a named human's signature within explicit bounds. Prosthetic, not delegated. Extension, not employee.
 
 > HAP ensures that irreversible actions only execute within bounds set by a human who owns the outcome.
 
