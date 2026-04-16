@@ -2,13 +2,9 @@
 
 **Open-Source Protocol — v0.4, April 2026**
 
-## Build AI-native teams.
+## Authorization Layer for AI Agents
 
-Each member authorizes their own agents. Coordinated authorization is how the team pursues a shared goal — every action traceable to a human.
-
-*From a team of one to a team of a hundred — HAP scales with you.*
-
-> Authorization creates agents. Coordinated authorization creates a team.
+An open protocol that keeps people in control of AI agents. A person sets what an agent is allowed to do. The agent can't do anything else. Every action leaves a receipt.
 
 - Read the protocol: [content/0.4/protocol.md](content/0.4/protocol.md)
 - Website: [humanagencyprotocol.org](https://humanagencyprotocol.org)
@@ -16,21 +12,21 @@ Each member authorizes their own agents. Coordinated authorization is how the te
 
 ---
 
-## How an AI-native team runs
+## How It Works in Practice
 
-Five things a team can do with HAP — each backed by a signed attestation, not a policy rule.
+What HAP makes possible — in practice.
 
-- **Every agent individually authorized** — No shared service accounts. Each agent has its own scoped authority, set by the human who owns the scope. Profiles, bounds, and daily limits — configured in minutes.
-- **Every member brings their own agents** — The marketing lead brings their publish agent. Sales brings their CRM agent. No central IT pool, no shared credentials — every member authorizes agents inside their own domain.
-- **Cooperation happens on the fly** — When one agent needs another domain's sign-off, the right human attests — within their bounds, on demand. No ticket, no meeting, no Slack thread.
-- **Decision structure replaces hierarchy** — Managers aren't bottlenecks. Decision owners are reachable. The org chart and the authority chart diverge — on purpose.
-- **Scale agents without scaling IT** — Ten agents is ten authorizations — not ten service accounts, ten secret rotations, ten policy rules. No new identity provider, no policy engine, no role hierarchy.
+- **One agent, one set of rules** — Each agent has its own set of rules about what it can do. A person decides what's allowed — how much it can spend, who it can email, what data it can change — and the agent can't do anything outside of that.
+- **Each person controls their own area** — Each person on a team has their own area — sales, marketing, finance. They decide which AI agents work in that area and what those agents can do. No central IT team in between.
+- **Actions that need approval from more than one person** — If an agent's action touches more than one area — say, a marketing agent that needs to spend part of the finance budget — each person responsible has to approve before the agent can proceed.
+- **Authority follows decisions, not job titles** — Whoever is responsible for a decision approves it, no matter where they sit on the org chart. Managers don't have to sign off on everything — the person who actually owns the decision does.
+- **Adding agents doesn't mean adding IT** — Agents don't get accounts, passwords, or API keys of their own. Each one works under a person's approval. Adding more agents just means more approvals — not more systems to manage.
 
 ---
 
-## The mechanism
+## How HAP Works
 
-A human signs, the gateway enforces, the receipt proves. HAP separates authorization from execution, so neither the agent nor the model vendor can self-certify.
+A person approves what an agent is allowed to do. The system enforces it — blocking anything outside the approval. Every action produces a receipt anyone can check.
 
 ```
     Human ─────────────────────────→ AI Agent
@@ -42,21 +38,21 @@ Service Provider ──────────────→   Gatekeeper
                                     Executor
 ```
 
-- **Service Provider** — Issues cryptographic attestations proving a human authorized an action within defined bounds.
-- **Gatekeeper** — Verifies attestations before execution and blocks any action that exceeds authorized limits.
-- **Executor** — Performs the action — but only after authorization has been validated.
+- **Service Provider** — Where a person records their approval, along with the exact limits.
+- **Gatekeeper** — Checks the approval before any action runs. Blocks anything outside the approved limits.
+- **Executor** — Runs the action — but only if the Gatekeeper allows it.
 
-HAP enforces authorization through two infrastructure components: Service Providers issue attestations. Gatekeepers verify them before execution.
+HAP uses two pieces of infrastructure: Service Providers record approvals. Gatekeepers check them before anything runs.
 
 ---
 
-## Agents aren't employees. They're extensions.
+## Agents Aren't Employees. They're Extensions.
 
-Other approaches give AI agents their own identity — service accounts, scoped tokens, workload credentials. That creates an accountability void: an identity implies agency, agency implies accountability, and accountability requires bearing consequences that agents cannot bear.
+Other approaches give AI agents their own accounts and passwords, like employees with their own identity. But if an agent does something wrong, who's responsible? The agent can't be held to account — it's software. There's no way for it to feel a consequence.
 
-HAP takes the opposite position. Agents never hold their own authority — every action traces back to a named human's signature within explicit bounds. Prosthetic, not delegated. Extension, not employee.
+HAP works differently. An agent never acts on its own authority. Every action traces back to the person who approved it, with the exact limits they set. The agent is an extension of the person — not a separate employee.
 
-> HAP ensures that irreversible actions only execute within bounds set by a human who owns the outcome.
+> Anything that can't be undone only runs if a person approved it — and stays inside the limits that person set.
 
 ---
 
@@ -75,11 +71,11 @@ HAP applies wherever AI agents take consequential action:
 
 ## Compliance Alignment
 
-HAP turns policy requirements into enforceable infrastructure.
+HAP turns compliance requirements into something the system actually enforces — not just something written in a policy document.
 
-- **EU AI Act** — Article 14 mandates effective human oversight for high-risk AI. HAP satisfies this structurally — oversight is not a checkbox, it's the architecture.
-- **ISO 42001** — Every AI action requires a human Decision Owner who has set the bounds and articulated the intent. No attestation, no execution.
-- **NIST AI RMF** — Every decision produces a cryptographic trail of authorship, bounds, and commitments — tamper-proof and verifiable.
+- **EU AI Act** — Article 14 of the EU AI Act requires real human oversight of high-risk AI. HAP provides this by design — oversight isn't a checkbox in a policy, it's built into how the system runs.
+- **ISO 42001** — Every AI action needs a person who owns the decision and has set the limits — and has said why. No approval, no action.
+- **NIST AI RMF** — Every action leaves a tamper-proof record — who approved it, what limits were set, what happened. Anyone can verify it.
 
 ---
 
@@ -87,14 +83,14 @@ HAP turns policy requirements into enforceable infrastructure.
 
 | Component | Purpose | Reference |
 |-----------|---------|-----------|
-| **Protocol** | Authorization structure and attestation format | [content/0.4/protocol.md](content/0.4/protocol.md) |
-| **Service Providers** | Issue cryptographic attestations | [content/0.4/service.md](content/0.4/service.md) |
-| **Gatekeeper** | Verifies attestations and blocks execution without a receipt | [content/0.4/gatekeeper.md](content/0.4/gatekeeper.md) |
-| **Gateway** | Open-source reference implementation that embeds the Gatekeeper for agent runtimes | [github.com/humanagencyprotocol/hap-gateway](https://github.com/humanagencyprotocol/hap-gateway) |
+| **Protocol** | The specification — how approvals are structured and signed | [content/0.4/protocol.md](content/0.4/protocol.md) |
+| **Service Providers** | Where people record their approvals | [content/0.4/service.md](content/0.4/service.md) |
+| **Gatekeeper** | The check that makes sure nothing runs without an approval | [content/0.4/gatekeeper.md](content/0.4/gatekeeper.md) |
+| **Gateway** | An open-source program that runs the check alongside your AI tools | [github.com/humanagencyprotocol/hap-gateway](https://github.com/humanagencyprotocol/hap-gateway) |
 | **Authority Profiles** | Seven published v0.4 profiles (charge, purchase, email, customers, schedule, publish, records) | [github.com/humanagencyprotocol/hap-profiles](https://github.com/humanagencyprotocol/hap-profiles) |
-| **Governance** | Protocol governance and trust model | [content/0.4/governance.md](content/0.4/governance.md) |
+| **Governance** | How the protocol is governed and who runs it | [content/0.4/governance.md](content/0.4/governance.md) |
 
-**HAP is the open protocol for human authority over AI agents. Verifiable, interoperable, and independent of any model vendor or platform.**
+**HAP is an open protocol for keeping people in charge of AI agents. Verifiable. Works across platforms. Not tied to any AI vendor.**
 
 ---
 

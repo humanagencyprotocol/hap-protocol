@@ -2,64 +2,54 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="HAP - Build AI-native teams">
+<BaseLayout title="HAP - Authorization Layer for AI Agents">
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
         <p class="hero-eyebrow">Open-Source Protocol</p>
-        <h1>Build <span class="highlight">AI-native teams.</span></h1>
-        <h2 class="hero-subtitle">Each member authorizes their own agents. Coordinated authorization is how the team pursues a shared goal — every action traceable to a human.</h2>
-        <p class="hero-tagline">From a team of one to a team of a hundred — HAP scales with you.</p>
+        <h1>Authorization Layer <br class="desktop-break"><span class="highlight">for AI Agents.</span></h1>
+        <h2 class="hero-subtitle">An open protocol that keeps people in control of AI agents. A person sets what an agent is allowed to do. The agent can't do anything else. Every action leaves a receipt.</h2>
 
         <div class="cta-group">
-            <a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Try HAP</a>
-            <a href="/protocol" class="btn btn-secondary">Read the Protocol</a>
+            <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
+            <a href="#architecture" class="btn btn-secondary">View Architecture</a>
         </div>
         </div>
     </section>
 
-    <!-- Category Flip -->
-    <section class="consequences-section">
-        <div class="consequences-body">
-            <blockquote class="axiom-block">
-                Authorization creates agents. Coordinated authorization creates a team.
-            </blockquote>
-        </div>
-    </section>
-
-    <!-- The Five Capabilities -->
+    <!-- How It Works in Practice -->
     <section class="compliance-section">
-        <h2 class="section-title">How an AI-native team runs</h2>
-        <p class="section-intro">Five things a team can do with HAP — each backed by a signed attestation, not a policy rule.</p>
+        <h2 class="section-title">How It Works in Practice</h2>
+        <p class="section-intro">What HAP makes possible — in practice.</p>
 
         <div class="compliance-grid">
             <div class="compliance-card">
-                <h3>Every agent individually authorized</h3>
-                <p>No shared service accounts. Each agent has its own scoped authority, set by the human who owns the scope. Profiles, bounds, and daily limits — configured in minutes.</p>
+                <h3>One agent, one set of rules</h3>
+                <p>Each agent has its own set of rules about what it can do. A person decides what's allowed — how much it can spend, who it can email, what data it can change — and the agent can't do anything outside of that.</p>
             </div>
             <div class="compliance-card">
-                <h3>Every member brings their own agents</h3>
-                <p>The marketing lead brings their publish agent. Sales brings their CRM agent. No central IT pool, no shared credentials — every member authorizes agents inside their own domain.</p>
+                <h3>Each person controls their own area</h3>
+                <p>Each person on a team has their own area — sales, marketing, finance. They decide which AI agents work in that area and what those agents can do. No central IT team in between.</p>
             </div>
             <div class="compliance-card">
-                <h3>Cooperation happens on the fly</h3>
-                <p>When one agent needs another domain's sign-off, the right human attests — within their bounds, on demand. No ticket, no meeting, no Slack thread.</p>
+                <h3>Actions that need approval from more than one person</h3>
+                <p>If an agent's action touches more than one area — say, a marketing agent that needs to spend part of the finance budget — each person responsible has to approve before the agent can proceed.</p>
             </div>
             <div class="compliance-card">
-                <h3>Decision structure replaces hierarchy</h3>
-                <p>Managers aren't bottlenecks. Decision owners are reachable. The org chart and the authority chart diverge — on purpose.</p>
+                <h3>Authority follows decisions, not job titles</h3>
+                <p>Whoever is responsible for a decision approves it, no matter where they sit on the org chart. Managers don't have to sign off on everything — the person who actually owns the decision does.</p>
             </div>
             <div class="compliance-card">
-                <h3>Scale agents without scaling IT</h3>
-                <p>Ten agents is ten authorizations — not ten service accounts, ten secret rotations, ten policy rules. No new identity provider, no policy engine, no role hierarchy.</p>
+                <h3>Adding agents doesn't mean adding IT</h3>
+                <p>Agents don't get accounts, passwords, or API keys of their own. Each one works under a person's approval. Adding more agents just means more approvals — not more systems to manage.</p>
             </div>
         </div>
     </section>
 
     <!-- How HAP Works -->
     <section id="architecture" class="architecture-section">
-        <h2 class="section-title">The mechanism</h2>
-        <p class="section-intro">A human signs, the gateway enforces, the receipt proves. HAP separates authorization from execution, so neither the agent nor the model vendor can self-certify.</p>
+        <h2 class="section-title">How HAP Works</h2>
+        <p class="section-intro">A person approves what an agent is allowed to do. The system enforces it — blocking anything outside the approval. Every action produces a receipt anyone can check.</p>
 
         <div class="flow-grid">
             <!-- Row 1 -->
@@ -107,29 +97,29 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="architecture-grid">
             <div class="architecture-card">
                 <h3>Service Provider</h3>
-                <p>Issues cryptographic attestations proving a human authorized an action within defined bounds.</p>
+                <p>Where a person records their approval, along with the exact limits.</p>
             </div>
             <div class="architecture-card">
                 <h3>Gatekeeper</h3>
-                <p>Verifies attestations before execution and blocks any action that exceeds authorized limits.</p>
+                <p>Checks the approval before any action runs. Blocks anything outside the approved limits.</p>
             </div>
             <div class="architecture-card">
                 <h3>Executor</h3>
-                <p>Performs the action — but only after authorization has been validated.</p>
+                <p>Runs the action — but only if the Gatekeeper allows it.</p>
             </div>
         </div>
 
-        <p class="section-conclusion">HAP enforces authorization through two infrastructure components: Service Providers issue attestations. Gatekeepers verify them before execution.</p>
+        <p class="section-conclusion">HAP uses two pieces of infrastructure: Service Providers record approvals. Gatekeepers check them before anything runs.</p>
     </section>
 
     <!-- Identity Frame -->
     <section id="why-exists" class="consequences-section">
-        <h2 class="section-title">Agents aren't employees. They're extensions.</h2>
+        <h2 class="section-title">Agents Aren't Employees. They're Extensions.</h2>
         <div class="consequences-body">
-            <p>Other approaches give AI agents their own identity — service accounts, scoped tokens, workload credentials. That creates an accountability void: an identity implies agency, agency implies accountability, and accountability requires bearing consequences that agents cannot bear.</p>
-            <p>HAP takes the opposite position. Agents never hold their own authority — every action traces back to a named human's signature within explicit bounds. Prosthetic, not delegated. Extension, not employee.</p>
+            <p>Other approaches give AI agents their own accounts and passwords, like employees with their own identity. But if an agent does something wrong, who's responsible? The agent can't be held to account — it's software. There's no way for it to feel a consequence.</p>
+            <p>HAP works differently. An agent never acts on its own authority. Every action traces back to the person who approved it, with the exact limits they set. The agent is an extension of the person — not a separate employee.</p>
             <blockquote class="axiom-block">
-                HAP ensures that irreversible actions only execute within bounds set by a human who owns the outcome.
+                Anything that can't be undone only runs if a person approved it — and stays inside the limits that person set.
             </blockquote>
         </div>
     </section>
@@ -223,20 +213,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <!-- Compliance Alignment -->
     <section class="compliance-section">
         <h2 class="section-title">Compliance Alignment</h2>
-        <p class="section-intro">HAP turns policy requirements into enforceable infrastructure.</p>
+        <p class="section-intro">HAP turns compliance requirements into something the system actually enforces — not just something written in a policy document.</p>
 
         <div class="compliance-grid">
             <div class="compliance-card">
                 <h3>EU AI Act</h3>
-                <p>Article 14 mandates effective human oversight for high-risk AI. HAP satisfies this structurally — oversight is not a checkbox, it's the architecture.</p>
+                <p>Article 14 of the EU AI Act requires real human oversight of high-risk AI. HAP provides this by design — oversight isn't a checkbox in a policy, it's built into how the system runs.</p>
             </div>
             <div class="compliance-card">
                 <h3>ISO 42001</h3>
-                <p>Every AI action requires a human Decision Owner who has set the bounds and articulated the intent. No attestation, no execution.</p>
+                <p>Every AI action needs a person who owns the decision and has set the limits — and has said why. No approval, no action.</p>
             </div>
             <div class="compliance-card">
                 <h3>NIST AI RMF</h3>
-                <p>Every decision produces a cryptographic trail of authorship, bounds, and commitments — tamper-proof and verifiable.</p>
+                <p>Every action leaves a tamper-proof record — who approved it, what limits were set, what happened. Anyone can verify it.</p>
             </div>
         </div>
     </section>
@@ -249,41 +239,41 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <a href="/protocol" class="protocol-link">
                 <div class="label">Protocol</div>
                 <h3>Protocol</h3>
-                <p>Defines authorization structure and attestation format.</p>
+                <p>The specification — how approvals are structured and signed.</p>
                 <div class="arrow">Read the protocol →</div>
             </a>
 
             <a href="/service" class="protocol-link">
                 <div class="label">Service Providers</div>
                 <h3>Service Providers</h3>
-                <p>Issue cryptographic attestations.</p>
+                <p>Where people record their approvals.</p>
                 <div class="arrow">View architecture →</div>
             </a>
 
             <a href="/gatekeeper" class="protocol-link">
                 <div class="label">Gatekeeper</div>
                 <h3>Gatekeeper</h3>
-                <p>Protocol role: verifies attestations and blocks execution without a receipt.</p>
+                <p>The check that makes sure nothing runs without an approval.</p>
                 <div class="arrow">Read gatekeeper spec →</div>
             </a>
 
             <a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer" class="protocol-link">
                 <div class="label">Gateway</div>
                 <h3>Gateway</h3>
-                <p>Open-source reference implementation that embeds the Gatekeeper for agent runtimes.</p>
+                <p>An open-source program that runs the check alongside your AI tools.</p>
                 <div class="arrow">Get started →</div>
             </a>
 
             <a href="/governance" class="protocol-link">
                 <div class="label">Governance</div>
                 <h3>Governance</h3>
-                <p>Protocol governance and trust model.</p>
+                <p>How the protocol is governed and who runs it.</p>
                 <div class="arrow">Read framework →</div>
             </a>
         </div>
 
         <p class="section-conclusion" style="margin-top: 3rem; text-align: left;">
-            <strong>HAP is the open protocol for human authority over AI agents. Verifiable, interoperable, and infrastructure-free.</strong>
+            <strong>HAP is an open protocol for keeping people in charge of AI agents. Verifiable. Works across platforms. Not tied to any AI vendor.</strong>
         </p>
     </section>
 
