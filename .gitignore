@@ -32,8 +32,14 @@ hap-records-mcp/
 # LinkedIn MCP server (separate repository)
 hap-linkedin-mcp/
 
+# Google Calendar MCP server (separate repository)
+hap-googlecalendar-mcp/
+
 # E2E tests (separate repository)
 hap-e2e/
+
+# Local image assets (not tracked in umbrella repo)
+images/
 
 # Misc
 style-guide.html
