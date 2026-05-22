@@ -14,11 +14,11 @@ demo-agent/
 demo-deploy/
 demo-hap-deploy-gate/
 demo-sp/
-hap-gateway/
+suveren-gateway/
 hap-core/
 
-# Service provider (separate repository)
-hap-sp/
+# Authority Server / Suveren AS (separate repository)
+suveren-as/
 
 # Profiles (separate repository)
 hap-profiles/
