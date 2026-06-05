@@ -1185,7 +1185,7 @@ Each successful request produces a signed receipt. Failed requests produce no re
 
 ## Future Directions
 
-Two v0.3 sections — **Output Provenance** and **Decision Streams** — were moved into a separate `review.md` in v0.4 pending re-review. v0.5 folds them back here as concise optional directions. A v0.5 implementation MAY implement either without losing conformance, and MAY skip both without losing conformance. The decision rule for promoting a future direction into the binding surface is: at least one reference implementation exercises it end-to-end **and** at least one external integrator depends on it. Neither condition is met as of v0.5.
+Two v0.3 sections — **Output Provenance** and **Decision Streams** — were moved into a separate `review.md` in v0.4 pending re-review. v0.5 folds them back here as concise optional directions and adds a third, **Content Provenance**. A v0.5 implementation MAY implement any of them without losing conformance, and MAY skip all of them without losing conformance. The decision rule for promoting a future direction into the binding surface is: at least one reference implementation exercises it end-to-end **and** at least one external integrator depends on it. Of the three, only Content Provenance has a reference implementation as of v0.5 (Suveren's `records`/`customers`); none yet has a dependent external integrator, so none is promoted.
 
 ### Output Provenance
 
@@ -1200,6 +1200,26 @@ Profiles MAY define an `output_ref` field in the **context schema**. Because `ou
 5. Optionally fetch receipts to verify the execution chain.
 
 Output Provenance is a useful design pattern for deployment-style profiles. The deploy profile is not yet shipped in `hap-profiles`; when it ships, expect Output Provenance to be promoted into that profile's normative surface — not into HAP Core. Profile-bound features stay profile-bound.
+
+### Content Provenance
+
+Output Provenance binds an output's **location**. Some profiles produce content with no stable address — an email body, a published post, a CRM record, a database row. **Content Provenance** is the ephemeral-content analog: it binds the **bytes** instead, for those profiles.
+
+A profile MAY declare a `content_binding` block — `{ "version": "1", "kind": "jcs" | "text", "pre_footer"?: bool }`. When present, the Gatekeeper computes a `content_hash` over the action's content and includes it in the receipt **request**; the SP copies it verbatim into the signed receipt **payload**. The SP receives **only the hash, never the content** — so Content Provenance preserves HAP's privacy-minimal design (the SP sees hashes, never plaintext).
+
+Canonicalization is normative and versioned — a verifier MUST pin `content_binding.version`:
+
+- `kind:"jcs"` — RFC 8785 JCS of the record payload → `sha256`. For structured writes (records, CRM), which have no single content field; the whole payload is the content.
+- `kind:"text"` — UTF-8 of the auto-detected content field after Unicode NFC, LF line endings, trailing per-line whitespace stripped, and trailing blank lines removed; taken **pre-footer** when `pre_footer` is set. For communicative profiles (email, publish, calendar).
+
+Receipt additions, both OPTIONAL (omitting them is fully conformant):
+
+- request: `content_hash` (Gatekeeper → SP).
+- payload: `content_hash` + `content_binding` (signed by the SP).
+
+Verification: recompute the hash from the held or stored content using the receipt's `content_binding`, compare to the signed `content_hash`, and verify the receipt signature. A match under a valid signature proves the SP attested that **this exact content** was authorized under these bounds at this time. It does **not** prove real-world identity (account-level only), nor catch edits made outside Suveren — those surface only as a gap between the signed content and the live artifact, never prevented.
+
+Like Output Provenance, Content Provenance lives in the relevant **profiles** (`records`, `customers`, then `publish`, `calendar`, `email`) — **not in HAP Core**. Core only gains the optional signed receipt fields that profiles MAY populate. Promotion follows the same rule (a reference implementation exercises it end-to-end **and** an external integrator depends on it); Suveren's `records`/`customers` implementation satisfies the first condition.
 
 ### Decision Streams
 
