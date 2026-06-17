@@ -4,11 +4,21 @@
 
 ## Authorization Layer for AI Agents
 
-An open protocol that keeps people in control of AI agents. A person sets what an agent is allowed to do. The agent can't do anything else. Every action leaves a receipt.
+An open protocol that keeps people in control of AI agents. A person sets what an agent is allowed to do. The agent can't do anything else. And no action runs without a receipt — proof, issued as the action is authorized, that ties it to the person who approved it. No receipt, no execution.
+
+> **HAP is the protocol. Suveren is an implementation of it.**
+>
+> The Human Agency Protocol (HAP) is the open standard — it defines the roles
+> (**Authority Server**, **Gatekeeper**, **Executor**) and the concepts
+> (profiles, gates, attestations, bounds, context, receipts). **Suveren** is a
+> commercial, HAP-compliant product that implements them: the **Authority
+> Server** (`suveren-as`, hosted) and the **Gateway** (`suveren-gateway`, open
+> source). The protocol is open — anyone can build their own compliant
+> implementation. See [Protocol vs. Implementations](#protocol-vs-implementations).
 
 - Read the protocol: [content/0.4/protocol.md](content/0.4/protocol.md)
 - Website: [humanagencyprotocol.org](https://humanagencyprotocol.org)
-- Hosted Service Provider: [humanagencyprotocol.com](https://humanagencyprotocol.com)
+- Hosted Authority Server: [humanagencyprotocol.com](https://humanagencyprotocol.com)
 
 ---
 
@@ -26,23 +36,42 @@ What HAP makes possible — in practice.
 
 ## How HAP Works
 
-A person approves what an agent is allowed to do. The system enforces it — blocking anything outside the approval. Every action produces a receipt anyone can check.
+A person approves what an agent is allowed to do. The system enforces it — blocking anything outside the approval. No action runs without a receipt that proves it was authorized — and anyone can check it.
 
 ```
     Human ─────────────────────────→ AI Agent
       │                                  │
       ▼                                  ▼
-Service Provider ──────────────→   Gatekeeper
+Authority Server ──────────────→   Gatekeeper
                                         │
                                         ▼
                                     Executor
 ```
 
-- **Service Provider** — Where a person records their approval, along with the exact limits.
+- **Authority Server** — Where a person records their approval, along with the exact limits.
 - **Gatekeeper** — Checks the approval before any action runs. Blocks anything outside the approved limits.
 - **Executor** — Runs the action — but only if the Gatekeeper allows it.
 
-HAP uses two pieces of infrastructure: Service Providers record approvals. Gatekeepers check them before anything runs.
+HAP uses two pieces of infrastructure: Authority Servers record approvals. Gatekeepers check them before anything runs.
+
+---
+
+## Protocol vs. Implementations
+
+HAP is the standard; it does not ship a product. The roles it defines are
+implemented by software — **Suveren** is the reference implementation, and the
+two roles map to its two products one-to-one.
+
+| HAP role | What it does | Suveren implementation | Where |
+|----------|--------------|------------------------|-------|
+| **Authority Server** | Records human approvals, signs attestations, issues receipts | Suveren Authority Server — hosted | [suveren.ai](https://www.suveren.ai) |
+| **Gatekeeper + Executor** | Checks each action against its authorization before it runs | Suveren Gateway — local, open source | [suverenai/suveren-gateway](https://github.com/suverenai/suveren-gateway) |
+| *the protocol itself* | Spec, shared library, profiles, conformance tests | — | `content/`, [hap-core](https://www.npmjs.com/package/@humanagencyp/hap-core), [hap-profiles](https://github.com/humanagencyprotocol/hap-profiles) |
+
+The protocol (spec, `hap-core`, `hap-profiles`) and the Suveren **Gateway** are
+open source. The Suveren **Authority Server** is a hosted commercial service.
+You can run your own HAP-compliant Authority Server by implementing the spec —
+HAP is not tied to Suveren or any vendor.
 
 ---
 
@@ -60,7 +89,7 @@ HAP works differently. An agent never acts on its own authority. Every action tr
 
 HAP applies wherever AI agents take consequential action:
 
-- **Payment Agents** — Agents charge customers, process refunds, and manage subscriptions within bounds you set. Every transaction produces a signed receipt linking it to your authorization.
+- **Payment Agents** — Agents charge customers, process refunds, and manage subscriptions within bounds you set. Every transaction requires a signed receipt — issued by the Authority Server before the charge runs — linking it to your authorization.
 - **Email & Communication** — Agents draft and send emails on your behalf with clear bounds — who, what topics, which tone. High-stakes replies pause for your review.
 - **CRM & Data Agents** — Agents manage contacts, leads, and customer records within scoped bounds — read here, write limits there, no deletes. Every action traceable.
 - **Infrastructure & DevOps** — Agents ship code and manage infrastructure under your named authority. High-risk operations require explicit human review before execution.
@@ -84,9 +113,9 @@ HAP turns compliance requirements into something the system actually enforces �
 | Component | Purpose | Reference |
 |-----------|---------|-----------|
 | **Protocol** | The specification — how approvals are structured and signed | [content/0.4/protocol.md](content/0.4/protocol.md) |
-| **Service Providers** | Where people record their approvals | [content/0.4/service.md](content/0.4/service.md) |
+| **Authority Servers** | Where people record their approvals | [content/0.4/service.md](content/0.4/service.md) |
 | **Gatekeeper** | The check that makes sure nothing runs without an approval | [content/0.4/gatekeeper.md](content/0.4/gatekeeper.md) |
-| **Gateway** | An open-source program that runs the check alongside your AI tools | [github.com/humanagencyprotocol/hap-gateway](https://github.com/humanagencyprotocol/hap-gateway) |
+| **Gateway** | Suveren's open-source program that runs the check alongside your AI tools | [github.com/suverenai/suveren-gateway](https://github.com/suverenai/suveren-gateway) |
 | **Authority Profiles** | Seven published v0.4 profiles (charge, purchase, email, customers, schedule, publish, records) | [github.com/humanagencyprotocol/hap-profiles](https://github.com/humanagencyprotocol/hap-profiles) |
 | **Governance** | How the protocol is governed and who runs it | [content/0.4/governance.md](content/0.4/governance.md) |
 
@@ -114,13 +143,16 @@ HAP turns compliance requirements into something the system actually enforces �
 
 ### Related Repositories
 
-The Human Agency Protocol ecosystem is spread across several open-source repositories:
+The Human Agency Protocol ecosystem spans the open protocol repos plus Suveren's reference implementation:
 
-- [**hap-gateway**](https://github.com/humanagencyprotocol/hap-gateway) — Open-source reference Gatekeeper, runs locally via Docker, any MCP-compatible agent can connect
+**Protocol (open source):**
 - [**hap-profiles**](https://github.com/humanagencyprotocol/hap-profiles) — v0.4 authority profiles (JSON, immutable, versioned)
 - [**hap-core**](https://www.npmjs.com/package/@humanagencyp/hap-core) — Shared TypeScript library on npm (types, crypto, gatekeeper logic)
+- **hap-e2e** — protocol conformance test suite
 
-The **Service Provider** is available as a hosted service at [humanagencyprotocol.com](https://humanagencyprotocol.com) — it runs the signing backend and public verification endpoints.
+**Suveren — reference implementation:**
+- [**suveren-gateway**](https://github.com/suverenai/suveren-gateway) — the Gatekeeper + Executor: runs locally, any MCP-compatible agent can connect (open source)
+- **suveren-as** — the Authority Server: signing backend, attestations, teams, receipts. Hosted commercial service at [suveren.ai](https://www.suveren.ai).
 
 ---
 
