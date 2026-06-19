@@ -34,9 +34,8 @@ const version = siteConfig.version;
             </button>
             <ul id="nav-menu">
                 <li><a href="/protocol" class={currentPath.startsWith('/protocol') ? 'active' : ''}>Protocol</a></li>
-                <li><a href="/service" class={currentPath.startsWith('/service') ? 'active' : ''}>Service Providers</a></li>
-                <li><a href="/gatekeeper" class={currentPath.startsWith('/gatekeeper') ? 'active' : ''}>Gatekeeper</a></li>
                 <li><a href="/governance" class={currentPath.startsWith('/governance') ? 'active' : ''}>Governance</a></li>
+                <li><a href="https://github.com/humanagencyprotocol/hap-protocol" target="_blank" rel="noopener noreferrer">GitHub</a></li>
             </ul>
         </div>
     </nav>
@@ -50,25 +49,10 @@ const version = siteConfig.version;
                 <ul>
                     <li><a href="/protocol">Overview</a></li>
                     <li><a href="/protocol#profiles">Profiles</a></li>
-                    <li><a href="/protocol#bounded-execution">Bounded Execution</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-section">
-                <h4>Service Providers</h4>
-                <ul>
-                    <li><a href="/service">Overview</a></li>
-                    <li><a href="/service#sp-workflow-in-practice">SP Workflow</a></li>
-                    <li><a href="/service#security-guarantees">Privacy Model</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-section">
-                <h4>Gatekeeper</h4>
-                <ul>
-                    <li><a href="/gatekeeper">Overview</a></li>
-                    <li><a href="/gatekeeper#connector-model">Connector Model</a></li>
-                    <li><a href="/gatekeeper#bounded-execution">Bounded Execution</a></li>
+                    <li><a href="/protocol#commitment-modes">Commitment Modes</a></li>
+                    <li><a href="/protocol#execution-receipts">Execution Receipts</a></li>
+                    <li><a href="/protocol#authority-server-behavior">Authority Server</a></li>
+                    <li><a href="/protocol#gatekeeper--executor-behavior">Gatekeeper</a></li>
                 </ul>
             </div>
 

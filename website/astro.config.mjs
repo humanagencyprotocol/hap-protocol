@@ -7,5 +7,11 @@ export default defineConfig({
   outDir: './dist',
   build: {
     format: 'directory'
+  },
+  // v0.5 folded service / gatekeeper / review into the single protocol page
+  redirects: {
+    '/service': '/protocol',
+    '/gatekeeper': '/protocol',
+    '/review': '/protocol'
   }
 });

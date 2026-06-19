@@ -1,42 +1,29 @@
 # Human Agency Protocol
 
-**Open-Source Protocol — v0.4, April 2026**
+**Open-Source Protocol — v0.5, June 2026**
 
-## Authorization Layer for AI Agents
+## Human authorization for consequential AI actions
 
-An open protocol that keeps people in control of AI agents. A person sets what an agent is allowed to do. The agent can't do anything else. And no action runs without a receipt — proof, issued as the action is authorized, that ties it to the person who approved it. No receipt, no execution.
+AI agents carry no authority of their own. Before an agent moves money, changes records, sends communication, grants access, or touches infrastructure, the action must receive a signed pre-execution receipt linked to human authorization.
 
-> **HAP is the protocol. Suveren is an implementation of it.**
->
-> The Human Agency Protocol (HAP) is the open standard — it defines the roles
-> (**Authority Server**, **Gatekeeper**, **Executor**) and the concepts
-> (profiles, gates, attestations, bounds, context, receipts). **Suveren** is a
-> commercial, HAP-compliant product that implements them: the **Authority
-> Server** (`suveren-as`, hosted) and the **Gateway** (`suveren-gateway`, open
-> source). The protocol is open — anyone can build their own compliant
-> implementation. See [Protocol vs. Implementations](#protocol-vs-implementations).
-
-- Read the protocol: [content/0.4/protocol.md](content/0.4/protocol.md)
+- Read the protocol: [content/0.5/protocol.md](content/0.5/protocol.md)
+- Governance: [content/0.5/governance.md](content/0.5/governance.md)
 - Website: [humanagencyprotocol.org](https://humanagencyprotocol.org)
-- Hosted Authority Server: [humanagencyprotocol.com](https://humanagencyprotocol.com)
 
 ---
 
-## How It Works in Practice
+## No receipt. No execution.
 
-What HAP makes possible — in practice.
+The receipt is not a post-execution log. It is the precondition for execution — and the audit artifact proving the action was authorized before it ran.
 
-- **One agent, one set of rules** — Each agent has its own set of rules about what it can do. A person decides what's allowed — how much it can spend, who it can email, what data it can change — and the agent can't do anything outside of that.
-- **Each person controls their own area** — Each person on a team has their own area — sales, marketing, finance. They decide which AI agents work in that area and what those agents can do. No central IT team in between.
-- **Actions that need approval from more than one person** — If an agent's action touches more than one area — say, a marketing agent that needs to spend part of the finance budget — each person responsible has to approve before the agent can proceed.
-- **Authority follows decisions, not job titles** — Whoever is responsible for a decision approves it, no matter where they sit on the org chart. Managers don't have to sign off on everything — the person who actually owns the decision does.
-- **Adding agents doesn't mean adding IT** — Agents don't get accounts, passwords, or API keys of their own. Each one works under a person's approval. Adding more agents just means more approvals — not more systems to manage.
+1. A human authorizes **bounded execution** — scope, limits, time, and commitment mode.
+2. The **Gatekeeper** verifies the attestation, checks per-action bounds, and enforces local context constraints.
+3. The **Authority Server** checks cumulative limits, expiry, and revocation, then **signs the receipt**.
+4. The **Executor** runs the action — only **after** the receipt exists.
 
 ---
 
 ## How HAP Works
-
-A person approves what an agent is allowed to do. The system enforces it — blocking anything outside the approval. No action runs without a receipt that proves it was authorized — and anyone can check it.
 
 ```
     Human ─────────────────────────→ AI Agent
@@ -48,40 +35,40 @@ Authority Server ──────────────→   Gatekeeper
                                     Executor
 ```
 
-- **Authority Server** — Where a person records their approval, along with the exact limits.
-- **Gatekeeper** — Checks the approval before any action runs. Blocks anything outside the approved limits.
-- **Executor** — Runs the action — but only if the Gatekeeper allows it.
-
-HAP uses two pieces of infrastructure: Authority Servers record approvals. Gatekeepers check them before anything runs.
+- **Authority Server** — Verifies bounds, cumulative limits, expiry, and revocation, and issues the signed receipt.
+- **Gatekeeper** — Verifies the attestation and per-action bounds/context locally, then obtains the receipt before anything runs. Fail-closed: no receipt, no execution.
+- **Executor** — Runs the action — only after a valid receipt exists.
 
 ---
 
-## Protocol vs. Implementations
+## Where HAP Fits
 
-HAP is the standard; it does not ship a product. The roles it defines are
-implemented by software — **Suveren** is the reference implementation, and the
-two roles map to its two products one-to-one.
+HAP composes with existing systems — it replaces none of them. It is **not** an authentication protocol, an API-access protocol, a tool-transport protocol, or a task-orchestration protocol. It is the authorization, enforcement, and receipt layer for consequential execution.
 
-| HAP role | What it does | Suveren implementation | Where |
-|----------|--------------|------------------------|-------|
-| **Authority Server** | Records human approvals, signs attestations, issues receipts | Suveren Authority Server — hosted | [suveren.ai](https://www.suveren.ai) |
-| **Gatekeeper + Executor** | Checks each action against its authorization before it runs | Suveren Gateway — local, open source | [suverenai/suveren-gateway](https://github.com/suverenai/suveren-gateway) |
-| *the protocol itself* | Spec, shared library, profiles, conformance tests | — | `content/`, [hap-core](https://www.npmjs.com/package/@humanagencyp/hap-core), [hap-profiles](https://github.com/humanagencyprotocol/hap-profiles) |
+- **OAuth / OpenID Connect** grant API access.
+- **MCP** exposes tools to agents.
+- **Identity** systems (EUDI, passkeys, WebAuthn) prove who you are.
+- **HAP** authorizes the consequential action — before it runs, with a signed receipt.
 
-The protocol (spec, `hap-core`, `hap-profiles`) and the Suveren **Gateway** are
-open source. The Suveren **Authority Server** is a hosted commercial service.
-You can run your own HAP-compliant Authority Server by implementing the spec —
-HAP is not tied to Suveren or any vendor.
+**OAuth grants reachable capability. HAP governs authorized use of that capability.**
 
 ---
 
-## Agents Aren't Employees. They're Extensions.
+## Commitment Modes
 
-Other approaches give AI agents their own accounts and passwords, like employees with their own identity. But if an agent does something wrong, who's responsible? The agent can't be held to account — it's software. There's no way for it to feel a consequence.
+You decide how much runs on its own — a signed choice on every authorization, not a default the agent can change.
 
-HAP works differently. An agent never acts on its own authority. Every action traces back to the person who approved it, with the exact limits they set. The agent is an extension of the person — not a separate employee.
+- **Automatic** — The agent acts within the bounds you set. No per-action approval; the Authority Server enforces the limits and issues a signed receipt for each action before execution.
+- **Review** — The agent proposes; you approve each action before it runs. No approval, no receipt — no execution.
+- **Review above a cap** — The agent runs on its own under a limit you set. Above it, the action routes to a named set of approvers before any receipt is issued.
 
-> Anything that can't be undone only runs if a person approved it — and stays inside the limits that person set.
+---
+
+## Agents Aren't Employees. They're Executors.
+
+Most systems give agents their own accounts, credentials, and standing permissions — one more identity to manage. HAP does the opposite. An agent never carries authority of its own. The receipt is cryptographic proof that a specific action was authorized — before it ran — linked to the human who authorized it. An agent may have technical identifiers for logging and routing, but it holds no independent authority.
+
+> As AI systems become more capable, HAP keeps authority from quietly moving from humans into machines.
 
 ---
 
@@ -89,22 +76,22 @@ HAP works differently. An agent never acts on its own authority. Every action tr
 
 HAP applies wherever AI agents take consequential action:
 
-- **Payment Agents** — Agents charge customers, process refunds, and manage subscriptions within bounds you set. Every transaction requires a signed receipt — issued by the Authority Server before the charge runs — linking it to your authorization.
-- **Email & Communication** — Agents draft and send emails on your behalf with clear bounds — who, what topics, which tone. High-stakes replies pause for your review.
-- **CRM & Data Agents** — Agents manage contacts, leads, and customer records within scoped bounds — read here, write limits there, no deletes. Every action traceable.
-- **Infrastructure & DevOps** — Agents ship code and manage infrastructure under your named authority. High-risk operations require explicit human review before execution.
-- **Multi-Stakeholder Actions** — When one signature isn't enough. Critical decisions require attestations from multiple domain owners before the agent can act.
-- **Compliance & Audit** — Prove human oversight to regulators, auditors, and insurers. EU AI Act, ISO 42001, NIST AI RMF — satisfied structurally, not through policy documents.
+- **Payments** — Refunds, charges, and payouts within bounds you set. Every transaction carries a signed receipt — issued by the Authority Server before it runs — linking it to your authorization.
+- **Email & Communication** — Agents draft and send within clear bounds; high-stakes sends pause for your review.
+- **CRM & Data** — Record changes and deletes within scoped bounds — read here, write limits there. Every action traceable.
+- **Infrastructure & DevOps** — Deploys and config changes under your named authority; high-risk operations require explicit review before execution.
+- **Multi-owner approvals** — When one signature isn't enough, critical actions require attestations from a named set of approvers before the agent can act.
+- **Compliance audit** — Verifiable receipts prove human oversight to regulators, auditors, and insurers.
 
 ---
 
-## Compliance Alignment
+## Compliance
 
-HAP turns compliance requirements into something the system actually enforces — not just something written in a policy document.
+HAP turns human oversight into something the system enforces — not just a policy document.
 
-- **EU AI Act** — Article 14 of the EU AI Act requires real human oversight of high-risk AI. HAP provides this by design — oversight isn't a checkbox in a policy, it's built into how the system runs.
-- **ISO 42001** — Every AI action needs a person who owns the decision and has set the limits — and has said why. No approval, no action.
-- **NIST AI RMF** — Every action leaves a tamper-proof record — who approved it, what limits were set, what happened. Anyone can verify it.
+- **EU AI Act — Article 14** — Article 14 requires effective human oversight of high-risk AI. HAP provides an enforceable oversight control **at the action layer**: consequential actions cannot run unless a human-linked authorization receipt exists before execution. HAP is Article-14-**enabling** infrastructure — not compliance on its own. Compliance still requires governance, training, documentation, and human competence.
+
+HAP also maps onto the human-oversight and record-keeping themes in ISO/IEC 42001 and the NIST AI RMF, but it is enabling infrastructure for those frameworks — not a substitute for an organization's own management system.
 
 ---
 
@@ -112,12 +99,12 @@ HAP turns compliance requirements into something the system actually enforces �
 
 | Component | Purpose | Reference |
 |-----------|---------|-----------|
-| **Protocol** | The specification — how approvals are structured and signed | [content/0.4/protocol.md](content/0.4/protocol.md) |
-| **Authority Servers** | Where people record their approvals | [content/0.4/service.md](content/0.4/service.md) |
-| **Gatekeeper** | The check that makes sure nothing runs without an approval | [content/0.4/gatekeeper.md](content/0.4/gatekeeper.md) |
-| **Gateway** | Suveren's open-source program that runs the check alongside your AI tools | [github.com/suverenai/suveren-gateway](https://github.com/suverenai/suveren-gateway) |
+| **Protocol** | The specification — concepts, wire format, and role behavior | [content/0.5/protocol.md](content/0.5/protocol.md) |
+| **Authority Server** | Issues signed receipts; enforces bounds, cumulative limits, expiry, revocation | [content/0.5/protocol.md#authority-server-behavior](content/0.5/protocol.md#authority-server-behavior) |
+| **Gatekeeper** | Verifies and obtains the receipt before anything runs | [content/0.5/protocol.md#gatekeeper--executor-behavior](content/0.5/protocol.md#gatekeeper--executor-behavior) |
+| **Gateway** | Suveren's open-source Gatekeeper + Executor — runs alongside your AI tools | [github.com/suverenai/suveren-gateway](https://github.com/suverenai/suveren-gateway) |
 | **Authority Profiles** | Seven published v0.4 profiles (charge, purchase, email, customers, schedule, publish, records) | [github.com/humanagencyprotocol/hap-profiles](https://github.com/humanagencyprotocol/hap-profiles) |
-| **Governance** | How the protocol is governed and who runs it | [content/0.4/governance.md](content/0.4/governance.md) |
+| **Governance** | How the protocol is governed and who runs it | [content/0.5/governance.md](content/0.5/governance.md) |
 
 **HAP is an open protocol for keeping people in charge of AI agents. Verifiable. Works across platforms. Not tied to any AI vendor.**
 
@@ -128,18 +115,16 @@ HAP turns compliance requirements into something the system actually enforces �
 ```
 .
 ├── content/
-│   ├── 0.1/       Foundation
-│   ├── 0.2/       Previous spec
-│   ├── 0.3/       Previous spec
-│   └── 0.4/       Current spec
-│       ├── protocol.md
-│       ├── service.md
-│       ├── gatekeeper.md
-│       ├── governance.md
-│       └── review.md
-├── website/       humanagencyprotocol.org (Astro)
+│   ├── 0.1/ – 0.3/   Previous specs
+│   ├── 0.4/          Prior spec (Service Provider / Gatekeeper / Governance / Review)
+│   └── 0.5/          Current spec
+│       ├── protocol.md     (concepts + wire format + Authority Server + Gatekeeper behavior)
+│       └── governance.md
+├── website/          humanagencyprotocol.org (Astro)
 └── README.md
 ```
+
+> v0.5 folds the former `service.md` (Authority Server), `gatekeeper.md`, and `review.md` into a single `protocol.md`, and retires the older "Service Provider" term in favor of **Authority Server**.
 
 ### Related Repositories
 
@@ -152,7 +137,6 @@ The Human Agency Protocol ecosystem spans the open protocol repos plus Suveren's
 
 **Suveren — reference implementation:**
 - [**suveren-gateway**](https://github.com/suverenai/suveren-gateway) — the Gatekeeper + Executor: runs locally, any MCP-compatible agent can connect (open source)
-- **suveren-as** — the Authority Server: signing backend, attestations, teams, receipts. Hosted commercial service at [suveren.ai](https://www.suveren.ai).
 
 ---
 

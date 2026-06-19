@@ -1,7 +1,8 @@
 ---
-title: "Governance"
-version: "Version 0.4"
-date: "April 2026"
+title: "Human Agency Protocol — Governance"
+version: "Version 0.5"
+date: "June 2026"
+status: "Normative — full prose"
 ---
 
 HAP is governed by invariant constraints, not institutions.
@@ -33,27 +34,27 @@ A consequential action is any operation that affects external state, human wellb
 No executor (human or machine) may perform a consequential action unless preceded by:
 
 1. A valid HAP attestation conforming to a trusted Profile
-2. A valid HAP execution receipt issued by the SP for that specific action
+2. A valid HAP execution receipt issued by the AS for that specific action
 
-This is the v0.4 strengthening of the v0.3 invariant. v0.3 required only the attestation. v0.4 requires both the attestation (proof of authorization) and the receipt (proof that the specific action was within bounds at the time of execution).
+This is the v0.5 strengthening of the v0.3 invariant. v0.3 required only the attestation. v0.5 requires both the attestation (proof of authorization) and the receipt (proof that the specific action was within bounds at the time of execution).
 
 ### Invariant 2 — Explicit Human Decision Ownership
 
 Every attestation must reference at least one identifiable human Decision Owner. Collective, symbolic, or anonymous ownership is invalid.
 
-### Invariant 3 — Domain-Covering Ownership
+### Invariant 3 — Required-Owner Coverage
 
-Each Decision Owner must declare a domain. In group mode, execution is invalid if the profile's required domains (as defined by the SP group configuration) are not covered by the declared domains of all Decision Owners. In personal mode, the user attests directly with no domain checks.
+Each Decision Owner is identified by DID. In group mode, execution is invalid if the profile's required approvers (as defined by the AS group configuration) are not all covered by the attesting Decision Owners. In personal mode, the user attests directly with no approver checks.
 
 ### Invariant 4 — Privacy Preservation
 
-No semantic content may leave local custody by protocol design. SPs and Executors receive only:
+No semantic content may leave local custody by protocol design. ASes and Executors receive only:
 
-- Bounds (in plaintext, for SP enforcement)
+- Bounds (in plaintext, for AS enforcement)
 - Cryptographic hashes (`bounds_hash`, `context_hash`, `execution_context_hash`, `gate_content_hashes.intent`)
 - Structural metadata
 - Signatures
-- DIDs and domain declarations
+- DIDs and owner declarations
 
 Context content, intent text, and any other narrative remain local.
 
@@ -69,13 +70,29 @@ Once execution occurs, the associated commitment, ownership record, and receipt 
 
 > New in v0.4.
 
-Every authorized action must produce an SP-signed receipt before it executes. The receipt is the cryptographic record of execution. A system that authorizes actions without receipts is not v0.4 compliant.
+Every authorized action must produce an AS-signed receipt before it executes. The receipt is the cryptographic record of execution. A system that authorizes actions without receipts is not v0.4+ compliant.
+
+### Invariant 8 — Tool-Gating Manifest Integrity
+
+> New in v0.5.
+
+A Gatekeeper that fronts MCP tool calls (or any other tool-shaped surface) MUST gate every tool — including read-only tools — through a tool-gating manifest. There is no permissive default and no implicit categorization. `actionType` MUST be resolved from the manifest, never inferred from string patterns on tool names.
+
+A system that exposes ungated tool access, or that derives enforcement semantics from tool-name parsing, is not v0.5 compliant.
+
+### Invariant 9 — Deterministic Signing
+
+> New in v0.5.
+
+Attestation and receipt signatures MUST be produced over a deterministic JSON canonicalization (sorted keys, no insignificant whitespace, base64url signatures, RFC 8785 compatible). Implementations MUST publish at least one signing test vector so independent verifiers can confirm canonicalization parity.
+
+A system whose signatures depend on object insertion order or implementation-specific JSON serialization is not v0.5 compliant.
 
 ---
 
 ## Profile Governance
 
-Profiles are the mechanism for domain-specific enforcement. Profile governance follows these principles:
+Profiles are the mechanism for authority-specific enforcement. Profile governance follows these principles:
 
 ### Permissionless Creation
 
@@ -87,12 +104,19 @@ Profiles version independently of HAP Core. Breaking changes require version bum
 
 ### Local Trust Decisions
 
-Applications and SPs decide which Profiles to trust. There is no global Profile registry.
+Applications and ASes decide which Profiles to trust. There is no global Profile registry.
+
+### Trust on First Use
+
+`profile_id` is a stable identifier, not a runtime fetch URL. ASes and Gatekeepers MUST resolve `profile_id` to bytes through a one-time provisioning step (bundled at install, or fetched once and persisted) and MUST NOT re-fetch on the attestation or receipt hot path. The protocol relies on the publisher's immutability promise plus each operator's local copy; it does not provide an additional cryptographic check for publisher misbehavior. Operators concerned about publisher integrity SHOULD verify a content hash at provisioning time using out-of-band means.
+
+Once provisioned, the local copy is the operator's source of truth for that `profile_id`. The protocol's trust unit is "Public Key + Profile + Local Policy"; the profile is part of the local trust anchor, not a remote dependency.
 
 ### Transparent Specification
 
 Profiles must fully specify:
 - Bounds schema (enforceable parameters)
+- `boundsSchema.actionTypes: string[]` — closed registry of valid `actionType` values (new in v0.5)
 - Context schema (operational scope, may be empty)
 - Execution context schema (cumulative tracking)
 - Required gates (`bounds`, `intent`, `commitment`, `decision_owner`)
@@ -103,16 +127,18 @@ Ambiguous Profiles are unenforceable.
 
 Profiles MUST NOT define:
 - `executionPaths` — removed in v0.4
-- `requiredDomains` — moved to SP group configuration
+- `requiredDomains` — moved to AS group configuration (now `requiredApprovers`)
 - `gateQuestions` — the intent prompt is universal in the gateway UI
+- `paths: [...]` arrays on bounds fields — finished removal in v0.5
+- `field.enum: string[]` — retired in v0.5; allowed values live in `constraint.values`
 
 ### Profile Versioning
 
 - Profiles MUST declare a version
 - Once published, profile versions are immutable
 - Breaking changes MUST bump the version
-- SPs MUST reject unknown profile versions
-- SPs SHOULD support profile version negotiation
+- ASes MUST reject unknown profile versions
+- ASes SHOULD support profile version negotiation
 - Deprecated profiles SHOULD have a sunset timeline
 
 ---
@@ -122,7 +148,7 @@ Profiles MUST NOT define:
 Any individual, team, or system may:
 
 - Implement the HAP protocol
-- Run a Service Provider
+- Run a Authority Server
 - Publish Profiles
 - Enforce HAP locally
 - Reject non-compliant executors
@@ -166,7 +192,7 @@ Forking is a feature, not a failure.
 Any community may fork:
 
 - Profiles
-- Service Provider implementations
+- Authority Server implementations
 - Gatekeeper / Gateway implementations
 - UX layers
 - Execution models
@@ -185,10 +211,14 @@ This preserves interoperability without requiring permission.
 To support interoperability without institutional control, the HAP ecosystem maintains:
 
 - Public invariant test vectors
-- Reference bounds and context canonicalization tests
-- Attestation validation test cases
-- Receipt validation test cases
-- Profile compliance checks
+- Reference bounds and context canonicalization tests (including escape rules: newline rejection, percent-encoding of `=`/`%`/non-printable bytes)
+- Signing canonicalization test vectors — `(payload, canonical bytes, base64url signature)` triples with a known public key
+- Attestation validation test cases (per-mode: `automatic`, `review`, `review_above_cap`)
+- Receipt validation test cases (success, `BOUND_EXCEEDED`, `CUMULATIVE_LIMIT_EXCEEDED`, `APPROVAL_REQUIRED`, `INVALID_ACTION_TYPE`)
+- Profile compliance checks (presence of `boundsSchema.actionTypes`, absence of `field.enum`, absence of `paths` arrays)
+- Tool-gating manifest schema validator
+
+> **v0.5 deliverable.** A normative test-vector file MUST ship with `hap-core` so any third-party AS or Gatekeeper can self-verify canonicalization parity. The file location is implementation-defined; the format is JSON with one test case per top-level entry. Implementations that pass the vectors are conformant on those points.
 
 Running these tests is voluntary. Publishing results is optional.
 
@@ -196,71 +226,71 @@ No entity grants approval. No entity issues certification.
 
 ---
 
-## SP Governance
+## AS Governance
 
-Service Providers are trusted parties. Their governance must be explicit:
+Authority Servers are trusted parties. Their governance must be explicit:
 
-### SP Operators
+### AS Operators
 
-- Who operates the SP?
+- Who operates the AS?
 - What jurisdiction?
 - What liability?
 
-### SP Accountability
+### AS Accountability
 
-- SPs MUST publish their signing public key
-- SPs MUST retain a record of all attestations issued
-- SPs MUST retain a record of all receipts issued (new in v0.4)
-- SPs MUST retain attestation and receipt records for at least the profile-defined retention period
+- ASes MUST publish their signing public key
+- ASes MUST retain a record of all attestations issued
+- ASes MUST retain a record of all receipts issued (new in v0.4)
+- ASes MUST retain attestation and receipt records for at least the profile-defined retention period
 - Records MUST be append-only
-- SPs MUST maintain a revocation list (new in v0.4)
-- SPs SHOULD publish attestation and receipt counts and statistics
-- SPs MUST NOT issue attestations without verifying domain authority (in group mode)
-- SPs MUST NOT issue receipts for revoked or expired attestations
+- ASes MUST maintain a revocation list (new in v0.4)
+- ASes SHOULD publish attestation and receipt counts and statistics
+- ASes MUST NOT issue attestations without verifying required-approver coverage (in group mode)
+- ASes MUST NOT issue receipts for revoked or expired attestations
 
-### SP Misbehavior
+### AS Misbehavior
 
-- Issuing attestations for unauthorized DIDs → SP trust revocation
-- Issuing receipts that violate bounds → SP trust revocation
-- Backdating timestamps → SP trust revocation
+- Issuing attestations for unauthorized DIDs → AS trust revocation
+- Issuing receipts that violate bounds → AS trust revocation
+- Backdating timestamps → AS trust revocation
 - Refusing valid requests → escalation path required
 
 ---
 
-## Multi-SP Ecosystem
+## Multi-AS Ecosystem
 
-The protocol supports multiple SPs:
+The protocol supports multiple ASes:
 
-- Organizations choose which SP(s) to use
-- Verifiers can trust multiple SPs
-- Attestations and receipts reference which SP signed them
-- No single SP has monopoly on trust
+- Organizations choose which AS(s) to use
+- Verifiers can trust multiple ASes
+- Attestations and receipts reference which AS signed them
+- No single AS has monopoly on trust
 
 ### Interoperability
 
-- SPs SHOULD use compatible attestation and receipt formats
-- SPs MAY federate domain authority (SP-A trusts SP-B's authority registry)
-- Cross-SP verification MUST be possible if both SPs are trusted
+- ASes SHOULD use compatible attestation and receipt formats
+- ASes MAY federate approver authority (AS-A trusts AS-B's authority registry)
+- Cross-AS verification MUST be possible if both ASes are trusted
 
-> v0.4 does not specify cross-SP receipt federation. A single attestation lives on a single SP. Multi-SP federation for receipts is deferred to a future version.
+> v0.5 does not specify cross-AS receipt federation. A single attestation lives on a single AS. Multi-AS federation for receipts is deferred to a future version.
 
 ---
 
-## Domain Authority Governance
+## Approver Authority Governance
 
-In v0.4, domain authority is configured per group on the SP, not in profiles.
+In v0.5, required approvers are configured per group on the AS, not in profiles.
 
 ### Within Groups
 
-- The group admin defines `profileDomains` — which profiles are enabled and which domains must attest
-- The group admin defines the authorization mapping — who holds each domain
+- The group admin defines `requiredApprovers` — which profiles are enabled and which members must attest
+- The group admin defines group membership — who may attest
 - Authority grants SHOULD require approval from existing authority holders
 - Authority SHOULD have expiration (annual renewal)
 
 ### Audit Trail
 
 - All authority grants/revocations MUST be logged
-- Logs MUST include: who granted, to whom, which domain, when, expiration
+- Logs MUST include: who granted, to whom, which profile, when, expiration
 
 ---
 
@@ -269,12 +299,12 @@ In v0.4, domain authority is configured per group on the SP, not in profiles.
 When attestation or receipt validity is disputed:
 
 1. Verify cryptographic validity (signatures, hashes)
-2. Verify domain authority at time of attestation
-3. Verify SP was trusted at time of attestation
+2. Verify required-approver coverage at time of attestation
+3. Verify AS was trusted at time of attestation
 4. For receipts: verify the receipt was issued during the attestation's TTL window and before any revocation
 5. If all valid → attestation and receipt stand
-6. If authority was invalid → attestation is void, SP may be at fault
-7. If receipt was issued for an unauthorized action → SP misbehavior
+6. If authority was invalid → attestation is void, AS may be at fault
+7. If receipt was issued for an unauthorized action → AS misbehavior
 
 ---
 
@@ -290,23 +320,25 @@ When attestation or receipt validity is disputed:
 - Each Profile defines `retention_minimum`
 - Attestations MUST be retained beyond TTL expiry for audit purposes
 - Receipts MUST be retained for at least `retention_minimum` from the receipt's own timestamp, independent of the parent attestation's lifecycle
-- **Receipts outlive attestations**: TTL expiry and revocation of an attestation affect only the SP's willingness to issue *new* receipts against it. Previously-issued receipts remain cryptographically valid, queryable, and retained until their own retention window elapses. Destroying a receipt because its parent attestation was revoked destroys the audit trail of what actually happened and is a governance violation.
+- **Receipts outlive attestations**: TTL expiry and revocation of an attestation affect only the AS's willingness to issue *new* receipts against it. Previously-issued receipts remain cryptographically valid, queryable, and retained until their own retention window elapses. Destroying a receipt because its parent attestation was revoked destroys the audit trail of what actually happened and is a governance violation.
 - Discarding attestations or receipts on TTL expiry destroys the audit trail
 
 ### Revocation
 
 - v0.4 adds revocation as a first-class concept
-- The SP maintains a revocation list, persisted in durable storage
-- Revoked attestations remain cryptographically valid for audit, but the SP refuses to issue new receipts against them
+- The AS maintains a revocation list, persisted in durable storage
+- Revoked attestations remain cryptographically valid for audit, but the AS refuses to issue new receipts against them
 - Revocation is faster than waiting for TTL expiry
 
 ---
 
 ## Error Transparency
 
-- Gatekeepers and SPs SHOULD return structured error codes
+- Gatekeepers and ASes SHOULD return structured error codes
 - Error codes MUST NOT leak sensitive information (intent text, context content, business secrets)
 - Failed validations MUST abort execution
+
+See the canonical error-code tables in [protocol.md](protocol.md#error-codes).
 
 ---
 
@@ -332,9 +364,61 @@ Trust in HAP is constructed as:
 Public Key + Profile + Local Policy
 ```
 
-Every Service Provider, Profile, Executor, or App identifies itself via a public key. Local systems choose which keys and Profiles to trust. Unknown or untrusted keys are ignored by default.
+Every Authority Server, Profile, Executor, or App identifies itself via a public key. Local systems choose which keys and Profiles to trust. Unknown or untrusted keys are ignored by default.
 
 There is no global trust anchor.
+
+---
+
+## Companion Specifications
+
+Some capabilities sit outside HAP Core but interoperate through it. v0.5 introduces the notion of a **companion specification** — an optional, independently versioned document that defines an extension surface. Companion specs MAY be implemented without affecting HAP Core conformance. A companion spec MUST NOT relax any HAP Core invariant; it MAY add new invariants applicable only to participants implementing the companion.
+
+### `output-provenance@0.1`
+
+Binds attestations to observable outputs (URLs, artifacts, configuration state) via an optional `output_ref` field in the profile's context schema. See `core.md` § "Future Directions / Output Provenance" for the design.
+
+### `decision-streams@0.1`
+
+Links attestations into a verifiable per-project chain via an optional signed `stream` block. See `core.md` § "Future Directions / Decision Streams" for the design.
+
+### `intent-disclosure@0.1`
+
+Enables multi-recipient encrypted intent for `review` and `review_above_cap` authorizations, where the intent text is needed by approvers (typically on different machines than the original attester) but MUST NOT be readable by the AS.
+
+The HAP privacy invariant says no semantic content leaves local custody. That works for `automatic` mode, where no one downstream of the attester reads intent. For review modes, two non-conformant solutions tempt implementers:
+
+1. Send intent in plaintext to the AS for relay. **Violates the privacy invariant.**
+2. Keep intent on the attester's machine and require approvers to fetch it directly. **Operationally fragile, breaks asynchronous review.**
+
+`intent-disclosure@0.1` chooses a third path: encrypt the intent under each approver's public key, store the ciphertext on the AS, let approvers decrypt locally. The AS holds bytes it cannot read.
+
+Sketch:
+
+```json
+{
+  "intent_ciphertext": "base64url(symmetric ciphertext)",
+  "encrypted_keys": {
+    "did:key:alice": { "ct": "...", "enc": "X25519+HKDF+AES-GCM" },
+    "did:key:bob":   { "ct": "...", "enc": "X25519+HKDF+AES-GCM" }
+  },
+  "approvers_frozen": ["did:key:alice", "did:key:bob"]
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `intent_ciphertext` | yes | Symmetric ciphertext of the canonical intent text. Algorithm: AES-256-GCM. |
+| `encrypted_keys` | yes | One entry per approver, keyed by DID. Each entry holds the symmetric key wrapped under the approver's public key. |
+| `approvers_frozen` | yes | Snapshot of the approver set at attestation time, referenced from the **signed** attestation payload so a compromised AS cannot widen or shrink it. |
+
+Companion-spec invariants:
+
+- **C1.** The AS MUST NOT be able to decrypt `intent_ciphertext`. If the AS holds any decryption key for any approver, the companion spec is not in force.
+- **C2.** The signed attestation payload MUST include a hash of `(intent_ciphertext + approvers_frozen)` — without it, a malicious AS could swap ciphertexts or strip approvers without invalidating the attestation signature.
+- **C3.** Key rotation when an approver leaves a group MUST re-encrypt the symmetric key for the remaining set; old wrapped keys MUST be retained for audit but MUST NOT be referenced by any future receipt.
+
+This is the one place the v0.4 reference implementation brushed against the privacy invariant. Lifting it into HAP Core would make every conformant AS responsible for ciphertext + key-rotation management. As a companion spec, only `review` / `review_above_cap` deployments opt in; `automatic`-only deployments stay simple. The reference AS and gateway already implement an early form of `intent-disclosure@0.1`; the formal companion-spec text is the next deliverable.
 
 ---
 
