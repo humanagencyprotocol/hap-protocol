@@ -2,1072 +2,634 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="HAP - Authorization Layer for AI Agents">
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-        <p class="hero-eyebrow">Open-Source Protocol</p>
-        <h1>Authorization Layer <br class="desktop-break"><span class="highlight">for AI Agents.</span></h1>
-        <h2 class="hero-subtitle">An open protocol that keeps people in control of AI agents. A person sets what an agent is allowed to do. The agent can't do anything else. Every action leaves a receipt.</h2>
+<BaseLayout title="HAP - Human authorization for consequential AI actions">
 
-        <div class="cta-group">
-            <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
-            <a href="#architecture" class="btn btn-secondary">View Architecture</a>
-        </div>
-        </div>
-    </section>
+  <!-- ──────────────────────────────────────────────────────────────────────
+       1. HERO
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="wrap">
+      <p class="label">Open-Source Protocol · v0.5</p>
+      <h1><span class="hl">Human authorization</span><br class="desktop-break">for consequential AI actions.</h1>
+      <p class="lead">
+        AI agents carry no authority of their own. Before an agent moves money,
+        changes records, sends communication, grants access, or touches infrastructure,
+        the action must receive a signed pre-execution receipt linked to human authorization.
+      </p>
+      <div class="cta-group">
+        <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
+        <button type="button" id="copy-spec" class="btn btn-secondary" data-src="/context.txt">Copy for your AI</button>
+      </div>
+    </div>
+  </section>
 
-    <!-- How It Works in Practice -->
-    <section class="compliance-section">
-        <h2 class="section-title">How It Works in Practice</h2>
-        <p class="section-intro">What HAP makes possible — in practice.</p>
+  <!-- ──────────────────────────────────────────────────────────────────────
+       3. NO RECEIPT. NO EXECUTION.
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <div class="wrap">
+      <p class="label">The core invariant</p>
+      <h2>No receipt. No execution.</h2>
+      <p class="body-lead">
+        The receipt is not a post-execution log. It is the precondition for execution —
+        and the audit artifact proving the action was authorized before it ran.
+      </p>
 
-        <div class="compliance-grid">
-            <div class="compliance-card">
-                <h3>One agent, one set of rules</h3>
-                <p>Each agent has its own set of rules about what it can do. A person decides what's allowed — how much it can spend, who it can email, what data it can change — and the agent can't do anything outside of that.</p>
-            </div>
-            <div class="compliance-card">
-                <h3>Each person controls their own area</h3>
-                <p>Each person on a team has their own area — sales, marketing, finance. They decide which AI agents work in that area and what those agents can do. No central IT team in between.</p>
-            </div>
-            <div class="compliance-card">
-                <h3>Actions that need approval from more than one person</h3>
-                <p>If an agent's action touches more than one area — say, a marketing agent that needs to spend part of the finance budget — each person responsible has to approve before the agent can proceed.</p>
-            </div>
-            <div class="compliance-card">
-                <h3>Authority follows decisions, not job titles</h3>
-                <p>Whoever is responsible for a decision approves it, no matter where they sit on the org chart. Managers don't have to sign off on everything — the person who actually owns the decision does.</p>
-            </div>
-            <div class="compliance-card">
-                <h3>Adding agents doesn't mean adding IT</h3>
-                <p>Agents don't get accounts, passwords, or API keys of their own. Each one works under a person's approval. Adding more agents just means more approvals — not more systems to manage.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- How HAP Works -->
-    <section id="architecture" class="architecture-section">
-        <h2 class="section-title">How HAP Works</h2>
-        <p class="section-intro">A person approves what an agent is allowed to do. The system enforces it — blocking anything outside the approval. Every action produces a receipt anyone can check.</p>
-
-        <div class="flow-grid">
-            <!-- Row 1 -->
-            <div class="flow-cell flow-cell-box">
-                <div class="flow-step"><span class="flow-label">Human</span></div>
-            </div>
-            <div class="flow-cell flow-cell-line-h">
-                <div class="flow-line-h"></div>
-            </div>
-            <div class="flow-cell flow-cell-box">
-                <div class="flow-step"><span class="flow-label">AI Agent</span></div>
-            </div>
-            <!-- Row 2: vertical connectors -->
-            <div class="flow-cell flow-cell-line-v">
-                <div class="flow-line-v"></div>
-            </div>
-            <div class="flow-cell"></div>
-            <div class="flow-cell flow-cell-line-v">
-                <div class="flow-line-v"></div>
-            </div>
-            <!-- Row 3 -->
-            <div class="flow-cell flow-cell-box">
-                <div class="flow-step flow-step-accent"><span class="flow-label">Service Provider</span></div>
-            </div>
-            <div class="flow-cell flow-cell-line-h">
-                <div class="flow-line-h"></div>
-            </div>
-            <div class="flow-cell flow-cell-box">
-                <div class="flow-step flow-step-accent"><span class="flow-label">Gatekeeper</span></div>
-            </div>
-            <!-- Row 4: vertical connector right only -->
-            <div class="flow-cell"></div>
-            <div class="flow-cell"></div>
-            <div class="flow-cell flow-cell-line-v">
-                <div class="flow-line-v"></div>
-            </div>
-            <!-- Row 5: executor right only -->
-            <div class="flow-cell"></div>
-            <div class="flow-cell"></div>
-            <div class="flow-cell flow-cell-box">
-                <div class="flow-step"><span class="flow-label">Executor</span></div>
-            </div>
+      <div class="invariant-cols">
+        <div class="receipt" role="figure" aria-label="Execution receipt example">
+          <div class="receipt-head">
+            Execution receipt
+            <span class="receipt-tag">signed · pre-execution</span>
+          </div>
+          <dl class="receipt-fields">
+            <dt class="rf-key">decision_owner</dt>
+            <dd class="rf-val">did:eudi:at:9f21… <span class="rf-note">— authorizing human, via attestation</span></dd>
+            <dt class="rf-key">profile</dt>
+            <dd class="rf-val">charge@0.5</dd>
+            <dt class="rf-key">bounds_hash</dt>
+            <dd class="rf-val">sha256:7a91…</dd>
+            <dt class="rf-key">action_type</dt>
+            <dd class="rf-val">refund</dd>
+            <dt class="rf-key">execution</dt>
+            <dd class="rf-val">order #4821 · €48.00</dd>
+            <dt class="rf-key">cumulative</dt>
+            <dd class="rf-val">€391 / €500 today <span class="rf-note">— AS-tracked</span></dd>
+            <dt class="rf-key">issued</dt>
+            <dd class="rf-val">2026-05-23T14:22Z</dd>
+            <dt class="rf-key">signature</dt>
+            <dd class="rf-val">ed25519:8f3b…1b4c</dd>
+          </dl>
         </div>
 
-        <div class="architecture-grid">
-            <div class="architecture-card">
-                <h3>Service Provider</h3>
-                <p>Where a person records their approval, along with the exact limits.</p>
-            </div>
-            <div class="architecture-card">
-                <h3>Gatekeeper</h3>
-                <p>Checks the approval before any action runs. Blocks anything outside the approved limits.</p>
-            </div>
-            <div class="architecture-card">
-                <h3>Executor</h3>
-                <p>Runs the action — but only if the Gatekeeper allows it.</p>
-            </div>
+        <ol class="chain">
+          <li>A human authorizes <strong>bounded execution</strong> — scope, limits, time, and commitment mode.</li>
+          <li>The <span class="role">Gatekeeper</span> verifies the attestation, checks per-action bounds, and enforces local context constraints.</li>
+          <li>The <span class="role">Authority Server</span> checks cumulative limits, expiry, and revocation, then <strong>signs the receipt</strong>.</li>
+          <li>The <span class="role">Executor</span> runs the action — only <strong>after</strong> the receipt exists.</li>
+        </ol>
+      </div>
+
+      <p class="neutrality">
+        <strong>Open infrastructure.</strong> Any compliant Authority Server can
+        issue receipts — Suveren is one implementation. The protocol is open;
+        no single vendor owns the trust layer.
+      </p>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────────────────────────
+       4. WHERE IT FITS
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec sec-alt">
+    <div class="wrap">
+      <p class="label">Where it fits</p>
+      <h2>HAP composes. It doesn't compete.</h2>
+      <p class="body-lead">
+        HAP isn't another login, API gateway, or agent framework. It's the layer that
+        decides whether an already-reachable capability may be used for a
+        <strong>consequential action</strong> — with proof.
+      </p>
+
+      <table class="contrast">
+        <thead>
+          <tr><th>Layer</th><th>What it does</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="old">OAuth / OpenID Connect</td><td class="old">Grants API access</td></tr>
+          <tr><td class="old">MCP</td><td class="old">Exposes tools to agents</td></tr>
+          <tr><td class="old">Identity (EUDI, passkeys, WebAuthn)</td><td class="old">Proves who you are</td></tr>
+          <tr><td class="hap">HAP</td><td class="hap">Authorizes the consequential action — before it runs, with a signed receipt</td></tr>
+        </tbody>
+      </table>
+
+      <p class="couplet"><span class="a">OAuth grants reachable capability.</span> <span class="b">HAP governs authorized use of that capability.</span></p>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────────────────────────
+       5. COMMITMENT MODES
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <div class="wrap">
+      <p class="label">Commitment modes</p>
+      <h2>You decide how much runs on its own.</h2>
+      <p class="body-lead">
+        The level of autonomy is a signed choice on every authorization — the
+        protocol's <strong>commitment mode</strong>, not a default the agent can change.
+      </p>
+
+      <div class="modes">
+        <div>
+          <div class="mode-name">Automatic<span class="who">Agent runs within bounds</span></div>
+          <p>The agent acts within the bounds you set. No per-action approval — the
+            Authority Server enforces the limits and issues a signed receipt for each
+            action before execution.</p>
         </div>
-
-        <p class="section-conclusion">HAP uses two pieces of infrastructure: Service Providers record approvals. Gatekeepers check them before anything runs.</p>
-    </section>
-
-    <!-- Identity Frame -->
-    <section id="why-exists" class="consequences-section">
-        <h2 class="section-title">Agents Aren't Employees. They're Extensions.</h2>
-        <div class="consequences-body">
-            <p>Other approaches give AI agents their own accounts and passwords, like employees with their own identity. But if an agent does something wrong, who's responsible? The agent can't be held to account — it's software. There's no way for it to feel a consequence.</p>
-            <p>HAP works differently. An agent never acts on its own authority. Every action traces back to the person who approved it, with the exact limits they set. The agent is an extension of the person — not a separate employee.</p>
-            <blockquote class="axiom-block">
-                Anything that can't be undone only runs if a person approved it — and stays inside the limits that person set.
-            </blockquote>
+        <div>
+          <div class="mode-name">Review<span class="who">You approve each action</span></div>
+          <p>The agent proposes; you approve each action before it runs.
+            No approval, no receipt — no execution.</p>
         </div>
-    </section>
-
-    <!-- Use Cases -->
-    <section class="use-cases-section">
-        <h2 class="section-title">Explore Use Cases</h2>
-
-        <div id="card-section" class="card-section">
-            <h2 class="card-section-title">Select a use case to generate a ready-to-paste prompt for your AI chat.</h2>
-
-            <div class="cards-grid">
-                <button class="use-case-card" data-card="payments">
-                    <h3 class="card-title">Payment Agents</h3>
-                    <p class="card-description">Agents charge customers, process refunds, and manage subscriptions within bounds you set. Every transaction produces a signed receipt linking it to your authorization.</p>
-                </button>
-
-                <button class="use-case-card" data-card="email">
-                    <h3 class="card-title">Email &amp; Communication</h3>
-                    <p class="card-description">Agents draft and send emails on your behalf with clear bounds — who, what topics, which tone. High-stakes replies pause for your review.</p>
-                </button>
-
-                <button class="use-case-card" data-card="crm">
-                    <h3 class="card-title">CRM &amp; Data Agents</h3>
-                    <p class="card-description">Agents manage contacts, leads, and customer records within scoped bounds — read here, write limits there, no deletes. Every action traceable.</p>
-                </button>
-
-                <button class="use-case-card" data-card="devops">
-                    <h3 class="card-title">Infrastructure &amp; DevOps</h3>
-                    <p class="card-description">Agents ship code and manage infrastructure under your named authority. High-risk operations require explicit human review before execution.</p>
-                </button>
-
-                <button class="use-case-card" data-card="multistakeholder">
-                    <h3 class="card-title">Multi-Stakeholder Actions</h3>
-                    <p class="card-description">When one signature isn't enough. Critical decisions require attestations from multiple domain owners before the agent can act.</p>
-                </button>
-
-                <button class="use-case-card" data-card="compliance">
-                    <h3 class="card-title">Compliance &amp; Audit</h3>
-                    <p class="card-description">Prove human oversight to regulators, auditors, and insurers. EU AI Act, ISO 42001, NIST AI RMF — satisfied structurally, not through policy documents.</p>
-                </button>
-
-                <!-- Or separator -->
-                <div class="or-separator">
-                    <span class="or-text">Or</span>
-                </div>
-
-                <button class="use-case-card" data-card="question">
-                    <h3 class="card-title">Ask a question about HAP</h3>
-                    <p class="card-description">Type your question and get HAP spec context.</p>
-                </button>
-            </div>
-
-            <!-- Prompt Panel -->
-            <div id="prompt-panel" class="prompt-display" style="display: none;">
-                <div class="prompt-content">
-                    <!-- Prompt preview -->
-                    <div id="prompt-preview">
-                        <p class="prompt-intro">Copy this prompt into your AI chat to learn how HAP applies to this use case:</p>
-                        <div class="prompt-box">
-                            <pre id="prompt-text" class="prompt-text"></pre>
-                        </div>
-                    </div>
-
-                    <!-- Optional additional context -->
-                    <label id="context-label" class="wildcard-label">Optional: Add your own context</label>
-                    <textarea
-                        id="context-input"
-                        class="wildcard-input"
-                        placeholder="e.g., Describe your specific setup, team, or constraints..."
-                    ></textarea>
-
-                    <!-- Question input (question card only) -->
-                    <div id="question-section" style="display: none;">
-                        <label class="wildcard-label">Your question about HAP:</label>
-                        <textarea
-                            id="question-input"
-                            class="wildcard-input"
-                            placeholder="e.g., How does attestation work? What are the six gates? How does HAP handle multi-stakeholder decisions?"
-                        ></textarea>
-                    </div>
-
-                    <div class="prompt-actions">
-                        <button id="copy-btn" class="btn btn-primary">Copy Prompt</button>
-                    </div>
-                </div>
-            </div>
+        <div>
+          <div class="mode-name">Review above a cap<span class="who">Approvers sign above a limit</span></div>
+          <p>The agent runs on its own under a limit you set. Above it, the action
+            routes to a named set of approvers before any receipt is issued.</p>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <!-- Compliance Alignment -->
-    <section class="compliance-section">
-        <h2 class="section-title">Compliance Alignment</h2>
-        <p class="section-intro">HAP turns compliance requirements into something the system actually enforces — not just something written in a policy document.</p>
+  <!-- ──────────────────────────────────────────────────────────────────────
+       6. THE DISTINCTION
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec sec-alt">
+    <div class="wrap">
+      <p class="label">The distinction</p>
+      <h2>Agents aren't employees. They're executors.</h2>
+      <p class="body-lead">
+        Most systems give agents their own accounts, credentials, and standing
+        permissions — one more identity to manage. HAP does the opposite.
+      </p>
+      <p>
+        An agent never carries authority of its own. A human authorizes a bounded
+        action; the <strong>receipt</strong> is cryptographic proof that this specific
+        action was authorized — and issued before it ran. An agent may have technical
+        identifiers for logging and routing, but it holds no <strong>independent authority</strong>.
+      </p>
+      <p class="soul">
+        As AI systems become more capable, HAP keeps authority from quietly
+        moving from humans into machines.
+      </p>
+    </div>
+  </section>
 
-        <div class="compliance-grid">
-            <div class="compliance-card">
-                <h3>EU AI Act</h3>
-                <p>Article 14 of the EU AI Act requires real human oversight of high-risk AI. HAP provides this by design — oversight isn't a checkbox in a policy, it's built into how the system runs.</p>
-            </div>
-            <div class="compliance-card">
-                <h3>ISO 42001</h3>
-                <p>Every AI action needs a person who owns the decision and has set the limits — and has said why. No approval, no action.</p>
-            </div>
-            <div class="compliance-card">
-                <h3>NIST AI RMF</h3>
-                <p>Every action leaves a tamper-proof record — who approved it, what limits were set, what happened. Anyone can verify it.</p>
-            </div>
-        </div>
-    </section>
+  <!-- ──────────────────────────────────────────────────────────────────────
+       7. TWO MODELS FOR AI AUTHORITY
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <div class="wrap">
+      <p class="label">The model choice</p>
+      <h2>Two models for authorizing agents.</h2>
+      <p class="body-lead">
+        How a system treats agent authority is an architectural decision with
+        long-term governance consequences.
+      </p>
 
-    <!-- Build With HAP -->
-    <section class="protocol-nav" id="protocol">
-        <h2 class="section-title">Build With HAP</h2>
+      <table class="contrast">
+        <thead>
+          <tr>
+            <th>Agent-identity approach</th>
+            <th>HAP approach</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="old">Treat agents as authority-bearing actors</td>
+            <td class="hap">Treat agents as executors</td>
+          </tr>
+          <tr>
+            <td class="old">Manage standing agent permissions</td>
+            <td class="hap">Issue bounded action receipts</td>
+          </tr>
+          <tr>
+            <td class="old">Rely on accounts and credentials</td>
+            <td class="hap">Bind execution to human authorization</td>
+          </tr>
+          <tr>
+            <td class="old">Audit after execution</td>
+            <td class="hap">Verify the receipt before execution</td>
+          </tr>
+          <tr>
+            <td class="old">Agent acts under standing authority</td>
+            <td class="hap">Agent acts only inside receipt-approved bounds</td>
+          </tr>
+        </tbody>
+      </table>
 
-        <div class="protocol-links">
-            <a href="/protocol" class="protocol-link">
-                <div class="label">Protocol</div>
-                <h3>Protocol</h3>
-                <p>The specification — how approvals are structured and signed.</p>
-                <div class="arrow">Read the protocol →</div>
-            </a>
-
-            <a href="/service" class="protocol-link">
-                <div class="label">Service Providers</div>
-                <h3>Service Providers</h3>
-                <p>Where people record their approvals.</p>
-                <div class="arrow">View architecture →</div>
-            </a>
-
-            <a href="/gatekeeper" class="protocol-link">
-                <div class="label">Gatekeeper</div>
-                <h3>Gatekeeper</h3>
-                <p>The check that makes sure nothing runs without an approval.</p>
-                <div class="arrow">Read gatekeeper spec →</div>
-            </a>
-
-            <a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer" class="protocol-link">
-                <div class="label">Gateway</div>
-                <h3>Gateway</h3>
-                <p>An open-source program that runs the check alongside your AI tools.</p>
-                <div class="arrow">Get started →</div>
-            </a>
-
-            <a href="/governance" class="protocol-link">
-                <div class="label">Governance</div>
-                <h3>Governance</h3>
-                <p>How the protocol is governed and who runs it.</p>
-                <div class="arrow">Read framework →</div>
-            </a>
-        </div>
-
-        <p class="section-conclusion" style="margin-top: 3rem; text-align: left;">
-            <strong>HAP is an open protocol for keeping people in charge of AI agents. Verifiable. Works across platforms. Not tied to any AI vendor.</strong>
+      <div class="a14">
+        <p class="label">EU AI Act — Article 14</p>
+        <p>
+          Article 14 requires effective human oversight of high-risk AI. HAP turns
+          that oversight into an <strong>enforceable control at the action layer</strong>:
+          consequential actions cannot run unless a human-linked authorization receipt
+          exists before execution.
         </p>
-    </section>
+        <p class="caveat">
+          HAP is Article-14-enabling infrastructure — not compliance on its own.
+          Compliance still requires governance, training, documentation, and human
+          competence.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────────────────────────
+       8. USE CASES
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec sec-alt">
+    <div class="wrap">
+      <p class="label">Use cases</p>
+      <h2>Where consequential actions need proof.</h2>
+      <div class="usecases">
+        <div>Payments<span>refunds, charges, payouts</span></div>
+        <div>Email<span>high-stakes sends</span></div>
+        <div>CRM<span>record changes &amp; deletes</span></div>
+        <div>Infrastructure<span>deploys &amp; config</span></div>
+        <div>Multi-owner approvals<span>two people must sign</span></div>
+        <div>Compliance audit<span>verifiable receipts</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────────────────────────
+       10. OPEN INFRASTRUCTURE
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <div class="wrap">
+      <p class="label">Open infrastructure</p>
+      <h2>No single vendor owns the trust layer.</h2>
+      <p class="body-lead">
+        HAP is an open standard — MIT-licensed, developed in the open, and maintained
+        by stewards, not owners. Any compliant Authority Server can issue receipts.
+      </p>
+      <div class="cta-group">
+        <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
+        <a href="https://github.com/humanagencyprotocol/hap-protocol" class="btn btn-secondary">View on GitHub</a>
+      </div>
+    </div>
+  </section>
 
 </BaseLayout>
 
+<script>
+  // Copy the full protocol context (/context.txt) to the clipboard for pasting into an AI chat.
+  const btn = document.getElementById('copy-spec') as HTMLButtonElement | null;
+  if (btn) {
+    const original = btn.textContent;
+    btn.addEventListener('click', async () => {
+      try {
+        const res = await fetch(btn.dataset.src || '/context.txt');
+        await navigator.clipboard.writeText(await res.text());
+        btn.textContent = 'Copied — paste into your AI';
+        btn.disabled = true;
+        setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 2600);
+      } catch {
+        window.open(btn.dataset.src || '/context.txt', '_blank');
+      }
+    });
+  }
+</script>
+
 <style>
-    /* Hero Section */
-    .hero {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 9rem 1.5rem 4rem;
-    }
-
-    .hero-content {
-        max-width: 1200px;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: flex-start;
-    }
-
-    @media (min-width: 1280px) {
-        .hero-content{
-        padding: 0 1.5rem;
-        }
-    }
-
-    .hero h1 {
-        font-size: clamp(2.2rem, 5vw, 4rem);
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -0.03em;
-        max-width: 980px;
-        margin-bottom: 2rem;
-        text-align: left;
-    }
-
-    .hero-eyebrow {
-        font-size: 0.85rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-tertiary);
-        margin-bottom: 1rem;
-    }
-
-    .hero .highlight {
-        color: var(--accent);
-    }
-
-    .desktop-break {
-        display: none;
-    }
-
-    @media (min-width: 769px) {
-        .desktop-break {
-            display: block;
-        }
-    }
-
-    .hero-subtitle {
-        font-size: clamp(1.2rem, 2.2vw, 1.6rem);
-        font-weight: 600;
-        color: var(--text-primary);
-        max-width: 800px;
-        margin-bottom: 1.5rem;
-        line-height: 1.3;
-        text-align: left;
-    }
-
-    .hero-tagline {
-        font-size: clamp(0.95rem, 1.5vw, 1.1rem);
-        font-style: italic;
-        color: var(--text-secondary);
-        max-width: 700px;
-        margin-bottom: 2rem;
-        line-height: 1.5;
-        text-align: left;
-    }
-
-    @media (max-height: 700px) {
-        .hero {
-            min-height: auto;
-            padding-top: 7rem;
-            padding-bottom: 3rem;
-        }
-        .hero h1 {
-            margin-bottom: 1.5rem;
-        }
-    }
-
-    .cta-group {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-    }
-
-    /* Architecture Section */
-    .architecture-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .flow-grid {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        grid-template-rows: auto auto auto auto auto;
-        justify-items: center;
-        align-items: center;
-        margin: 3rem auto;
-        max-width: 500px;
-    }
-
-    .flow-cell {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-    }
-
-    .flow-cell-line-h {
-        width: 100%;
-    }
-
-    .flow-step {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 0.75rem;
-        padding: 1.25rem 2rem;
-        text-align: center;
-        width: 100%;
-    }
-
-    .flow-step-accent {
-        border-color: var(--accent);
-        background: var(--accent-subtle);
-    }
-
-    .flow-label {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        white-space: nowrap;
-    }
-
-    .flow-line-h {
-        width: 100%;
-        height: 2px;
-        background: var(--border);
-    }
-
-    .flow-line-v {
-        width: 2px;
-        height: 1.5rem;
-        background: var(--border);
-    }
-
-    .architecture-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 2rem;
-        margin-top: 3rem;
-    }
-
-    .architecture-card {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 1rem;
-        padding: 2.5rem;
-    }
-
-    .architecture-card h3 {
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: var(--text-primary);
-    }
-
-    .architecture-card p {
-        color: var(--text-secondary);
-        line-height: 1.7;
-        font-size: clamp(1rem, 1.8vw, 1.1rem);
-        margin: 0;
-    }
-
-    /* Card Selector Styles */
-    .use-cases-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .card-section {
-        width: 100%;
-        max-width: 1000px;
-        margin-top: 2rem;
-        text-align: left;
-    }
-
-    .card-section-title {
-        font-size: clamp(1.2rem, 2.2vw, 1.6rem);
-        font-weight: 600;
-        text-align: left;
-        margin-bottom: 3rem;
-        line-height: 1.3;
-        color: var(--text-primary);
-    }
-
-    .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-        justify-content: center;
-        align-items: stretch;
-        width: 100%;
-        max-width: 1200px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .use-case-card {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 0.75rem;
-        padding: 2rem;
-        text-align: left;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        position: relative;
-        width: 100%;
-        max-width: 300px;
-        margin: 0 auto;
-        justify-self: center;
-    }
-
-    .use-case-card:hover {
-        border-color: var(--accent);
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    }
-
-    .use-case-card.active {
-        border-color: var(--accent);
-        background: var(--bg);
-    }
-
-    /* Or Separator */
-    .or-separator {
-        grid-column: 1 / -1;
-        display: flex;
-        align-items: center;
-        margin: 2rem 0;
-        text-align: center;
-    }
-
-    .or-separator::before,
-    .or-separator::after {
-        content: '';
-        flex: 1;
-        border-top: 1px solid var(--border);
-    }
-
-    .or-text {
-        background: var(--bg);
-        padding: 0 1rem;
-        color: var(--text-secondary);
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .card-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-        color: var(--text-primary);
-    }
-
-    .card-description {
-        font-size: 0.95rem;
-        color: var(--text-secondary);
-        line-height: 1.5;
-        margin: 0;
-    }
-
-
-
-    /* Wildcard Input */
-    .wildcard-label {
-        display: block;
-        font-size: 1rem;
-        font-weight: 500;
-        color: var(--text-primary);
-        margin-bottom: 0.75rem;
-    }
-
-    .wildcard-input {
-        width: 100%;
-        min-height: 120px;
-        padding: 1rem;
-        font-size: 1rem;
-        font-family: inherit;
-        border: 2px solid var(--border);
-        border-radius: 0.5rem;
-        background: var(--bg);
-        color: var(--text-primary);
-        resize: vertical;
-        margin-bottom: 1rem;
-    }
-
-    .wildcard-input:focus {
-        outline: none;
-        border-color: var(--accent);
-    }
-
-    /* Prompt Display */
-    .prompt-intro {
-        font-size: 1rem;
-        color: var(--text-secondary);
-        margin-bottom: 1.5rem;
-        text-align: center;
-    }
-
-    .prompt-box {
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        overflow-x: auto;
-    }
-
-    .prompt-text {
-        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Courier New', monospace;
-        font-size: 0.9rem;
-        line-height: 1.6;
-        color: var(--text-primary);
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        border: none;
-        border-radius: 0;
-    }
-
-    .prompt-actions {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .prompt-display {
-        background: var(--bg-elevated);
-        border: 2px solid var(--accent);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        margin-top: 1rem;
-        animation: slideDown 0.3s ease-out;
-    }
-
-    .prompt-content {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    /* Content Sections */
-    .section-body {
-        max-width: 800px;
-    }
-
-    .section-body p {
-        font-size: clamp(1.05rem, 2vw, 1.2rem);
-        line-height: 1.8;
-        margin-bottom: 1.5rem;
-        color: var(--text-primary);
-    }
-
-    .axiom-block {
-        font-size: clamp(1.2rem, 2.5vw, 1.6rem);
-        font-weight: 600;
-        font-style: italic;
-        color: var(--text-primary);
-        border-left: 4px solid var(--accent);
-        padding: 1.5rem 2rem;
-        margin: 3rem 0;
-        background: var(--bg-elevated);
-        line-height: 1.5;
-    }
-
-    /* AI Does Not Feel Consequences */
-    .consequences-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .consequences-body {
-        max-width: 800px;
-    }
-
-    .consequences-body p {
-        font-size: clamp(1.05rem, 2vw, 1.2rem);
-        line-height: 1.8;
-        margin-bottom: 1.5rem;
-        color: var(--text-primary);
-    }
-
-    /* Comparison Section */
-    .comparison-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .comparison-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-        margin: 3rem 0;
-    }
-
-    .comparison-card {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 1rem;
-        padding: 2.5rem;
-    }
-
-    .comparison-card.highlight {
-        border-color: var(--accent);
-        background: var(--accent-subtle);
-    }
-
-    .comparison-card h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        color: var(--text-primary);
-    }
-
-    .comparison-card p {
-        color: var(--text-primary);
-        line-height: 1.6;
-        font-size: clamp(1rem, 1.8vw, 1.1rem);
-    }
-
-    .section-conclusion {
-        font-size: clamp(1.2rem, 2.2vw, 1.4rem);
-        font-weight: 600;
-        color: var(--accent);
-        margin-top: 3rem;
-        max-width: 800px;
-        line-height: 1.6;
-    }
-
-    .section-intro {
-        font-size: clamp(1.05rem, 2vw, 1.2rem);
-        color: var(--text-primary);
-        margin-bottom: 1rem;
-        max-width: 800px;
-        line-height: 1.7;
-    }
-
-    /* Compliance Section */
-    .compliance-section {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .compliance-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 2rem;
-        margin-top: 3rem;
-    }
-
-    .compliance-card {
-        background: var(--bg-elevated);
-        border: 2px solid var(--border);
-        border-radius: 1rem;
-        padding: 2.5rem;
-    }
-
-    .compliance-card h3 {
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: var(--text-primary);
-    }
-
-    .compliance-card p {
-        color: var(--text-secondary);
-        line-height: 1.7;
-        font-size: clamp(1rem, 1.8vw, 1.1rem);
-        margin: 0;
-    }
-
-    /* Shared Styles */
-    .section-title {
-        font-size: clamp(2rem, 4vw, 3rem);
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        margin-bottom: 2rem;
-        max-width: 800px;
-    }
-
-    /* Documentation */
-    .protocol-nav {
-        max-width: 1200px;
-        margin: 8rem auto;
-        padding: 0 1.5rem;
-    }
-
-    .protocol-links {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin-top: 3rem;
-    }
-
-    .protocol-link {
-        background: var(--bg-elevated);
-        border: 1px solid var(--border);
-        border-radius: 0.75rem;
-        padding: 2rem;
-        text-decoration: none;
-        color: inherit;
-        transition: all 0.3s;
-        display: block;
-    }
-
-    .protocol-link:hover {
-        border-color: var(--accent);
-        background: var(--accent-subtle);
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .protocol-link:hover {
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-        }
-    }
-
-    .protocol-link .label {
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--text-tertiary);
-        margin-bottom: 0.5rem;
-    }
-
-    .protocol-link h3 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-    }
-
-    .protocol-link p {
-        color: var(--text-secondary);
-        line-height: 1.7;
-    }
-
-    .protocol-link .arrow {
-        margin-top: 1rem;
-        color: var(--accent);
-        font-weight: 600;
-    }
-
-    /* Animations */
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .hero {
-            padding-top: 8rem;
-            min-height: auto;
-        }
-
-        .cta-group {
-            flex-direction: column;
-        }
-
-        .btn {
-            text-align: center;
-        }
-
-        .consequences-section,
-        .comparison-section,
-        .architecture-section,
-        .use-cases-section,
-        .compliance-section,
-        .protocol-nav {
-            margin: 4rem auto;
-        }
-
-        .comparison-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .flow-grid {
-            max-width: 100%;
-        }
-
-        .flow-step {
-            padding: 1rem 1.25rem;
-        }
-    }
+  #copy-spec { font-family: inherit; }
 </style>
 
-<script>
-    const preamble = `Start with a brief summary: The Human Agency Protocol (HAP) is an open-source authorization protocol for AI agents. It solves the problem of AI systems executing irreversible real-world actions (deploying code, moving money, changing infrastructure) without verified human authorization. HAP works by requiring cryptographic attestations — signed proof that a named human authorized a specific action within defined bounds — verified by a Gatekeeper before any executor is allowed to proceed.
+<style>
+  /* ─── layout wrapper ──────────────────────────────────────────────────── */
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
 
-Then explain the following use case in clear, practical terms:\n\n`;
+  /* ─── hero ────────────────────────────────────────────────────────────── */
+  .hero {
+    padding: 8rem 0 7rem;
+  }
 
-    const prompts = {
-        payments: {
-            prompt: preamble + `Payment Agents: Explain how HAP authorizes AI agents handling financial transactions. A human creates an authorization with bounds — max charge per transaction, daily and monthly limits, allowed action types (charge, refund, subscribe). The agent operates autonomously within those bounds. Each transaction produces a signed receipt that proves who authorized the scope, when, and within which limits. If the agent tries to exceed any bound, the action is blocked. Give a concrete example: a customer service AI processing refunds up to $50 per customer with a $500 daily cap, and what happens when it tries a $200 refund or hits the daily limit.`
-        },
-        email: {
-            prompt: preamble + `Email & Communication Agents: Explain how HAP gives users control over AI agents that send email on their behalf. The user authorizes the agent with bounds — which recipients, which topics, daily send limit, allowed actions (draft, send, reply). For high-stakes operations, the user can require review-each-action mode where the agent proposes and the human approves before sending. Give a concrete example: a sales follow-up agent authorized to email leads in a specific CRM segment, with a daily limit of 20 emails and review mode enabled for any reply marked urgent.`
-        },
-        crm: {
-            prompt: preamble + `CRM & Data Agents: Explain how HAP scopes AI agent access to customer relationship data. The user authorizes specific operations — read access (list, get, search), bounded write access (max records per day), and explicit toggles for delete or archive (default off). The agent operates within those scopes; every action produces a receipt linking it back to the human authorization. Give a concrete example: a sales operations agent authorized to read all contacts, create up to 10 new leads per day, with delete access disabled — preventing the agent from removing records under any circumstance.`
-        },
-        devops: {
-            prompt: preamble + `Infrastructure & DevOps Agents: Explain how HAP gates AI agents that deploy code and manage infrastructure. Routine operations (like running tests or deploying to staging) execute automatically within bounds. High-risk operations (production deploys, cost changes, secret rotations) require explicit per-action human review. Every action produces a signed receipt for the audit trail. Give a concrete example: an infrastructure agent authorized to deploy to staging automatically, but required to wait for human approval before any production deploy or change to billing-related resources.`
-        },
-        multistakeholder: {
-            prompt: preamble + `Multi-Stakeholder Actions: Explain how HAP handles AI agent actions that require approval from multiple humans. For high-stakes operations, the protocol allows authorizations to require attestations from multiple domain owners — engineering, finance, compliance, legal — each with their own scope. The agent waits until all required humans have attested before proceeding. Give a concrete example: an AI agent attempting to launch a marketing campaign that requires sign-off from marketing (content approved), finance (budget approved), and legal (claims compliant) — and what happens when one stakeholder rejects or delays.`
-        },
-        compliance: {
-            prompt: preamble + `Compliance & Audit: Explain how HAP satisfies regulatory requirements for AI agent oversight. Every agent action produces a cryptographically signed receipt linking it to a named human, a specific authorization scope, and the human's stated intent. This is verifiable by any third party with the SP's public key — auditors, regulators, insurers, or courts. Compare this to policy-based audit trails (which prove the system was configured a certain way) versus signed receipts (which prove a specific human authorized a specific action). Walk through how this satisfies EU AI Act Article 14 (human oversight), ISO 42001 (AI management system), and NIST AI RMF (governance).`
-        }
-    };
+  .hero h1 {
+    font-size: clamp(2.6rem, 5.5vw, 4.2rem);
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    max-width: 860px;
+    margin-bottom: 1.6rem;
+  }
 
-    let selectedCard = null;
-    let contextText = null;
+  .hero .hl { color: var(--accent); }
 
-    // Fetch context text
-    async function fetchContext() {
-        if (!contextText) {
-            const response = await fetch('/context.txt');
-            contextText = await response.text();
-        }
-        return contextText;
-    }
+  .desktop-break { display: none; }
+  @media (min-width: 769px) { .desktop-break { display: block; } }
 
-    // Copy text to clipboard with fallback
-    async function copyToClipboard(text) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            try {
-                await navigator.clipboard.writeText(text);
-                return true;
-            } catch (e) {
-                // fall through to fallback
-            }
-        }
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'absolute';
-        textarea.style.left = '-9999px';
-        document.body.appendChild(textarea);
-        textarea.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        return ok;
-    }
+  .hero .lead {
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    max-width: 620px;
+    margin-bottom: 1rem;
+  }
 
-    // Show "Copied!" feedback on a button
-    function showCopied(button, originalText) {
-        button.textContent = 'Copied! Paste it in your AI chat';
-        button.disabled = true;
-        setTimeout(() => {
-            button.textContent = originalText;
-            button.disabled = false;
-        }, 3000);
-    }
+  .hero .audience {
+    margin-top: 1.8rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-tertiary);
+    max-width: 620px;
+    margin-bottom: 0;
+  }
 
-    // Pre-fetch context
-    fetchContext();
+  /* ─── label (eyebrow / section tag) ──────────────────────────────────── */
+  .label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 0.9rem;
+  }
 
-    // Handle card selection
-    document.querySelectorAll('[data-card]').forEach(card => {
-        card.addEventListener('click', () => {
-            const cardId = card.dataset.card;
-            selectedCard = cardId;
+  /* ─── couplet ─────────────────────────────────────────────────────────── */
+  .couplet {
+    margin-top: 2.4rem;
+    max-width: 680px;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    margin-bottom: 2.4rem;
+  }
+  .couplet .a { color: var(--text-secondary); }
+  .couplet .b { display: block; color: var(--text-primary); font-weight: 700; }
 
-            // Update active state
-            document.querySelectorAll('[data-card]').forEach(c => c.classList.remove('active'));
-            card.classList.add('active');
+  /* ─── spec strip ──────────────────────────────────────────────────────── */
+  .spec-strip {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+  .spec-strip .wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.01em;
+  }
+  .spec-strip .sep { color: var(--border); user-select: none; }
+  .spec-strip strong { color: var(--text-primary); font-weight: 600; }
+  .spec-strip a { color: var(--text-secondary); }
+  .spec-strip a:hover { color: var(--accent); text-decoration: none; }
 
-            const panel = document.getElementById('prompt-panel');
-            const promptPreview = document.getElementById('prompt-preview');
-            const promptText = document.getElementById('prompt-text');
-            const contextLabel = document.getElementById('context-label');
-            const contextInput = document.getElementById('context-input');
-            const questionSection = document.getElementById('question-section');
+  /* ─── section layout ──────────────────────────────────────────────────── */
+  .sec { padding: 6rem 0; }
+  .sec + .sec { border-top: 1px solid var(--border); }
+  .sec-alt { background: var(--bg-elevated); border-top: 1px solid var(--border); }
 
-            panel.style.display = 'block';
+  /* ─── section heading pattern ─────────────────────────────────────────── */
+  .sec h2 {
+    font-size: clamp(1.7rem, 3.2vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    margin-bottom: 1.2rem;
+  }
+  .sec .body-lead {
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    max-width: 680px;
+    margin-bottom: 1rem;
+  }
+  .sec p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    max-width: 680px;
+    margin-bottom: 1rem;
+  }
+  .sec p strong { color: var(--text-primary); }
+  .sec p:last-child { margin-bottom: 0; }
 
-            if (cardId === 'question') {
-                // Question mode: hide prompt preview, show question input
-                promptPreview.style.display = 'none';
-                contextLabel.style.display = 'none';
-                contextInput.style.display = 'none';
-                questionSection.style.display = 'block';
-            } else {
-                // Use-case mode: show prompt preview + optional context
-                const data = prompts[cardId];
-                questionSection.style.display = 'none';
+  /* ─── invariant / receipt layout ─────────────────────────────────────── */
+  .invariant-cols {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 3rem;
+    align-items: start;
+    margin-top: 3rem;
+  }
+  @media (max-width: 860px) {
+    .invariant-cols { grid-template-columns: 1fr; gap: 2rem; }
+  }
 
-                promptPreview.style.display = 'block';
-                promptText.textContent = data.prompt;
+  /* receipt — the one monospace element */
+  .receipt {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, 'Cascadia Code', monospace;
+  }
+  .receipt-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+  }
+  .receipt-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+  .receipt-fields {
+    padding: 1rem;
+    background: var(--bg-main);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    font-size: 0.82rem;
+  }
+  .rf-key  { color: var(--text-tertiary); white-space: nowrap; }
+  .rf-val  { color: var(--text-primary); word-break: break-all; }
+  .rf-note { color: var(--text-tertiary); font-size: 0.75rem; }
 
-                contextLabel.style.display = 'block';
-                contextInput.style.display = 'block';
-                contextInput.value = '';
-            }
+  /* numbered causal chain */
+  .chain { list-style: none; counter-reset: c; padding: 0.4rem 0 0; margin: 0; }
+  .chain li {
+    position: relative;
+    margin: 0;
+    padding: 0 0 1.4rem 2.4rem;
+    counter-increment: c;
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+  }
+  .chain li::before {
+    content: counter(c);
+    position: absolute;
+    left: 0;
+    top: 0.05rem;
+    width: 1.65rem;
+    height: 1.65rem;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--bg-main);
+  }
+  .chain li::after {
+    content: '';
+    position: absolute;
+    left: 0.8rem;
+    top: 1.75rem;
+    bottom: 0.05rem;
+    width: 2px;
+    background: var(--border);
+  }
+  .chain li:last-child::after { display: none; }
+  .chain li:last-child { padding-bottom: 0; }
+  .chain .role  { color: var(--accent); font-weight: 600; }
+  .chain strong { color: var(--text-primary); }
 
-            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
-    });
+  /* neutrality note */
+  .neutrality {
+    margin-top: 2.4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--text-tertiary);
+    max-width: 680px;
+  }
+  .neutrality strong { color: var(--text-secondary); }
 
-    // Copy prompt button
-    document.getElementById('copy-btn')?.addEventListener('click', async () => {
-        const button = document.getElementById('copy-btn');
-        const originalText = button.textContent;
+  /* ─── contrast table ──────────────────────────────────────────────────── */
+  table.contrast {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    max-width: 760px;
+    /* override global.css table rules */
+    display: table;
+    overflow-x: visible;
+    margin-bottom: 0;
+    table-layout: fixed;
+  }
+  table.contrast th,
+  table.contrast td {
+    text-align: left;
+    padding: 0.8rem 1rem;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95rem;
+    background: transparent;
+    /* override global mobile rule that sets white-space: nowrap */
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 560px) {
+    table.contrast th, table.contrast td { padding: 0.6rem 0.6rem; font-size: 0.85rem; }
+  }
+  table.contrast thead th {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+  }
+  table.contrast td.hap { color: var(--text-primary); font-weight: 600; }
+  table.contrast td.old { color: var(--text-secondary); }
+  /* kill global alternating row bg on contrast tables */
+  table.contrast tr:nth-child(even) { background: transparent; }
 
-        button.textContent = 'Copying...';
-        button.disabled = true;
+  /* ─── Article 14 note ─────────────────────────────────────────────────── */
+  .a14 {
+    margin-top: 3rem;
+    padding: 1.75rem 2rem;
+    background: var(--accent-subtle);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    max-width: 760px;
+  }
+  .a14 .label { color: var(--accent); margin-bottom: 0.6rem; }
+  .a14 p { color: var(--text-primary); font-size: 1rem; margin-bottom: 0.6rem; }
+  .a14 .caveat {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    margin: 0;
+    line-height: 1.5;
+  }
 
-        try {
-            const context = await fetchContext();
-            let combined;
+  /* ─── commitment modes ────────────────────────────────────────────────── */
+  .modes { margin-top: 2.4rem; max-width: 820px; }
+  .modes > div {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 1.5rem;
+    padding: 1.4rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .modes > div:last-child { border-bottom: 1px solid var(--border); }
+  .mode-name { font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+  .mode-name .who {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-top: 0.35rem;
+  }
+  .modes p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+  .modes p strong { color: var(--text-primary); }
+  @media (max-width: 640px) {
+    .modes > div { grid-template-columns: 1fr; gap: 0.5rem; }
+  }
 
-            if (selectedCard === 'question') {
-                // Question mode: question + HAP context
-                const question = document.getElementById('question-input')?.value.trim();
-                if (!question) {
-                    alert('Please enter your question about HAP first.');
-                    button.textContent = originalText;
-                    button.disabled = false;
-                    return;
-                }
-                combined = `You are an expert on the Human Agency Protocol (HAP).
+  /* ─── soul line ───────────────────────────────────────────────────────── */
+  .soul {
+    font-size: 1.2rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    max-width: 680px;
+    padding-left: 1rem;
+    border-left: 3px solid var(--accent);
+    margin-bottom: 0;
+    /* override .sec p margin */
+    margin-top: 1rem;
+  }
 
-User Question: "${question}"
+  /* ─── use cases / building blocks grid ───────────────────────────────── */
+  .usecases {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 2.2rem;
+    max-width: 860px;
+  }
+  .usecases > div {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+  }
+  .usecases > div span {
+    display: block;
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    margin-top: 0.25rem;
+  }
+  @media (max-width: 700px) { .usecases { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 440px) { .usecases { grid-template-columns: 1fr; } }
 
-Please provide a detailed answer based on the following HAP specification context:
-
-${context}
-
-Focus your response on answering the specific question while referencing relevant parts of the HAP specification.`;
-            } else {
-                // Use-case mode: prompt + optional user context + HAP context
-                const promptText = document.getElementById('prompt-text')?.textContent;
-                const userContext = document.getElementById('context-input')?.value.trim();
-
-                combined = promptText;
-                if (userContext) {
-                    combined += `\n\nAdditional context from the user: ${userContext}`;
-                }
-                combined += `\n\nUse the following HAP specification as your primary reference:\n\n${context}`;
-            }
-
-            const ok = await copyToClipboard(combined);
-            if (ok) {
-                showCopied(button, originalText);
-            } else {
-                button.textContent = 'Copy failed. Try again.';
-                setTimeout(() => { button.textContent = originalText; button.disabled = false; }, 3000);
-            }
-        } catch (error) {
-            button.textContent = 'Copy failed. Try again.';
-            setTimeout(() => { button.textContent = originalText; button.disabled = false; }, 3000);
-        }
-    });
-</script>
+  /* ─── CTA group (homepage — left-aligned) ─────────────────────────────── */
+  .cta-group {
+    display: flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+  }
+</style>

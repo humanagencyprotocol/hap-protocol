@@ -3,14 +3,15 @@ import { getEntry } from 'astro:content';
 import ContentLayout from '../layouts/ContentLayout.astro';
 
 const entry = await getEntry('docs', 'protocol');
-const { Content } = await entry.render();
+const { Content, headings } = await entry.render();
 ---
 
 <ContentLayout
     title={entry.data.title}
     version={entry.data.version}
     date={entry.data.date}
-    nextPage={{ url: '/service', label: 'Service Providers' }}
+    headings={headings}
+    nextPage={{ url: '/governance', label: 'Governance' }}
 >
     <Content />
 </ContentLayout>
