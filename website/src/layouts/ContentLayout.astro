@@ -45,7 +45,7 @@ const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
         <article class:list={['content', { 'has-breadcrumb': breadcrumb && breadcrumb.length > 0 }]}>
             {(version || date) && (
                 <div class="version-badge-top">
-                    {version && <a href="/changelog" class="version-pill">{version}</a>}
+                    {version && <span class="version-pill">{version}</span>}
                     {date && <span class="version-date">{date}</span>}
                 </div>
             )}
@@ -95,7 +95,7 @@ const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
         padding: 11rem 1.5rem 4rem;
         display: grid;
         gap: 3.5rem;
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
     .doc-layout.has-toc { grid-template-columns: 232px minmax(0, 1fr); }
     /* the grid owns width/padding; reset the global .content box */
@@ -152,8 +152,9 @@ const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
     }
     @media (max-width: 900px) {
         /* single column + hide the TOC on mobile */
-        .doc-layout, .doc-layout.has-toc { grid-template-columns: 1fr; padding-top: 7rem; }
+        .doc-layout, .doc-layout.has-toc { grid-template-columns: minmax(0, 1fr); padding-top: 7rem; }
         .toc { display: none; }
+        .doc-layout .content { max-width: 100%; }
     }
 
     .version-badge-top {
@@ -164,7 +165,7 @@ const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
         margin-bottom: 1.5rem;
     }
 
-    a.version-pill {
+    .version-pill {
         display: inline-block;
         color: var(--text-tertiary);
         background: var(--bg-elevated);
@@ -172,14 +173,6 @@ const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
         padding: 0.35rem 0.85rem;
         border-radius: 2rem;
         font-weight: 500;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-
-    a.version-pill:hover {
-        color: var(--accent);
-        border-color: var(--accent);
-        text-decoration: none;
     }
 
     .version-date {
