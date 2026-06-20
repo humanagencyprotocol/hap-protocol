@@ -362,6 +362,8 @@ code {
     border-radius: 0.25rem;
     font-size: 1em;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+    /* break long inline tokens (e.g. gate_content_hashes.intent) so they don't overflow on narrow screens */
+    overflow-wrap: anywhere;
 }
 
 pre {
