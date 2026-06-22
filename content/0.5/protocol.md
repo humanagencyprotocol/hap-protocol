@@ -226,6 +226,8 @@ Commitment closes alternatives and authorizes proceeding. Commitment is recorded
 - `automatic` — the agent acts within the bounds without per-action human approval
 - `review` — each agent action becomes a proposal that the human must approve before execution
 
+`commitment_mode` is part of the **signed** attestation payload. The Gatekeeper MUST drive its review-vs-automatic routing from the signed value, not from any unsigned metadata an Authority Server returns alongside it. If the signed `commitment_mode` requires review (`review` or `review_above_cap`) but the AS supplies no pending approvers, the two disagree — a possible commitment-mode downgrade — and the Gatekeeper MUST fail closed (refuse to auto-execute) rather than treat the action as automatic.
+
 **Decision Owner — Who is accountable for the authorization?**
 
 Execution requires an identifiable human who is a required approver for the decision.
