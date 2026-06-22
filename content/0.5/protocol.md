@@ -226,6 +226,8 @@ Commitment closes alternatives and authorizes proceeding. Commitment is recorded
 - `automatic` — the agent acts within the bounds without per-action human approval
 - `review` — each agent action becomes a proposal that the human must approve before execution
 
+`commitment_mode` is part of the **signed** attestation payload. The Gatekeeper MUST drive its review-vs-automatic routing from the signed value, not from any unsigned metadata an Authority Server returns alongside it. If the signed `commitment_mode` requires review (`review` or `review_above_cap`) but the AS supplies no pending approvers, the two disagree — a possible commitment-mode downgrade — and the Gatekeeper MUST fail closed (refuse to auto-execute) rather than treat the action as automatic.
+
 **Decision Owner — Who is accountable for the authorization?**
 
 Execution requires an identifiable human who is a required approver for the decision.
@@ -243,6 +245,15 @@ A single locally-held statement that informs the agent's planning within the bou
 These are guidance prompts, not enforced categories. The user writes naturally; the protocol stores a single hash (`gate_content_hashes.intent`).
 
 Direction State may contain semantic content. It is local by default, may be encrypted by the implementation, and MUST NOT be transmitted to Authority Servers, Gatekeepers, or Executors as semantic plaintext. The protocol attests to a cryptographic commitment to Direction State (via `gate_content_hashes.intent`), but does not require its disclosure.
+
+**Intent canonicalization.** `gate_content_hashes.intent` is `sha256` over the intent text **canonicalized** as follows, so that any party — the attester, a second approver on another machine, or a third-party auditor — reproduces the identical hash from the same logical statement:
+
+1. Encode as **UTF-8**.
+2. Apply Unicode normalization form **NFC**.
+3. Normalize line endings to a single `\n` (`\r\n` and `\r` → `\n`).
+4. Strip trailing whitespace on each line, then strip leading and trailing whitespace from the whole string.
+
+The hash is computed over the resulting byte sequence. This determinism is REQUIRED: in multi-owner decisions each owner attests separately and all attestations MUST carry the same `gate_content_hashes.intent` (see *Multi-Owner Coverage Rule*), which is only achievable if intent canonicalization is identical across implementations of this protocol version. Canonicalization defines the hash only; it does not alter the intent text an implementation stores, encrypts, or displays.
 
 ### Normative Distinction
 
@@ -633,6 +644,7 @@ Attestations do not contain semantic content. `gate_content_hashes.intent` commi
 |-------|---|---|
 | `above_cap_caps` | `commitment_mode === "review_above_cap"` | Map of bounds field name → numeric cap. Receipt requests exceeding any cap return `APPROVAL_REQUIRED`. |
 | `above_cap_approvers` | `commitment_mode === "review_above_cap"` | List of DIDs that must approve a proposal raised by a cap exceedance. |
+| `intent_disclosure_hash` | The attestation carries an encrypted-intent disclosure object (companion spec `intent-disclosure@0.1`) | `sha256` binding the disclosure's `intent_ciphertext` and `approvers_frozen` into the signed payload, so the AS cannot alter the ciphertext or approver set undetected. Defined in `governance.md` → *Companion Specifications* → `intent-disclosure@0.1`. |
 
 **Normative rules:**
 
@@ -1722,65 +1734,7 @@ Error codes are canonical across the protocol. Implementations MUST emit exactly
 
 ## Future Directions
 
-Two v0.3 sections — **Output Provenance** and **Decision Streams** — were moved into a separate `review.md` in v0.4 pending re-review. v0.5 folds them back here as concise optional directions and adds a third, **Content Provenance**. A v0.5 implementation MAY implement any of them without losing conformance, and MAY skip all of them without losing conformance. The decision rule for promoting a future direction into the binding surface is: at least one reference implementation exercises it end-to-end **and** at least one external integrator depends on it. Of the three, only Content Provenance has a reference implementation as of v0.5 (Suveren's `records`/`customers`); none yet has a dependent external integrator, so none is promoted.
-
-### Output Provenance
-
-For deployment-style profiles (`ship`, `provision`, `deploy`), it can be useful to bind the attestation to an observable output — a deployed URL, an artifact, a configuration state.
-
-Profiles MAY define an `output_ref` field in the **context schema**. Because `output_ref` is part of context, it is hashed into `context_hash` and signed; the binding between attestation and output location is therefore cryptographic. After execution, outputs MAY carry provenance metadata (`attestation_id` + `bounds_hash`, optionally an AS endpoint and receipt IDs). Verification flow:
-
-1. Read provenance metadata from the output.
-2. Fetch the attestation through the AS's third-party verification endpoint (see "Verification API for Third Parties").
-3. Verify the attestation signature.
-4. Verify `output_ref` in the attested context matches the output's actual location — this is the binding step; without it an `attestation_id` on an output is just a claim.
-5. Optionally fetch receipts to verify the execution chain.
-
-Output Provenance is a useful design pattern for deployment-style profiles. The deploy profile is not yet shipped in `hap-profiles`; when it ships, expect Output Provenance to be promoted into that profile's normative surface — not into HAP Core. Profile-bound features stay profile-bound.
-
-### Content Provenance
-
-Output Provenance binds an output's **location**. Some profiles produce content with no stable address — an email body, a published post, a CRM record, a database row. **Content Provenance** is the ephemeral-content analog: it binds the **bytes** instead, for those profiles.
-
-A profile MAY declare a `content_binding` block — `{ "version": "1", "kind": "jcs" | "text", "pre_footer"?: bool }`. When present, the Gatekeeper computes a `content_hash` over the action's content and includes it in the receipt **request**; the AS copies it verbatim into the signed receipt **payload**. The AS receives **only the hash, never the content** — so Content Provenance preserves HAP's privacy-minimal design (the AS sees hashes, never plaintext).
-
-Canonicalization is normative and versioned — a verifier MUST pin `content_binding.version`:
-
-- `kind:"jcs"` — RFC 8785 JCS of the record payload → `sha256`. For structured writes (records, CRM), which have no single content field; the whole payload is the content.
-- `kind:"text"` — UTF-8 of the auto-detected content field after Unicode NFC, LF line endings, trailing per-line whitespace stripped, and trailing blank lines removed; taken **pre-footer** when `pre_footer` is set. For communicative profiles (email, publish, calendar).
-
-Receipt additions, both OPTIONAL (omitting them is fully conformant):
-
-- request: `content_hash` (Gatekeeper → AS).
-- payload: `content_hash` + `content_binding` (signed by the AS).
-
-Verification: recompute the hash from the held or stored content using the receipt's `content_binding`, compare to the signed `content_hash`, and verify the receipt signature. A match under a valid signature proves the AS attested that **this exact content** was authorized under these bounds at this time. It does **not** prove real-world identity (account-level only), nor catch edits made outside Suveren — those surface only as a gap between the signed content and the live artifact, never prevented.
-
-Like Output Provenance, Content Provenance lives in the relevant **profiles** (`records`, `customers`, then `publish`, `calendar`, `email`) — **not in HAP Core**. Core only gains the optional signed receipt fields that profiles MAY populate. Promotion follows the same rule (a reference implementation exercises it end-to-end **and** an external integrator depends on it); Suveren's `records`/`customers` implementation satisfies the first condition.
-
-### Decision Streams
-
-Individual attestations are snapshots. For public accountability and project history, attestations MAY be linked into a verifiable chain. Each attestation MAY optionally belong to a decision stream:
-
-```json
-{
-  "stream": {
-    "project_id": "hap-protocol",
-    "sequence": 12,
-    "previous_attestation_hash": "sha256:..."
-  }
-}
-```
-
-| Field | Purpose |
-|-------|---------|
-| `project_id` | Groups attestations into a project |
-| `sequence` | Order within the stream (starts at 1) |
-| `previous_attestation_hash` | Links to prior attestation (null for first) |
-
-If implemented, `stream` MUST be part of the **signed** attestation payload (otherwise an AS could rewrite history) and any verifier consuming the stream MUST validate the `previous_attestation_hash` chain.
-
-The use cases that motivate decision streams (public project histories, regulatory audits of multi-step decisions) have not surfaced in any reference implementation since v0.3. v0.6 will re-review; if no integrator has asked by then, this direction retires.
+Optional extensions and forward-looking directions — Output Provenance, Content Provenance, Decision Streams, and resilience to a compromised Authority Server — live in a dedicated, non-normative companion document: see `review.md`. They are not part of the v0.5 binding surface.
 
 ## Versioning & Migration
 

@@ -368,6 +368,8 @@ Every Authority Server, Profile, Executor, or App identifies itself via a public
 
 There is no global trust anchor.
 
+**Scope of AS trust.** Choosing to trust an Authority Server's key means trusting it to **sign honestly and to enforce cumulative bounds, revocation, and approval**. The local Gatekeeper is the counterweight: it re-derives `gate_content_hashes` from locally-held content and enforces per-transaction bounds and context constraints, so a misbehaving AS cannot cause an Executor to run an action the human never authored locally. A *compromised* AS can still over-authorize authorities the human did create and — because the human does not co-sign — fabricate authorization artifacts attributed to a Decision Owner. HAP v0.5 does not claim resistance to a fully compromised AS; defenses against that (owner co-signatures, a transparency log, approver-public-key authenticity) are forward directions tracked in `review.md` → "Resilience to a Compromised Authority Server."
+
 ---
 
 ## Companion Specifications
@@ -376,13 +378,15 @@ Some capabilities sit outside HAP Core but interoperate through it. v0.5 introdu
 
 ### `output-provenance@0.1`
 
-Binds attestations to observable outputs (URLs, artifacts, configuration state) via an optional `output_ref` field in the profile's context schema. See `core.md` § "Future Directions / Output Provenance" for the design.
+Binds attestations to observable outputs (URLs, artifacts, configuration state) via an optional `output_ref` field in the profile's context schema. See `review.md` § "Output Provenance" for the design.
 
 ### `decision-streams@0.1`
 
-Links attestations into a verifiable per-project chain via an optional signed `stream` block. See `core.md` § "Future Directions / Decision Streams" for the design.
+Links attestations into a verifiable per-project chain via an optional signed `stream` block. See `review.md` § "Decision Streams" for the design.
 
 ### `intent-disclosure@0.1`
+
+**Status:** Normative companion specification. Optional — implementing it does not affect HAP Core conformance, but a participant that claims `intent-disclosure@0.1` MUST satisfy every requirement below.
 
 Enables multi-recipient encrypted intent for `review` and `review_above_cap` authorizations, where the intent text is needed by approvers (typically on different machines than the original attester) but MUST NOT be readable by the AS.
 
@@ -391,16 +395,18 @@ The HAP privacy invariant says no semantic content leaves local custody. That wo
 1. Send intent in plaintext to the AS for relay. **Violates the privacy invariant.**
 2. Keep intent on the attester's machine and require approvers to fetch it directly. **Operationally fragile, breaks asynchronous review.**
 
-`intent-disclosure@0.1` chooses a third path: encrypt the intent under each approver's public key, store the ciphertext on the AS, let approvers decrypt locally. The AS holds bytes it cannot read.
+`intent-disclosure@0.1` chooses a third path: encrypt the intent under each approver's public key, store the ciphertext on the AS, and let approvers decrypt locally. The AS holds bytes it cannot read.
 
-Sketch:
+#### Disclosure object
+
+The attester computes the following object and sends it to the AS alongside the attestation. These fields are AS-side metadata — they are **not** part of the signed attestation payload; their integrity is guaranteed instead by `intent_disclosure_hash` (below), which **is** signed.
 
 ```json
 {
-  "intent_ciphertext": "base64url(symmetric ciphertext)",
+  "intent_ciphertext": "base64url(iv ‖ AES-256-GCM ciphertext)",
   "encrypted_keys": {
-    "did:key:alice": { "ct": "...", "enc": "X25519+HKDF+AES-GCM" },
-    "did:key:bob":   { "ct": "...", "enc": "X25519+HKDF+AES-GCM" }
+    "did:key:alice": { "ct": "base64url(wrapped CEK)", "enc": "base64url(HPKE enc)" },
+    "did:key:bob":   { "ct": "base64url(wrapped CEK)", "enc": "base64url(HPKE enc)" }
   },
   "approvers_frozen": ["did:key:alice", "did:key:bob"]
 }
@@ -408,17 +414,37 @@ Sketch:
 
 | Field | Required | Description |
 |---|---|---|
-| `intent_ciphertext` | yes | Symmetric ciphertext of the canonical intent text. Algorithm: AES-256-GCM. |
-| `encrypted_keys` | yes | One entry per approver, keyed by DID. Each entry holds the symmetric key wrapped under the approver's public key. |
-| `approvers_frozen` | yes | Snapshot of the approver set at attestation time, referenced from the **signed** attestation payload so a compromised AS cannot widen or shrink it. |
+| `intent_ciphertext` | yes | The **canonical intent text** (per *Intent canonicalization* in `protocol.md`) encrypted under a freshly generated 256-bit content-encryption key (CEK) with **AES-256-GCM**; the 96-bit IV is prepended to the ciphertext before base64url encoding. |
+| `encrypted_keys` | yes | One entry per approver, keyed by the approver's **DID**. Each entry wraps the CEK to that approver using **HPKE (RFC 9180)** with suite `DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM`: `enc` is the HPKE encapsulated key, `ct` is the HPKE-sealed CEK. Each recipient is sealed independently. |
+| `approvers_frozen` | yes | Snapshot of the approver DID set at attestation time. The key set of `encrypted_keys` MUST equal this set. |
 
-Companion-spec invariants:
+#### Signed binding (`intent_disclosure_hash`)
+
+When an attestation carries a disclosure object, its **signed** payload (the Ed25519-signed `AttestationPayload`) MUST include the field `intent_disclosure_hash`, computed as:
+
+```
+intent_disclosure_hash = "sha256:" + hex(
+  sha256( utf8( intent_ciphertext ‖ "\n" ‖ JCS(sort(approvers_frozen)) ) )
+)
+```
+
+where `intent_ciphertext` is the exact base64url string above, `sort(approvers_frozen)` orders the DIDs by Unicode code point, and `JCS` is RFC 8785 JSON Canonicalization of the sorted array. The attester computes this **after** encryption and signs it as part of the attestation.
+
+This is the integrity anchor: `intent_ciphertext`, `encrypted_keys`, and `approvers_frozen` travel unsigned, but any change to the ciphertext or the approver set alters `intent_disclosure_hash`, which is covered by the attestation signature. (`encrypted_keys` is bound transitively: its key set MUST equal `approvers_frozen`, and a verifier MUST reject any mismatch.)
+
+#### Verification chain
+
+1. **AS, at attestation time** — recompute `intent_disclosure_hash` from the received `intent_ciphertext` + `approvers_frozen`; it MUST equal the value in the signed payload, and `keys(encrypted_keys)` MUST equal `approvers_frozen`. On any mismatch the AS MUST reject the attestation (fail-closed) — it does not store it.
+2. **AS, relaying to an approver** — return `intent_ciphertext`, the caller's own `encrypted_keys[caller_did]`, and `approvers_frozen` only to a DID present in `approvers_frozen`.
+3. **Approver, on receipt** — verify the attestation signature; recompute `intent_disclosure_hash` and confirm it matches; HPKE-open the CEK; AES-256-GCM-decrypt the intent; recompute `gate_content_hashes.intent` over the decrypted, canonicalized text and confirm it equals the value in the signed attestation. Only then is the intent trustworthy. This chain ties ciphertext, approver set, and plaintext-intent commitment together under one signature.
+
+#### Companion-spec invariants
 
 - **C1.** The AS MUST NOT be able to decrypt `intent_ciphertext`. If the AS holds any decryption key for any approver, the companion spec is not in force.
-- **C2.** The signed attestation payload MUST include a hash of `(intent_ciphertext + approvers_frozen)` — without it, a malicious AS could swap ciphertexts or strip approvers without invalidating the attestation signature.
-- **C3.** Key rotation when an approver leaves a group MUST re-encrypt the symmetric key for the remaining set; old wrapped keys MUST be retained for audit but MUST NOT be referenced by any future receipt.
+- **C2.** The signed attestation payload MUST include `intent_disclosure_hash` as defined above. Without it, a malicious or compromised AS could swap ciphertexts, replace wrapped keys, or widen/shrink the approver set without invalidating the attestation signature.
+- **C3.** When the approver set changes (e.g., an approver leaves the group), a **new** attestation with a new disclosure object MUST be issued for any subsequent action: the CEK is regenerated and re-wrapped for the new `approvers_frozen` set. Superseded wrapped keys MUST be retained for audit but MUST NOT be referenced by any future receipt. A receipt MUST only be issued against an attestation whose `approvers_frozen` matches the current required-approver set.
 
-This is the one place the v0.4 reference implementation brushed against the privacy invariant. Lifting it into HAP Core would make every conformant AS responsible for ciphertext + key-rotation management. As a companion spec, only `review` / `review_above_cap` deployments opt in; `automatic`-only deployments stay simple. The reference AS and gateway already implement an early form of `intent-disclosure@0.1`; the formal companion-spec text is the next deliverable.
+As a companion spec, only `review` / `review_above_cap` deployments opt in; `automatic`-only deployments carry none of this. The Suveren reference AS and gateway implement this companion spec; see `protocol.md` *Intent canonicalization* for the shared hashing rule the chain depends on.
 
 ---
 

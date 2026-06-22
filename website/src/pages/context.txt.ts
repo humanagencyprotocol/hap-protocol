@@ -8,9 +8,11 @@ export async function GET() {
 
   // Read the raw markdown files from the current version
   const contentPath = path.join(process.cwd(), `../content/${version}`);
-  // v0.5 folds the former service.md / gatekeeper.md / review.md into protocol.md.
+  // v0.5 folds the former service.md / gatekeeper.md into protocol.md;
+  // review.md holds the non-normative future directions.
   const protocolContent = fs.readFileSync(path.join(contentPath, 'protocol.md'), 'utf-8');
   const governanceContent = fs.readFileSync(path.join(contentPath, 'governance.md'), 'utf-8');
+  const reviewContent = fs.readFileSync(path.join(contentPath, 'review.md'), 'utf-8');
 
   // Combine all content
   const combinedContent = `
@@ -118,6 +120,12 @@ ${protocolContent}
 # Governance
 
 ${governanceContent}
+
+---
+
+# Review — Future Directions (non-normative)
+
+${reviewContent}
 
 ---
 
