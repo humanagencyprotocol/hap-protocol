@@ -244,6 +244,15 @@ These are guidance prompts, not enforced categories. The user writes naturally; 
 
 Direction State may contain semantic content. It is local by default, may be encrypted by the implementation, and MUST NOT be transmitted to Authority Servers, Gatekeepers, or Executors as semantic plaintext. The protocol attests to a cryptographic commitment to Direction State (via `gate_content_hashes.intent`), but does not require its disclosure.
 
+**Intent canonicalization.** `gate_content_hashes.intent` is `sha256` over the intent text **canonicalized** as follows, so that any party — the attester, a second approver on another machine, or a third-party auditor — reproduces the identical hash from the same logical statement:
+
+1. Encode as **UTF-8**.
+2. Apply Unicode normalization form **NFC**.
+3. Normalize line endings to a single `\n` (`\r\n` and `\r` → `\n`).
+4. Strip trailing whitespace on each line, then strip leading and trailing whitespace from the whole string.
+
+The hash is computed over the resulting byte sequence. This determinism is REQUIRED: in multi-owner decisions each owner attests separately and all attestations MUST carry the same `gate_content_hashes.intent` (see *Multi-Owner Coverage Rule*), which is only achievable if intent canonicalization is identical across implementations of this protocol version. Canonicalization defines the hash only; it does not alter the intent text an implementation stores, encrypts, or displays.
+
 ### Normative Distinction
 
 Authorization States are required for attestation and Gatekeeper enforcement.
@@ -633,6 +642,7 @@ Attestations do not contain semantic content. `gate_content_hashes.intent` commi
 |-------|---|---|
 | `above_cap_caps` | `commitment_mode === "review_above_cap"` | Map of bounds field name → numeric cap. Receipt requests exceeding any cap return `APPROVAL_REQUIRED`. |
 | `above_cap_approvers` | `commitment_mode === "review_above_cap"` | List of DIDs that must approve a proposal raised by a cap exceedance. |
+| `intent_disclosure_hash` | The attestation carries an encrypted-intent disclosure object (companion spec `intent-disclosure@0.1`) | `sha256` binding the disclosure's `intent_ciphertext` and `approvers_frozen` into the signed payload, so the AS cannot alter the ciphertext or approver set undetected. Defined in `governance.md` → *Companion Specifications* → `intent-disclosure@0.1`. |
 
 **Normative rules:**
 
