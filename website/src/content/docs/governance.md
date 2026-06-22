@@ -368,7 +368,7 @@ Every Authority Server, Profile, Executor, or App identifies itself via a public
 
 There is no global trust anchor.
 
-**Scope of AS trust.** Choosing to trust an Authority Server's key means trusting it to **sign honestly and to enforce cumulative bounds, revocation, and approval**. The local Gatekeeper is the counterweight: it re-derives `gate_content_hashes` from locally-held content and enforces per-transaction bounds and context constraints, so a misbehaving AS cannot cause an Executor to run an action the human never authored locally. A *compromised* AS can still over-authorize authorities the human did create and — because the human does not co-sign — fabricate authorization artifacts attributed to a Decision Owner. HAP v0.5 does not claim resistance to a fully compromised AS; defenses against that (owner co-signatures, a transparency log, approver-public-key authenticity) are forward directions tracked in `protocol.md` → *Future Directions* → "Resilience to a Compromised Authority Server."
+**Scope of AS trust.** Choosing to trust an Authority Server's key means trusting it to **sign honestly and to enforce cumulative bounds, revocation, and approval**. The local Gatekeeper is the counterweight: it re-derives `gate_content_hashes` from locally-held content and enforces per-transaction bounds and context constraints, so a misbehaving AS cannot cause an Executor to run an action the human never authored locally. A *compromised* AS can still over-authorize authorities the human did create and — because the human does not co-sign — fabricate authorization artifacts attributed to a Decision Owner. HAP v0.5 does not claim resistance to a fully compromised AS; defenses against that (owner co-signatures, a transparency log, approver-public-key authenticity) are forward directions tracked in `review.md` → "Resilience to a Compromised Authority Server."
 
 ---
 
@@ -378,11 +378,11 @@ Some capabilities sit outside HAP Core but interoperate through it. v0.5 introdu
 
 ### `output-provenance@0.1`
 
-Binds attestations to observable outputs (URLs, artifacts, configuration state) via an optional `output_ref` field in the profile's context schema. See `core.md` § "Future Directions / Output Provenance" for the design.
+Binds attestations to observable outputs (URLs, artifacts, configuration state) via an optional `output_ref` field in the profile's context schema. See `review.md` § "Output Provenance" for the design.
 
 ### `decision-streams@0.1`
 
-Links attestations into a verifiable per-project chain via an optional signed `stream` block. See `core.md` § "Future Directions / Decision Streams" for the design.
+Links attestations into a verifiable per-project chain via an optional signed `stream` block. See `review.md` § "Decision Streams" for the design.
 
 ### `intent-disclosure@0.1`
 

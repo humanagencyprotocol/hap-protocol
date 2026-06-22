@@ -8,10 +8,10 @@ export default defineConfig({
   build: {
     format: 'directory'
   },
-  // v0.5 folded service / gatekeeper / review into the single protocol page
+  // v0.5 folded service / gatekeeper into the single protocol page;
+  // review.md is its own page again (future directions / optional extensions)
   redirects: {
     '/service': '/protocol',
-    '/gatekeeper': '/protocol',
-    '/review': '/protocol'
+    '/gatekeeper': '/protocol'
   }
 });
