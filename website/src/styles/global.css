@@ -263,6 +263,105 @@ nav a.active {
     transform: rotate(-45deg);
 }
 
+/* Share button (mobile-only) + QR popup */
+.nav-share {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+}
+
+.nav-share:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.share-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1002;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.share-overlay.open {
+    display: flex;
+}
+
+.share-modal {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.9rem 1.5rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.share-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.7rem;
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.share-close:hover {
+    color: var(--accent);
+}
+
+.share-brand {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+}
+
+.share-title {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    margin-bottom: 1.2rem;
+}
+
+.share-qr {
+    display: inline-flex;
+    padding: 12px;
+    background: #ffffff;
+    border-radius: 0.5rem;
+}
+
+.share-qr svg {
+    width: 200px;
+    height: 200px;
+    display: block;
+}
+
+.share-url {
+    margin-top: 1rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
 /* Buttons */
 .btn {
     padding: 0.9rem 1.8rem;
@@ -426,6 +525,12 @@ hr {
 
     .burger {
         display: flex;
+    }
+
+    .nav-share {
+        display: flex;
+        margin-left: auto;
+        margin-right: 0.6rem;
     }
 
     nav ul {
