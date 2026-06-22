@@ -368,6 +368,8 @@ Every Authority Server, Profile, Executor, or App identifies itself via a public
 
 There is no global trust anchor.
 
+**Scope of AS trust.** Choosing to trust an Authority Server's key means trusting it to **sign honestly and to enforce cumulative bounds, revocation, and approval**. The local Gatekeeper is the counterweight: it re-derives `gate_content_hashes` from locally-held content and enforces per-transaction bounds and context constraints, so a misbehaving AS cannot cause an Executor to run an action the human never authored locally. A *compromised* AS can still over-authorize authorities the human did create and — because the human does not co-sign — fabricate authorization artifacts attributed to a Decision Owner. HAP v0.5 does not claim resistance to a fully compromised AS; defenses against that (owner co-signatures, a transparency log, approver-public-key authenticity) are forward directions tracked in `protocol.md` → *Future Directions* → "Resilience to a Compromised Authority Server."
+
 ---
 
 ## Companion Specifications
