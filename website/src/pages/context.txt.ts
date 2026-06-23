@@ -26,13 +26,13 @@ export async function GET() {
 
 ### Human authorization for consequential AI actions.
 
-AI agents carry no authority of their own. Before an agent moves money, changes records, sends communication, grants access, or touches infrastructure, the action must receive a signed pre-execution receipt linked to human authorization.
+AI agents carry no authority or credentials of their own. Before an agent moves money, changes records, sends communication, grants access, or touches infrastructure, the action must receive a signed pre-execution receipt linked to human authorization.
 
 ---
 
 ### No receipt. No execution.
 
-The receipt is not a post-execution log. It is the precondition for execution — and the audit artifact proving the action was authorized before it ran.
+The receipt is not a post-execution log. It is the precondition for execution — and, afterwards, the verifiable proof that authorization existed before it ran. Agents request execution; they do not hold the keys.
 
 The 4-step causal chain:
 1. A human authorizes bounded execution — scope, limits, time, and commitment mode.
@@ -69,9 +69,9 @@ The level of autonomy is a signed choice on every authorization — the protocol
 
 ### Agents aren't employees. They're executors.
 
-Most systems give agents their own accounts, credentials, and standing permissions — one more identity to manage. HAP does the opposite.
+Most systems give agents accounts, credentials, and standing permissions — turning them into authority-bearing actors. HAP does the opposite.
 
-An agent never carries authority of its own. A human authorizes a bounded action; the receipt is cryptographic proof that this specific action was authorized — and issued before it ran. An agent may have technical identifiers for logging and routing, but it holds no independent authority.
+An agent never carries authority or raw credentials of its own. A human authorizes a bounded action; the receipt is cryptographic proof that this specific action was authorized — and issued before it ran. An agent may have technical identifiers for logging and routing, but it holds no independent authority.
 
 As AI systems become more capable, HAP keeps authority from quietly moving from humans into machines.
 
@@ -84,7 +84,7 @@ How a system treats agent authority is an architectural decision with long-term 
 Agent-identity approach vs HAP approach:
 - Treat agents as authority-bearing actors → Treat agents as executors
 - Manage standing agent permissions → Issue bounded action receipts
-- Rely on accounts and credentials → Bind execution to human authorization
+- Hand agents standing credentials → Keep credentials behind the execution boundary
 - Audit after execution → Verify the receipt before execution
 - Agent acts under standing authority → Agent acts only inside receipt-approved bounds
 

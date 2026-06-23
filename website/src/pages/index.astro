@@ -12,7 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <p class="label">Open-Source Protocol · v0.5</p>
       <h1><span class="hl">Human authorization</span> <br class="desktop-break">for consequential AI actions.</h1>
       <p class="lead">
-        AI agents carry no authority of their own. Before an agent moves money,
+        AI agents carry no authority or credentials of their own. Before an agent moves money,
         changes records, sends communication, grants access, or touches infrastructure,
         the action must receive a signed pre-execution receipt linked to human authorization.
       </p>
@@ -32,7 +32,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <h2>No receipt. No execution.</h2>
       <p class="body-lead">
         The receipt is not a post-execution log. It is the precondition for execution —
-        and the audit artifact proving the action was authorized before it ran.
+        and, afterwards, the verifiable proof that authorization existed before it ran.
+        Agents request execution; they do not hold the keys.
       </p>
 
       <div class="invariant-cols">
@@ -147,11 +148,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <p class="label">The distinction</p>
       <h2>Agents aren't employees. They're executors.</h2>
       <p class="body-lead">
-        Most systems give agents their own accounts, credentials, and standing
-        permissions — one more identity to manage. HAP does the opposite.
+        Most systems give agents accounts, credentials, and standing
+        permissions — turning them into authority-bearing actors. HAP does the opposite.
       </p>
       <p>
-        An agent never carries authority of its own. A human authorizes a bounded
+        An agent never carries authority or raw credentials of its own. A human authorizes a bounded
         action; the <strong>receipt</strong> is cryptographic proof that this specific
         action was authorized — and issued before it ran. An agent may have technical
         identifiers for logging and routing, but it holds no <strong>independent authority</strong>.
@@ -192,8 +193,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <td class="hap">Issue bounded action receipts</td>
           </tr>
           <tr>
-            <td class="old">Rely on accounts and credentials</td>
-            <td class="hap">Bind execution to human authorization</td>
+            <td class="old">Hand agents standing credentials</td>
+            <td class="hap">Keep credentials behind the execution boundary</td>
           </tr>
           <tr>
             <td class="old">Audit after execution</td>
