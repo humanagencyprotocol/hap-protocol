@@ -76,3 +76,66 @@ v0.5's threat model treats the Authority Server as **trusted to sign honestly an
 - **Owner co-signatures.** Have the Decision Owner sign the attestation (or a commitment over its bounds/context/intent/mode) with their own key, so authorization is non-repudiable independent of the AS — and approvals are owner signatures rather than AS assertions. Highest-leverage: removes the AS's ability to forge authority, skip approvals, or flip commitment mode.
 - **Transparency log.** An append-only, independently auditable log of signed attestations and receipts, so a user can detect equivocation, forged authorizations under their DID, ignored revocations, or cumulative-cap violations.
 - **Approver public-key authenticity.** Under companion spec `intent-disclosure@0.1`, intent confidentiality holds against a passive AS and any interceptor, but the approver public keys used to wrap the content key are served by the AS unauthenticated and are not bound into the signed attestation. An actively malicious AS could substitute an attacker key and read intent (detectable after the fact, but already leaked). Bind the approver→pubkey map into the signed payload, or sign/pin the key directory.
+
+## Identity Assurance (targets v0.6)
+
+`resolved_owners` records a Decision Owner as a bare DID — pseudonymous by design. Identity Assurance adds an optional, **signed** overlay so an authorization (and the receipts and content footers it produces) can carry the owner's **verified real-world identity**, gated by *how* that identity was verified. It extends `protocol.md` → *Identity & Authorization* (identity ≠ authority); the `eudi` method below *is* the *Owner co-signatures* direction above.
+
+### Levels, methods, trust root
+
+Two display levels; at `high`, two trust roots:
+
+| Field | Values | Meaning |
+|---|---|---|
+| `assurance` | `low` \| `high` | `low` → no name shown; `high` → the name MAY be shown |
+| `method` | `self_declared` \| `as_vouched` \| `eudi` | how identity was established |
+| `trust_root` | `self` \| `as` \| `external` | **who** vouches — the load-bearing field |
+
+- **`self_declared`** (`low`/`self`) — the owner typed a name. Never disclosed.
+- **`as_vouched`** (`high`/`as`) — the **AS operator** verified the owner. Valid only within the operator's own trust domain.
+- **`eudi`** (`high`/`external`) — an external eID (EUDI wallet); AS-independent, carries the owner's own signature.
+
+### Signed `subjects` block
+
+When identity is disclosed, the attestation carries a signed `subjects` array (one per owner); the receipt copies the disclosed subset so it self-verifies:
+
+```json
+"subjects": [{
+  "did": "did:key:…",
+  "assurance": "high",
+  "method": "as_vouched",
+  "trust_root": "as",
+  "verifier": "did:web:suveren.ai",
+  "disclose": { "name": "Andreas Schadauer" },
+  "verified_at": 1735900000,
+  "owner_signature": null
+}]
+```
+
+Validation: `disclose.name` only when `assurance:"high"`; `as_vouched ⇒ trust_root:"as"` + `verifier`; `eudi ⇒ trust_root:"external"` + `owner_signature`; `low ⇒ no disclose`.
+
+### Two orthogonal knobs
+
+**Assurance** (how verified — a property of the credential) is separate from **disclosure** (whether the name is attached to a given authorization — opt-in, default off). `high` *permits* the name; the owner still *chooses* to attach it.
+
+### Domain-scoping (conformance)
+
+> An AS MAY issue `method:"as_vouched"` (`high`) **only** for subjects within its own trust domain. For any subject outside that domain, `high` MUST come from an external root (e.g. EUDI). An AS MUST NOT self-vouch `high` for an external subject.
+
+### Credential binding
+
+Identity is **not re-verified per attestation.** Verification is a one-time event that attaches the assurance record to the authenticated **credential (API key)**; each attestation **stamps** the `subjects` block from that credential's *current* record at issuance. So revocation/expiry need no re-verification (the next attestation reflects the change), and a key minted from a stronger auth session can carry a higher assurance than a weaker one for the same account. A bearer key carrying `high` is a sensitive credential — which is why the strongest root (`eudi`) binds to a **per-event owner signature**, not a bearer key.
+
+### Disclosure in footers
+
+The owner's name appears **only at `high`**, derived from the signed `subjects` block:
+
+- `low` → "Sent by an AI agent via «operator»" — **no name**.
+- `high`/`as_vouched` → "Sent by an AI agent of «name» — verified by «operator»".
+- `high`/`eudi` → "…of «name» — identity verified (EUDI)".
+
+`«operator»` renders the actual `verifier`, never a hardcoded brand — a different AS operator self-vouches under its own name. The verify page always shows the method and trust root so a relying party can weigh operator-asserted vs externally-verified identity.
+
+### Status
+
+`self_declared` + `as_vouched` are the v0.6 baseline. `eudi` (per-session wallet signature → `owner_signature`) is a forward method that also delivers the *Owner co-signatures* hardening above. Additive and backward-compatible: an attestation with no `subjects` renders as `low`.
