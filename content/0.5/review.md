@@ -45,6 +45,45 @@ Verification: recompute the hash from the held or stored content using the recei
 
 Like Output Provenance, Content Provenance lives in the relevant **profiles** (`records`, `customers`, then `publish`, `calendar`, `email`) — **not in HAP Core**. Core only gains the optional signed receipt fields that profiles MAY populate. Promotion follows the same rule (a reference implementation exercises it end-to-end **and** an external integrator depends on it); Suveren's `records`/`customers` implementation satisfies the first condition.
 
+## Portable Tool-Gating Binding
+
+HAP profiles define the **abstract** side of a consequential action — the bounds schema, context schema, `actionTypes` registry, and required gates (`protocol.md` → *Profiles*). The **concrete** side — how a specific tool invocation's arguments map onto those abstract fields — is left to the implementation. `protocol.md` assigns that job to *"`actionType` and the tool-gating manifest,"* and the *Example Integration Topology* that performs it (*"the Gatekeeper maps the tool arguments into a profile-defined execution context"*) is explicitly **non-normative** — HAP Core specifies "not the surrounding transport or identity choices."
+
+That scoping is deliberate, but it carries a cost the transport/identity disclaimers do not: **the argument→field mapping is enforcement-critical.** Whether an email tool's `to` array maps to `recipient_count` (a count transform) or to `allowed_domains` (a domain-extraction transform) decides *which bound a call is checked against*. Get it wrong and the Gatekeeper enforces the wrong constraint — a security outcome, not a plumbing choice. Today that mapping lives only in a vendor-specific manifest (the reference implementation's `toolGating.executionMapping`, with an ad-hoc transform vocabulary), so:
+
+- two HAP-conformant Gatekeepers, given the same profile and the same MCP tool, MAY gate it differently — or one incorrectly — and both remain conformant; and
+- a gated integration built for one implementation does **not** port to another. HAP's receipts are portable; the **gating that produces them is not.**
+
+This also sits in tension with the protocol's own principle that *"context-specific bindings belong in profiles."* The profile carries the abstract binding; the concrete binding it references lives nowhere normative.
+
+**Forward direction.** Define an optional, normative **binding descriptor** — a minimal, portable schema mapping a named tool's arguments onto a profile's bounds/context fields, plus its consequential/read classification, using a fixed, versioned transform vocabulary:
+
+```json
+{
+  "tool": "send_message",
+  "profile": "email@0.5",
+  "consequential": true,
+  "actionType": "send",
+  "map": {
+    "to": [
+      { "field": "recipient_count", "transform": "count" },
+      { "field": "allowed_recipients", "transform": "identity" },
+      { "field": "allowed_domains", "transform": "domains" }
+    ]
+  }
+}
+```
+
+Where it should live is the open question, and it forks on *"bindings belong in profiles"*:
+
+1. **In the profile** — the profile ships a normative binding for a canonical tool shape. Honors the principle and maximizes portability, but couples profiles to specific tool schemas, which the abstract profile deliberately avoids.
+2. **A standalone binding artifact** — versioned like a profile and referenced by both, so profiles stay tool-agnostic while the binding becomes a first-class, portable, verifiable object. Clean abstraction at the cost of a new artifact type.
+3. **Explicitly out of scope** — keep it implementation-defined (status quo), but make the disclaimer *deliberate and reasoned* in `protocol.md`: state plainly that portable, consistent gating of a given tool is **not** a HAP guarantee, so relying parties do not assume it.
+
+Any transform vocabulary MUST be closed and versioned — mirroring the `boundType.kind` rule that already forbids inferring enforcement semantics from field-name patterns. An open or string-eval'd transform set would reintroduce exactly that "infer enforcement from names" hazard.
+
+**Status.** One reference implementation exists (the gateway's `toolGating`), but no external integrator yet depends on a portable format, so under the promotion rule above this stays a future direction. It is, however, the highest-leverage open item for HAP's *"any compliant Gatekeeper"* claim: unlike the other entries here, leaving it unspecified weakens the **enforcement** guarantee itself, not an optional feature.
+
 ## Decision Streams
 
 Individual attestations are snapshots. For public accountability and project history, attestations MAY be linked into a verifiable chain. Each attestation MAY optionally belong to a decision stream:
@@ -131,8 +170,8 @@ Identity is **not re-verified per attestation.** Verification is a one-time even
 The owner's name appears **only at `high`**, derived from the signed `subjects` block:
 
 - `low` → "Sent by an AI agent via «operator»" — **no name**.
-- `high`/`as_vouched` → "Sent by an AI agent of «name» — verified by «operator»".
-- `high`/`eudi` → "…of «name» — identity verified (EUDI)".
+- `high`/`as_vouched` → "Sent by an AI agent of «name», verified by «operator»".
+- `high`/`eudi` → "…of «name», identity verified (EUDI)".
 
 `«operator»` renders the actual `verifier`, never a hardcoded brand — a different AS operator self-vouches under its own name. The verify page always shows the method and trust root so a relying party can weigh operator-asserted vs externally-verified identity.
 
