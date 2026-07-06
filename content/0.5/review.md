@@ -43,7 +43,43 @@ Receipt additions, both OPTIONAL (omitting them is fully conformant):
 
 Verification: recompute the hash from the held or stored content using the receipt's `content_binding`, compare to the signed `content_hash`, and verify the receipt signature. A match under a valid signature proves the AS attested that **this exact content** was authorized under these bounds at this time. It does **not** prove real-world identity (account-level only), nor catch edits made outside Suveren — those surface only as a gap between the signed content and the live artifact, never prevented.
 
-Like Output Provenance, Content Provenance lives in the relevant **profiles** (`records`, `customers`, then `publish`, `calendar`, `email`) — **not in HAP Core**. Core only gains the optional signed receipt fields that profiles MAY populate. Promotion follows the same rule (a reference implementation exercises it end-to-end **and** an external integrator depends on it); Suveren's `records`/`customers` implementation satisfies the first condition.
+Like Output Provenance, Content Provenance lives in the relevant **profiles** (`records`, `customers`, then `publish`, `calendar`, `email`) — **not in HAP Core**. Core only gains the optional signed receipt fields that profiles MAY populate. Promotion follows the same rule (a reference implementation exercises it end-to-end **and** an external integrator depends on it); Suveren's `records`/`customers` implementation (extended to `email`/`publish` with `kind:"text"` in July 2026) satisfies the first condition.
+
+## Profile Immutability vs. Additive Annotations (deviation note — tightening targets v0.6)
+
+The normative rule is stated three times (`protocol.md` "Profiles", "Profile
+Constraints" rule 3, "Governance"; `governance.md` "Profile Governance"): once
+published, a profile version is immutable — changes require a new version.
+
+The reference implementation has deviated from it twice: `content_binding` was
+added **in place** to the published `records@0.4`/`customers@0.4` (June 2026)
+and then, following that precedent, to `email@0.4`/`publish@0.4` (July 2026).
+No version bump, no re-attestation of existing grants.
+
+Why the deviations were tolerable in practice:
+
+- The **authority contract** the human signed — bounds schema, gates, context
+  constraints, TTL — was untouched; existing attestations verify unchanged.
+- Receipts are **self-contained**, so a profile mutation can never rewrite
+  history — it only changes what *future* receipts carry.
+- `content_hash` is OPTIONAL in the receipt surface; its absence or presence
+  breaks no verifier.
+
+Why they are still wrong: an annotation that changes what future receipts
+**publicly expose** is a behavior change. For `email`, adding `content_binding`
+changed the privacy posture of already-signed grants — a public hash of a
+private body admits confirmation-of-guess on low-entropy content — without the
+grant being re-signed. "Immutable except for annotations" is not immutable;
+rule 3's examples (`boundType`, context constraints) were misread as an
+exhaustive list of what forces a bump.
+
+Tightening proposed for v0.6: **any** field change to a published profile
+version — including additive, OPTIONAL, or annotation-class fields — requires
+a new profile version. There is no annotation exemption; whether a field
+touches the authority contract or only the receipt surface, it changes what
+operating under the profile *means*. The four in-place mutations above are
+grandfathered and documented here; implementations SHOULD treat them as the
+last of their kind.
 
 ## Portable Tool-Gating Binding
 
