@@ -25,6 +25,39 @@ Profiles MAY define an `output_ref` field in the **context schema**. Because `ou
 
 Output Provenance is a useful design pattern for deployment-style profiles. The deploy profile is not yet shipped in `hap-profiles`; when it ships, expect Output Provenance to be promoted into that profile's normative surface — not into HAP Core. Profile-bound features stay profile-bound.
 
+## Public Receipt Verifiability — the redaction/signature gap (future direction)
+
+The public receipt view (`/r/<id>`) deliberately redacts private fields
+(`userId`, `cumulativeState`, `limits`, recipients, the full attestation hash)
+**and the signature itself**. Because a single Ed25519 signature covers the
+whole receipt, a verifier cannot re-check it while any signed field is hidden —
+signing is all-or-nothing. Consequence: the public page's "Signature Valid" is
+the AS re-verifying *its own* signature on each load; it is **not** independently
+checkable from the public page alone.
+
+Full zero-trust verification is available only to the **holder** of the complete
+signed receipt (e.g. the recipient of an email, or the issuer's own execution
+log): (1) obtain the full receipt incl. signature; (2) pin the AS public key
+(`/api/as/pubkey`); (3) strip the signature, JCS-canonicalize the rest;
+(4) Ed25519-verify; (5) recompute `content_hash` from the held content and
+compare. For a **private** action the holder is the party that matters, so the
+claim holds. For a **public** artifact (a published post) "everyone is the
+holder," yet the public page can't be independently verified — that is the gap.
+
+Two ways to close it, increasing cost:
+- **Dual-sign a public projection** — the AS separately signs a public-only
+  object `{id, timestamp, profileId, actionType, contentHash, contentBinding,
+  identity, issuer}` and exposes it with its signature. Independently verifiable,
+  zero private leakage. Pragmatic; ~half a day + a `verifyPublicReceipt` helper.
+- **Selective-disclosure signatures** (BBS+ / signed Merkle-root-of-fields) —
+  sign once, reveal any subset with proofs. General (also covers opt-in bounds
+  disclosure) but substantial crypto work.
+
+Not required for the current launch: the in-browser content verifier proves the
+content matches the signed fingerprint, and campaign copy is scoped to "matches
+the signed fingerprint," not "verify with zero trust in the operator." Dual-sign
+is the fast-follow that makes the public claim airtight.
+
 ## Content Provenance
 
 Output Provenance binds an output's **location**. Some profiles produce content with no stable address — an email body, a published post, a CRM record, a database row. **Content Provenance** is the ephemeral-content analog: it binds the **bytes** instead, for those profiles.
