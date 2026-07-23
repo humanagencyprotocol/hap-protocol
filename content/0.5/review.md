@@ -247,3 +247,95 @@ The owner's name appears **only at `high`**, derived from the signed `subjects` 
 ### Status
 
 `self_declared` + `as_vouched` are the v0.6 baseline. `eudi` (per-session wallet signature → `owner_signature`) is a forward method that also delivers the *Owner co-signatures* hardening above. Additive and backward-compatible: an attestation with no `subjects` renders as `low`.
+
+## Read Authorization: Age Windows, Overrides & Resource Scope (targets v0.6)
+
+v0.5 profiles may declare **read bounds** (`email@0.4`: `read_max_age_days`, `read_daily_max`) and **read scope** (`allowed_recipients`, `allowed_domains`), but the *binding semantics* of read authority were left implicit — and a reference Gatekeeper initially enforced none of them, letting an agent read any message once any email authority existed. This proposal specifies how read authority binds. It extends `protocol.md` → *Bounded Execution*. It is **not** Identity Assurance (§ above): that binds the **Decision Owner's real-world identity** into the *signed attestation*; this concerns purely local, unsigned read enforcement by the Gatekeeper. Reads remain **receiptless** — no consequential action, no receipt — so everything here is Gatekeeper-local; enforcement is broader than receipting.
+
+> **Supersedes** the earlier *Correspondent Coverage & Identity* proposal. That design derived a `correspondent(message) = participants − ownIdentities` set and denied reads no authority covered, which required a per-connector account-identity subsystem (discovered + human-declared "this is also me" identifiers). Two findings retired it. First, a *per-authorization* read window is **unenforceable as specified**: nothing maps an inbound item to a particular grant, so where several grants overlap the strictest window silently collapses to the most permissive — the UI would promise a limit the engine cannot keep. Second, the identity layer's failure mode is **silent and asymmetric**: one forgotten self-address over-covers, i.e. leaks, and nothing surfaces it. The model below drops identity entirely and keeps the capability that motivated it.
+
+### Read policy binds to the integration, not the grant
+
+A conformant Gatekeeper SHOULD evaluate read authority as **one policy per integration**, derived from the authorizations that enable its read tools, with two knobs:
+
+- **Default age window** — the floor applying to *every* item. Unset ⇒ unlimited; `0` ⇒ read nothing by default.
+- **Per-correspondent overrides** — a list of `identifier → window`, each **≥ the default**. Overrides may only *raise* a window, never lower it.
+
+```
+applicableWindow(item) =
+    max( defaultWindow,
+         { override.window | override.identifier matches some participant of item } )
+
+read permitted  ⇔  age(item) ≤ applicableWindow(item)
+```
+
+Normative consequences:
+
+- Because overrides only raise, the default is a **guaranteed floor** and a multi-party item never yields a conflict — the most permissive applicable window applies.
+- An override is a **positive membership test** ("is this identifier among the participants?"). It requires no notion of *self*, hence no identity store, no discovery recipe, and no self-subtraction.
+- The **only** denial reason on the read path is **age**. There is no coverage denial: a read is never refused because no grant "reaches" a correspondent.
+- Restrictive intent ("only read mail involving X") is expressed as `default = 0` plus higher overrides — the same mechanism at a lower floor, not a separate feature.
+- Where several authorizations enable the same integration's reads, the effective default is the **most permissive** among them, and an implementation SHOULD surface it as a single effective number rather than implying a stricter grant is constraining reads when it is not.
+
+**Stated limit.** Matching is ANY-of-participants, not all-parties: an item on which an overridden identifier appears alongside others becomes readable at that identifier's window. This is an **age-tuning** model, not a confidentiality wall; it MUST NOT be presented as "the agent can never see X's correspondence." A true confidentiality guarantee would require the retired coverage design.
+
+### Two kinds of scope
+
+A context field's meaning on the read path is not uniform. Profiles SHOULD mark each context field:
+
+```jsonc
+"allowed_recipients": { "format": "email", "scopeKind": "counterparty" },
+"allowed_calendars":  { "format": "string", "scopeKind": "resource" }
+```
+
+- **`counterparty`** — names the *other party* to a communication or transaction (email `allowed_recipients`, calendar `allowed_attendees`, purchase `allowed_vendors`). Matched against the item's participant list.
+- **`resource`** — names *which container the item belongs to* (`allowed_calendars`, publish `allowed_platforms`, customers `contact_type`). A direct attribute match.
+
+Absent an explicit `scopeKind`, an implementation MAY infer `counterparty` from `format: email|domain` (transitional; explicit is normative).
+
+### Resource scope MUST bind reads
+
+A resource scope names a container the authority may act within. Where an implementation enforces such a scope on writes, it **MUST** enforce the same scope on reads of the same resource. Enforcing it on one side only produces the incoherent posture that an excluded container is *unwritable yet fully readable* — the agent cannot add an event to a calendar it can read in full.
+
+This is the cheapest of the read mechanisms: a subset membership test on an argument the call already carries, requiring no date parsing and no participant extraction, and reusing the mapping the write path already declares. A conformant Gatekeeper MUST reject a read whose resource argument falls outside the granted subset, and MUST fail closed where the target resource cannot be determined.
+
+Containers are not only calendars. A mailbox's folders/labels, a drive's shared drives, a workspace's projects are all resource scopes, and a **container allowlist is the preferred way to exclude a class of untrusted content** — notably a mail provider's spam/junk container. An allowlist is default-deny by construction, so an excluded container needs no rule of its own; a denylist ("do not read spam") is a special case that must be written, remembered, and kept in step with each provider's naming.
+
+Correspondingly, where a provider exposes an argument that *widens* the container set (e.g. an `includeSpamTrash`-style flag, or a caller-supplied label list), that argument is the **Gatekeeper's to set, not the agent's**. A conformant Gatekeeper MUST NOT pass an agent-supplied resource-widening argument through unvalidated, and MUST NOT rely on a provider's permissive-by-omission default. Relying on a provider default is not enforcement: it holds only until the agent supplies the argument, and typically does not apply to fetch-by-id at all.
+
+### Identifier matching
+
+Override and scope identifiers are compared against values the connector supplies. Semantics MUST be fixed by the implementation and identical across providers, or the same policy yields different results on Gmail and Microsoft Graph:
+
+- Comparison is **case-insensitive**; identifiers and extracted values are normalized (NFKC) before matching.
+- Where a value carries a display name, matching is on the **address**, never the display-name text — display names are unauthenticated attacker-controlled data.
+- Domain identifiers match **that domain exactly**; a subdomain is NOT matched by its parent (silent widening is worse than an explicit second entry).
+- Which fields carry participants is **manifest data** (e.g. `From`/`To`), not protocol. Implementations MUST NOT match on message bodies or item content.
+
+### Conformance: undeclared read governance is a denial
+
+Read enforcement is driven by per-connector descriptors — a static gate, a read adapter, a resource mapping. A conformant Gatekeeper MUST NOT treat *absent* descriptors as *permitted*: a tool classified as a read that declares no applicable governance MUST be denied, or carry an explicit, recorded exemption. Absence of configuration is otherwise indistinguishable from absence of enforcement, and a connector silently bypasses the read model by omitting a declaration.
+
+### Conformance: enforcement by construction must not be escapable
+
+Where a Gatekeeper enforces read limits by injecting constraints into a provider **query** supplied by the agent (an optimization over post-fetch filtering), the injected constraints MUST be combined so the agent's own fragment cannot capture or cancel them. In a boolean query language a naive concatenation is insufficient — a fragment ending in a disjunction operator turns the intended conjunction into a union, and the limit stops binding. Implementations MUST bracket the agent-supplied fragment and MUST fail closed on a fragment that cannot be safely combined, rather than silently rewriting it. Query injection is an optimization; **post-fetch enforcement remains the normative baseline** and MUST NOT be omitted on the assumption that the query was constrained.
+
+### Read enforcement is Gatekeeper-local — and that is the trust boundary
+
+Consequential actions are checked **twice**: the Gatekeeper verifies locally, then the Authority Server enforces cumulative bounds and issues the signed receipt — so a Gatekeeper that ignored its own checks still cannot produce a receipt, and without a receipt the action does not run. Reads have no such second check. They are receiptless by design (no consequential action), so read enforcement is verified **only** by the local Gatekeeper, and no other party observes it.
+
+The consequence should be stated rather than left implicit: **read bounds are a property of a trusted Gatekeeper build, not of the protocol.** A modified, misconfigured, or simply outdated Gatekeeper reads whatever the connector will return, and nothing in the system contradicts it. This is an accepted trade — reads are not the consequential act, and the acts that disclose what was read (send, publish) *are* receipted on the way out, so the boundary that matters is enforced where the data leaves.
+
+**Possible future addition.** If read enforcement ever needs to be verifiable rather than merely performed, the options are, in increasing cost: (a) a **signed read policy** — the effective window/containers bound into the attestation, so a relying party can at least see what the Gatekeeper was *supposed* to enforce; (b) **denial reporting** — the Gatekeeper reports read denials to the Authority Server, making enforcement observable without recording what was read; (c) **read receipts** for a narrow class of high-sensitivity reads, accepting the latency and privacy cost of the Authority Server learning that a read occurred. (c) should not be adopted broadly: a complete read record is a metadata trail of everything the owner corresponds with, which is a privacy cost the current design deliberately avoids paying.
+
+### Where it lives (portable)
+
+- **Profile**: `scopeKind` per context field; the bound governing the read window (linked to the adapter's produced age field via `boundType.of`, not by field name). Provider-agnostic.
+- **Manifest**: read adapters only — where participants and dates live, the resource argument mapping, and any query-injection template. Provider data. **No identity recipe.**
+- **Gatekeeper**: generic evaluation — window resolution, positive override matching, resource subset test, query composition. No tool or profile literal.
+
+A new provider (Outlook) reuses the profile and engine unchanged, supplying only its manifest adapters. A connector that cannot expose participants simply cannot offer overrides and falls back to the default window.
+
+### Status
+
+Reference implementation (Suveren gateway, `email`): the static read gate and age enforcement are landed and verified live against real Gmail; query-composition hardening is landed with adversarial tests. Not yet built: per-correspondent overrides, resource scope on reads (calendar's `allowed_calendars` currently binds writes only), and default-deny for undeclared read governance. The first-cut coverage code from the retired design is superseded and pending removal. No external integrator depends on any of it → future direction under the promotion rule. It remains the highest-leverage open area on the *read* surface: unspecified, read authority is either unenforced or enforced against the wrong thing. Full design, UX, use cases and edge cases: `doc/read-authorization-identity-coverage.md`.
