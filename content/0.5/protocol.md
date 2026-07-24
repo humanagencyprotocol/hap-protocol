@@ -75,6 +75,10 @@ The protocol distinguishes two structural categories of authorization parameters
 
 Any semantic content used to reach a decision (AI analysis, deliberation, reasoning) remains local and out of protocol scope.
 
+Both categories above are **attested** — Bounds via `bounds_hash`, Context via `context_hash`, both signed. They govern **consequential action**: what the agent may *do* on the human's behalf, enforced through the signed receipt loop. A third class of constraint governs **non-consequential access** — how far an agent may *read* into the human's own data (e.g. a read-age window, readable containers). Because reads produce no receipt (see *Protocol Composition*), read policy MAY be enforced **locally by the Gatekeeper and left un-attested** — present in neither `bounds_hash` nor `context_hash`.
+
+The governing rule is that **a limit lives in the same trust domain as its enforcement.** A constraint enforced through the signed receipt loop MUST be attested, so any relying party can verify it. A constraint enforced only by the local Gatekeeper, over the human's own data, need not be — there is no counterparty to prove it to, and an attested read limit that no receipt ever checks would be a signature over nothing. The exception proves the rule: where a read limit must be enforced by *another party against the human* — an organization capping a member's read reach — it re-enters the attested surface, because now there is a counterparty who must trust it.
+
 ### Action vs. Execution
 
 The protocol uses two related but distinct terms:
