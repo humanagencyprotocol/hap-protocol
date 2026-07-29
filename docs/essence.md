@@ -116,9 +116,19 @@ roughly 60 routes and 30 stores; the protocol part of it is a small fraction.
 > requirements in `content/<version>/protocol.md`. You do not reimplement
 > Suveren.**
 
-The spec currently carries ~258 normative MUSTs. A conformance mapping — clause
-→ implementation → test — is outstanding and is the main gap between "HAP is a
-blueprint" and "HAP is a blueprint someone else can build from."
+How many normative requirements the spec carries is **not currently known**. The
+string `MUST` appears 258 times across `content/0.5/` (194 in `protocol.md`
+alone), but that is a text count, not a requirement count: 73 of them are inside
+`MUST NOT`, and a single rule is often stated twice — `protocol.md:15` expresses
+one requirement as *MUST obtain* plus *MUST NOT proceed*. The real figure is
+materially lower, and establishing it is the first step of the conformance work,
+not a precondition for starting it.
+
+A conformance mapping — clause → implementation → test — is outstanding, and is
+the main gap between "HAP is a blueprint" and "HAP is a blueprint someone else
+can build from." It cannot begin until the requirements have stable identifiers,
+because the spec's sections are named rather than numbered and nothing today is
+citable.
 
 ## What HAP is not
 
