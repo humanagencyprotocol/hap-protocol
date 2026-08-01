@@ -58,6 +58,61 @@ content matches the signed fingerprint, and campaign copy is scoped to "matches
 the signed fingerprint," not "verify with zero trust in the operator." Dual-sign
 is the fast-follow that makes the public claim airtight.
 
+### Receipts consumed by a machine verifier (new in the deploy work)
+
+The section above assumes a **human** reading a receipt page. The deploy domain
+introduces a second consumer, and it changes the requirements.
+
+To stop an agent bypassing the Gatekeeper — dispatching a pipeline directly with
+`gh workflow run`, or with any credential lying around on a developer machine —
+the **pipeline itself must refuse to run without a valid receipt**. The trigger
+cannot be the control point, because trigger access cannot be fully restricted;
+only whether pulling it achieves anything. That makes the pipeline a second
+Gatekeeper at the true execution boundary, and it makes the receipt a **bearer
+proof presented to a third party**.
+
+Every existing integration is different: the Gatekeeper requests a receipt and
+then performs the downstream call *itself*. The receipt never leaves. Nothing has
+previously had to survive being handed to someone else.
+
+Three consequences the protocol does not currently address:
+
+1. **Replay.** Idempotency exists (a stable key per logical call, so a retry
+   after a hidden failure returns the original receipt rather than counting
+   twice) but that is retry-dedup, not replay defence. A receipt presented twice
+   to an external verifier is a different problem. Content binding contains most
+   of it — replaying a receipt redeploys the *same* commit, a no-op — but an old
+   receipt could force old, possibly vulnerable, code back into production.
+   Minimum: a **validity window**. Stronger: a spent-receipt record the verifier
+   can consult, or a nonce bound at issue time.
+
+2. **Scope fields must be verifiable, not merely disclosed.** A machine verifier
+   needs to check that the receipt authorises *this* repository, environment and
+   pipeline. Those live in `executionContext`, which the public projection
+   redacts — so today a receipt for staging cannot be distinguished from one for
+   production by the party enforcing the boundary. Any dual-signed public
+   projection should therefore include the **execution-context fields the profile
+   marks as disclosable**, not only `contentHash`. This is the same selective-
+   disclosure need as above, arriving from enforcement rather than transparency.
+
+3. **Disclosure becomes a per-grant decision.** A public artifact (a website
+   deploy from a public repository) wants full disclosure — repository names and
+   environments are not secrets, and the proof is the point. A private
+   deployment wants the opposite: prove that *someone with authority approved a
+   deploy*, revealing neither repository nor commit. That is the existing
+   content-verifiable vs authority-verifiable split, and it argues for the owner
+   choosing per grant rather than a single global projection.
+
+**Direction.** Dual-signing a public projection remains the pragmatic first step
+(above), extended so the projection carries profile-designated execution-context
+fields and an explicit validity window. Selective-disclosure signatures remain
+the general answer.
+
+**Not a launch blocker for deploy.** The commit binding is the check that
+actually prevents an unapproved release, and it works within what is already
+exposed. The environment gap is presently theoretical for a deployment target
+with a single environment — but it must not be described as closed.
+
 ## Content Provenance
 
 Output Provenance binds an output's **location**. Some profiles produce content with no stable address — an email body, a published post, a CRM record, a database row. **Content Provenance** is the ephemeral-content analog: it binds the **bytes** instead, for those profiles.
