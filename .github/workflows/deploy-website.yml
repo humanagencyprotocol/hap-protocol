@@ -124,6 +124,53 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      # The host's REST API, not its CLI. The deploy token is scoped to the team
+      # rather than to a person, so `/v2/user` 404s and `/v2/teams` 403s while
+      # the project itself reads fine with an explicit teamId. Every CLI command
+      # resolves the user before it does anything, so the CLI cannot work with
+      # this token regardless of project context — the earlier
+      # "User not found (404)" was that, not a missing `.vercel` link.
+      #
+      # This is the better dependency anyway: three documented HTTP calls
+      # instead of a CLI whose auth behaviour we do not control.
+      - name: Resolve the build URL to a deployment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+        run: |
+          set -euo pipefail
+          host="${DEPLOYMENT_URL#https://}"; host="${host#http://}"; host="${host%%/*}"
+          curl -sS -o deployment.json \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/$host?teamId=$VERCEL_ORG_ID"
+
+          python3 - <<'PY'
+          import json, os
+          d = json.load(open('deployment.json'))
+          if 'error' in d:
+              print(f"::error::host rejected the build URL: {d['error']}")
+              raise SystemExit(1)
+
+          # The receipt already binds this URL, so this is not the trust check —
+          # it is the check that the URL means what we think. A build belonging
+          # to another project, or one still building, must never be served.
+          if d.get('projectId') != os.environ['VERCEL_PROJECT_ID']:
+              print('::error::that build belongs to a different project')
+              raise SystemExit(1)
+          if d.get('readyState') != 'READY':
+              print(f"::error::build is {d.get('readyState')}, not READY")
+              raise SystemExit(1)
+
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f"DEPLOYMENT_ID={d['uid']}\n")
+          sha = (d.get('meta') or {}).get('githubCommitSha', '')
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f"DEPLOYMENT_SHA={sha[:7]}\n")
+          print(f"{d['uid']} — READY, built from {sha[:7]}")
+          PY
+
       - name: Make this build live
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -132,22 +179,42 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Establish project context first. This job deliberately does not check
-          # out the repository — nothing is built here — so there is no `.vercel`
-          # link on disk and the CLI cannot tell which team or project a bare
-          # deployment URL belongs to. It answered "User not found (404)".
-          #
-          # `vercel pull` reads VERCEL_ORG_ID / VERCEL_PROJECT_ID from the
-          # environment and writes that link into an empty directory, which is
-          # all the CLI needs. Still no checkout, still no build.
-          mkdir -p .vercel-context && cd .vercel-context
-          npx --yes vercel@latest pull --yes \
-            --environment=production --token "$VERCEL_TOKEN"
+          # Promotion re-points production at bytes that already exist. The API
+          # is explicit that it does not rebuild, which is the whole point: what
+          # goes live is exactly what the human opened and looked at.
+          code=$(curl -sS -o promote.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Length: 0' \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID")
+          if [ "$code" != "201" ] && [ "$code" != "202" ]; then
+            echo "::error::promote refused (HTTP $code)"
+            head -c 300 promote.json
+            exit 1
+          fi
+          echo "Promotion accepted (HTTP $code)."
 
-          # `promote` re-points production at bytes that already exist. Nothing
-          # is built, so nothing can diverge from what was approved.
-          npx --yes vercel@latest promote "${{ inputs.deployment_url }}" \
-            --token "$VERCEL_TOKEN" --yes
+      # Acceptance is not the same as being live, and a workflow that reports a
+      # release it did not confirm is exactly the false certification this whole
+      # design exists to prevent. So ask the host what production points at.
+      - name: Confirm it is actually serving
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            live=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
+              | python3 -c 'import json,sys; print((json.load(sys.stdin).get("targets") or {}).get("production", {}).get("id", ""))')
+            if [ "$live" = "$DEPLOYMENT_ID" ]; then
+              echo "Production now serves $DEPLOYMENT_ID."
+              exit 0
+            fi
+            echo "attempt $attempt: production serves ${live:-nothing yet}"
+            sleep 5
+          done
+          echo "::error::promotion was accepted but production still does not serve $DEPLOYMENT_ID"
+          exit 1
 
       - name: Summary
         run: |
@@ -155,5 +222,6 @@ jobs:
             echo "### Released under human authority"
             echo ""
             echo "- build: ${{ inputs.deployment_url }}"
+            echo "- commit: \`$DEPLOYMENT_SHA\`"
             echo "- receipt: ${{ env.AS_BASE }}/r/${{ inputs.receipt_id }}"
           } >> "$GITHUB_STEP_SUMMARY"

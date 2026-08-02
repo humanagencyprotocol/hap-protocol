@@ -38,3 +38,17 @@ jobs:
           print('matches :', (d.get('projectId') or '') == os.environ['VERCEL_PROJECT_ID'])
           print('commit  :', (d.get('meta') or {}).get('githubCommitSha', '')[:7])
           PY
+
+          echo "--- what production serves right now ---"
+          curl -sS -o project.json \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
+          python3 - <<'PY'
+          import json
+          p = json.load(open('project.json'))
+          prod = (p.get('targets') or {}).get('production') or {}
+          d = json.load(open('deployment.json'))
+          print('live id :', prod.get('id'))
+          print('live sha:', (prod.get('meta') or {}).get('githubCommitSha', '')[:7])
+          print('already live? :', prod.get('id') == d.get('uid'))
+          PY
