@@ -1,0 +1,29 @@
+name: Vercel project settings (temporary)
+on: workflow_dispatch
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # Read-only. We need to know which directory Vercel builds from and what
+      # it runs, before overriding either on a test branch.
+      - name: How is this project configured?
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          curl -sS -o p.json -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
+
+          python3 - <<'PY'
+          import json
+          p = json.load(open('p.json'))
+          for k in ('name', 'framework', 'rootDirectory', 'buildCommand',
+                    'outputDirectory', 'installCommand', 'nodeVersion'):
+              print(f'  {k:16} = {p.get(k, "<unset — Vercel default>")}')
+          prod = (p.get('targets') or {}).get('production') or {}
+          print(f'  live deployment  = {prod.get("id")}')
+          print(f'  autoAssignDomains= {p.get("autoAssignCustomDomains")}')
+          PY
