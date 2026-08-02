@@ -1,24 +1,23 @@
-name: Deploy (gated by HAP receipt)
+name: Release (gated by HAP receipt)
 
-# Dispatch ONLY. The push trigger is deliberately absent: while a push deploys,
-# every check below is decoration, because anyone — or any agent — can reach
-# production by committing.
+# Dispatch ONLY, and dispatching proves nothing. Anyone with repository write
+# access can start a workflow, and an agent with a shell on a developer machine
+# can use that machine's `gh` credentials. The control point is `verify`: a
+# dispatch without a valid receipt achieves nothing.
 #
-# Dispatching is NOT the control point. Anyone with repository write access can
-# dispatch a workflow, and an agent with a shell on a developer machine can use
-# that machine's `gh` credentials. So the control point is the `verify` job:
-# a dispatch without a valid receipt achieves nothing.
+# Nothing is built here. The release activates a build that already exists, so
+# the bytes served are exactly the bytes a human opened and looked at.
 on:
   workflow_dispatch:
     inputs:
-      sha:
-        description: Exact commit approved in the receipt
+      deployment_url:
+        description: Immutable URL of the build to make live
         required: true
       receipt_id:
-        description: Receipt proving human authority for this deploy
+        description: Receipt proving human authority for this release
         required: true
       environment:
-        description: Target environment (recorded; see note in verify)
+        description: Target environment (recorded; see the note in verify)
         required: false
         default: production
 
@@ -30,60 +29,54 @@ env:
 
 jobs:
   # ───────────────────────────────────────────────────────────────────────────
-  # The gate. No secrets, no privileges — it only needs to read a public
-  # receipt. Anything it cannot prove, it refuses.
+  # The gate. No secrets and no privileges — it only reads a public receipt.
+  # Anything it cannot prove, it refuses.
   # ───────────────────────────────────────────────────────────────────────────
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Verify the receipt authorises this deploy
+      - name: Verify the receipt authorises this release
         env:
           RECEIPT_ID: ${{ inputs.receipt_id }}
-          COMMIT_SHA: ${{ inputs.sha }}
-          # How stale a receipt may be. A receipt is a bearer proof here: it is
-          # handed to a third party rather than used in-process, which no other
-          # HAP integration does. Replaying one redeploys the SAME commit (a
-          # no-op), but an OLD receipt could force old, possibly vulnerable code
-          # back into production. The window is what stops that.
+          DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+          # A receipt is a bearer proof here — handed to a third party rather
+          # than used in-process, which no other HAP integration does. Replaying
+          # one re-releases the SAME build (a no-op), but an OLD receipt could
+          # put old, possibly vulnerable, bytes back in front of users. The
+          # window is what stops that.
           MAX_AGE_SECONDS: '1800'
         run: |
           set -euo pipefail
-
           echo "Receipt : $RECEIPT_ID"
-          echo "Commit  : $COMMIT_SHA"
+          echo "Build   : $DEPLOYMENT_URL"
 
-          # --- fetch -----------------------------------------------------------
           http_code=$(curl -sS -o receipt.json -w '%{http_code}' \
             "$AS_BASE/api/as/public-receipt/$RECEIPT_ID" || true)
           if [ "$http_code" != "200" ]; then
-            echo "::error::No such receipt (HTTP $http_code). Nothing deployed."
+            echo "::error::No such receipt (HTTP $http_code). Nothing released."
             exit 1
           fi
 
-          # --- checks ----------------------------------------------------------
-          # Each failure below means the deploy must not proceed. Fail closed:
-          # a check that cannot be evaluated is a failure, never a pass.
           python3 - <<'PY'
           import json, hashlib, sys, time, unicodedata, os
 
           r = json.load(open('receipt.json'))
-          sha = os.environ['COMMIT_SHA']
+          url = os.environ['DEPLOYMENT_URL']
           max_age = int(os.environ['MAX_AGE_SECONDS'])
           fail = []
 
           # 1. Genuine. NOTE: `signatureValid` is the Authority Server verifying
-          #    its OWN signature — this is not independent verification. The
-          #    public projection withholds the raw signature, so a third party
-          #    cannot re-check it. Documented in content/0.5/review.md; this
-          #    check is therefore trust-in-issuer, not proof.
+          #    its OWN signature. The public projection withholds the raw
+          #    signature, so this is trust-in-issuer, not independent proof.
+          #    Documented in content/0.5/review.md.
           if r.get('signatureValid') is not True:
               fail.append('signature not valid according to the issuer')
 
-          # 2. It authorises a DEPLOY, not some cheaper action.
-          if r.get('actionType') != 'deploy':
-              fail.append(f"actionType is {r.get('actionType')!r}, expected 'deploy'")
+          # 2. It authorises a RELEASE — not a read, not something cheaper.
+          if r.get('actionType') != 'release':
+              fail.append(f"actionType is {r.get('actionType')!r}, expected 'release'")
 
-          # 3. Issued under the deploy profile.
+          # 3. Issued under a deploy profile.
           if 'deploy@' not in (r.get('profileId') or ''):
               fail.append(f"profileId {r.get('profileId')!r} is not a deploy profile")
 
@@ -94,81 +87,60 @@ jobs:
           if age < -300:
               fail.append('receipt timestamp is in the future')
 
-          # 5. THE check: it binds THIS commit.
-          #    Canonicalisation is the profile's content_binding kind:"text" —
-          #    NFC, LF line endings, trim — reimplemented here on purpose. The
-          #    verifier must not depend on the software it is verifying.
+          # 5. THE check: it binds THIS build. Canonicalisation is the profile's
+          #    content_binding kind:"text" — NFC, LF, trim — reimplemented here
+          #    on purpose. A verifier must not depend on the software it is
+          #    verifying.
           binding = r.get('contentBinding') or {}
           if binding.get('kind') != 'text':
-              fail.append(f"unsupported contentBinding {binding!r}")
+              fail.append(f'unsupported contentBinding {binding!r}')
           else:
-              canon = unicodedata.normalize('NFC', sha).replace('\r\n', '\n').replace('\r', '\n').strip()
+              canon = unicodedata.normalize('NFC', url).replace('\r\n', '\n').replace('\r', '\n').strip()
               expected = 'sha256:' + hashlib.sha256(canon.encode('utf-8')).hexdigest()
               if r.get('contentHash') != expected:
-                  fail.append('receipt does NOT bind this commit — it authorises different code')
+                  fail.append('receipt does NOT bind this build — it authorises different bytes')
 
-          # NOT CHECKED, and it must not be claimed: repository, environment and
+          # NOT CHECKED, and not to be claimed: repository, environment and
           # pipeline live in executionContext, which the public projection
-          # redacts. A receipt for one environment is indistinguishable from
-          # another here. Closing this needs declared disclosure — see
+          # redacts. Closing this needs the declared-disclosure work in
           # content/0.5/review.md.
 
           if fail:
               for f in fail:
-                  print(f"::error::{f}")
+                  print(f'::error::{f}')
               sys.exit(1)
 
-          print(f"Receipt verified. Authorised by {(r.get('identity') or {}).get('name', 'unknown')} "
-                f"at {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime(r['timestamp']))}.")
+          who = (r.get('identity') or {}).get('name', 'unknown')
+          when = time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime(r['timestamp']))
+          print(f'Receipt verified. Released by {who} at {when}.')
           PY
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Only runs if verify passed. The Vercel token lives in the `production`
+  # Runs only if verify passed. The Vercel token lives in the `production`
   # environment, so a workflow that skipped verify could not reach it.
   # ───────────────────────────────────────────────────────────────────────────
-  deploy:
+  release:
     needs: verify
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Checkout the APPROVED commit
-        uses: actions/checkout@v6
-        with:
-          # Load-bearing. Building the branch head instead would let a receipt
-          # for one commit ship another — and the receipt would still verify,
-          # certifying something false. That is worse than no receipt.
-          ref: ${{ inputs.sha }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm ci || npm install
-        working-directory: ./website
-
-      - name: Build with deploy provenance
-        working-directory: ./website
-        env:
-          PUBLIC_DEPLOY_SHA: ${{ inputs.sha }}
-          PUBLIC_DEPLOY_RECEIPT: ${{ inputs.receipt_id }}
-        run: npm run build
-
-      - name: Deploy to Vercel
-        working-directory: ./website
+      - name: Make this build live
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npx --yes vercel@latest deploy ./dist \
-            --prod --yes --token "$VERCEL_TOKEN" \
-            --archive=tgz
+          set -euo pipefail
+          # `promote` re-points production at bytes that already exist. Nothing
+          # is built, so nothing can diverge from what was approved.
+          npx --yes vercel@latest promote "${{ inputs.deployment_url }}" \
+            --token "$VERCEL_TOKEN" --yes
 
       - name: Summary
         run: |
-          echo "### Deployed under human authority" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- commit: \`${{ inputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- receipt: ${{ env.AS_BASE }}/r/${{ inputs.receipt_id }}" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "### Released under human authority"
+            echo ""
+            echo "- build: ${{ inputs.deployment_url }}"
+            echo "- receipt: ${{ env.AS_BASE }}/r/${{ inputs.receipt_id }}"
+          } >> "$GITHUB_STEP_SUMMARY"
