@@ -1,0 +1,34 @@
+name: Vercel response shape (temporary)
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_url:
+        description: Build URL to inspect (read-only)
+        required: true
+        default: https://human-agency-protocol-3nlnn4bhw-sublinme.vercel.app
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # The previous diagnostic asked `d.get('uid') or d.get('id')` and printed
+      # the result, so it never revealed WHICH key answered. The workflow then
+      # hardcoded d['uid'] and died on it. Print the keys themselves.
+      - name: What does the deployment response actually contain?
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+        run: |
+          host="${DEPLOYMENT_URL#https://}"; host="${host#http://}"; host="${host%%/*}"
+          curl -sS -o d.json -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/$host?teamId=$VERCEL_ORG_ID"
+
+          python3 - <<'PY'
+          import json
+          d = json.load(open('d.json'))
+          print('top-level keys:', sorted(d.keys()))
+          for k in ('id', 'uid', 'readyState', 'status', 'state', 'target', 'projectId'):
+              print(f'  {k:11} = {d.get(k, "<ABSENT>")}')
+          PY
