@@ -108,6 +108,47 @@ Three consequences the protocol does not currently address:
 fields and an explicit validity window. Selective-disclosure signatures remain
 the general answer.
 
+### Disclosure is declared, and silence means nothing is revealed
+
+The requirements above pull in opposite directions. A machine verifier needs to
+see the environment a deploy was authorised for; an email receipt must never
+reveal who was written to. Both are receipts, and today one global projection
+serves them.
+
+Resolving that by widening the projection would make every existing profile
+worse to serve the newest one: turning on execution-context disclosure for
+deploy would start publishing recipients on email receipts. A new requirement
+must never degrade the profiles that did not ask for it.
+
+> **Principle.** A profile — and, where finer control is wanted, a grant —
+> DECLARES which execution-context fields a receipt may disclose publicly. The
+> default is **none**. Absence of a declaration is never permission.
+
+This is the same fail-closed reading applied elsewhere in this document: an
+unset read window denies rather than permitting everything; an undeclared read
+governance denies rather than proxying. Disclosure follows the same rule, so the
+protocol is consistent about what silence means.
+
+Consequences:
+
+- **Existing profiles are unaffected by construction.** They declare nothing, so
+  they disclose nothing, and their privacy is exactly what it is today.
+- `email` keeps recipients private permanently — that is not a limitation to be
+  removed later, it is the correct setting.
+- `publish` may disclose more freely: the artifact is public, so the content
+  fingerprint and platform reveal nothing not already visible.
+- `deploy` against a **public** repository may disclose repository, environment
+  and pipeline — none is secret, and the verifier needs them.
+- `deploy` against a **private** repository discloses none of it, and its
+  receipt proves only that someone with authority approved a deploy.
+
+The last two are the same profile with different disclosure, which is why the
+declaration belongs on the grant as well as the profile: the owner is the one
+who knows whether the target is public.
+
+Stated for the reader rather than the implementer: **you decide whether a
+receipt proves only that you approved something, or exactly what you approved.**
+
 **Not a launch blocker for deploy.** The commit binding is the check that
 actually prevents an unapproved release, and it works within what is already
 exposed. The environment gap is presently theoretical for a deployment target
