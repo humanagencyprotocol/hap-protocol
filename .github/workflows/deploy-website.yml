@@ -163,12 +163,20 @@ jobs:
               print(f"::error::build is {d.get('readyState')}, not READY")
               raise SystemExit(1)
 
-          with open(os.environ['GITHUB_ENV'], 'a') as f:
-              f.write(f"DEPLOYMENT_ID={d['uid']}\n")
+          # This endpoint returns the identifier as `id`. An earlier version
+          # read `uid`, which is absent here — it survived review because the
+          # diagnostic that "confirmed" it asked for `uid or id` and printed
+          # only the answer, never which key supplied it.
+          deployment_id = d.get('id')
+          if not deployment_id:
+              print(f'::error::no deployment id in the response; keys were {sorted(d)}')
+              raise SystemExit(1)
+
           sha = (d.get('meta') or {}).get('githubCommitSha', '')
           with open(os.environ['GITHUB_ENV'], 'a') as f:
-              f.write(f"DEPLOYMENT_SHA={sha[:7]}\n")
-          print(f"{d['uid']} — READY, built from {sha[:7]}")
+              f.write(f'DEPLOYMENT_ID={deployment_id}\n')
+              f.write(f'DEPLOYMENT_SHA={sha[:7]}\n')
+          print(f'{deployment_id} — READY, built from {sha[:7]}')
           PY
 
       - name: Make this build live
@@ -205,7 +213,7 @@ jobs:
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
             live=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
               "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
-              | python3 -c 'import json,sys; print((json.load(sys.stdin).get("targets") or {}).get("production", {}).get("id", ""))')
+              | python3 -c 'import json,sys; print((((json.load(sys.stdin).get("targets") or {}).get("production")) or {}).get("id") or "")')
             if [ "$live" = "$DEPLOYMENT_ID" ]; then
               echo "Production now serves $DEPLOYMENT_ID."
               exit 0
