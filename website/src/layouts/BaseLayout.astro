@@ -12,6 +12,22 @@ const { title, description = siteConfig.description } = Astro.props;
 const currentPath = Astro.url.pathname;
 const version = siteConfig.version;
 
+// Deploy provenance. Supplied by the pipeline AFTER a receipt was issued, so a
+// local or ungated build renders nothing rather than claiming a proof it does
+// not have. Read at build time and emitted as plain markup — the site ships no
+// JavaScript, and this needs none.
+//
+// The receipt binds the COMMIT, not the built output: a page containing a link
+// to its own fingerprint could never match that fingerprint. So verification is
+// "the receipt names this commit, and this page says it was built from it".
+// `process.env`, NOT `import.meta.env`: the latter is populated from .env FILES
+// by Vite, so shell variables exported by CI never appear in it. Using it here
+// would render nothing, on every deploy, silently — the footer would simply be
+// absent and look like a styling problem rather than a broken pipeline.
+const deploySha = process.env.PUBLIC_DEPLOY_SHA;
+const deployReceipt = process.env.PUBLIC_DEPLOY_RECEIPT;
+const deployShaShort = typeof deploySha === 'string' ? deploySha.slice(0, 7) : '';
+
 // Build-time QR code for the mobile share popup — an inline SVG of this page's
 // canonical URL, so no client-side JS or QR library is needed to render it.
 const pageUrl = new URL(currentPath, Astro.site ?? 'https://humanagencyprotocol.org').href;
@@ -101,6 +117,13 @@ const shareTitle = title.replace(/^(HAP|Human Agency Protocol)\s*[-–—|:]\s*/
 
         <div class="footer-bottom">
             <p><a href="/impress">Impress</a> | The Human Agency Protocol is open infrastructure. Licensed under MIT. Maintained by stewards, not owners.</p>
+            {deploySha && deployReceipt && (
+                <p class="deploy-proof">
+                    Deployed from <a href={`${siteConfig.repoUrl ?? 'https://github.com/humanagencyprotocol/hap'}/commit/${deploySha}`}><code>{deployShaShort}</code></a>
+                    {' '}under human authority &mdash;
+                    {' '}<a href={`https://www.suveren.ai/r/${deployReceipt}`}>verify the receipt</a>
+                </p>
+            )}
         </div>
     </footer>
 </body>

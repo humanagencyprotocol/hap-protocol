@@ -1,47 +1,174 @@
-name: Deploy to GitHub Pages
+name: Deploy (gated by HAP receipt)
 
+# Dispatch ONLY. The push trigger is deliberately absent: while a push deploys,
+# every check below is decoration, because anyone — or any agent — can reach
+# production by committing.
+#
+# Dispatching is NOT the control point. Anyone with repository write access can
+# dispatch a workflow, and an agent with a shell on a developer machine can use
+# that machine's `gh` credentials. So the control point is the `verify` job:
+# a dispatch without a valid receipt achieves nothing.
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      sha:
+        description: Exact commit approved in the receipt
+        required: true
+      receipt_id:
+        description: Receipt proving human authority for this deploy
+        required: true
+      environment:
+        description: Target environment (recorded; see note in verify)
+        required: false
+        default: production
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+
+env:
+  AS_BASE: https://www.suveren.ai
 
 jobs:
-  build:
+  # ───────────────────────────────────────────────────────────────────────────
+  # The gate. No secrets, no privileges — it only needs to read a public
+  # receipt. Anything it cannot prove, it refuses.
+  # ───────────────────────────────────────────────────────────────────────────
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Verify the receipt authorises this deploy
+        env:
+          RECEIPT_ID: ${{ inputs.receipt_id }}
+          COMMIT_SHA: ${{ inputs.sha }}
+          # How stale a receipt may be. A receipt is a bearer proof here: it is
+          # handed to a third party rather than used in-process, which no other
+          # HAP integration does. Replaying one redeploys the SAME commit (a
+          # no-op), but an OLD receipt could force old, possibly vulnerable code
+          # back into production. The window is what stops that.
+          MAX_AGE_SECONDS: '1800'
+        run: |
+          set -euo pipefail
+
+          echo "Receipt : $RECEIPT_ID"
+          echo "Commit  : $COMMIT_SHA"
+
+          # --- fetch -----------------------------------------------------------
+          http_code=$(curl -sS -o receipt.json -w '%{http_code}' \
+            "$AS_BASE/api/as/public-receipt/$RECEIPT_ID" || true)
+          if [ "$http_code" != "200" ]; then
+            echo "::error::No such receipt (HTTP $http_code). Nothing deployed."
+            exit 1
+          fi
+
+          # --- checks ----------------------------------------------------------
+          # Each failure below means the deploy must not proceed. Fail closed:
+          # a check that cannot be evaluated is a failure, never a pass.
+          python3 - <<'PY'
+          import json, hashlib, sys, time, unicodedata, os
+
+          r = json.load(open('receipt.json'))
+          sha = os.environ['COMMIT_SHA']
+          max_age = int(os.environ['MAX_AGE_SECONDS'])
+          fail = []
+
+          # 1. Genuine. NOTE: `signatureValid` is the Authority Server verifying
+          #    its OWN signature — this is not independent verification. The
+          #    public projection withholds the raw signature, so a third party
+          #    cannot re-check it. Documented in content/0.5/review.md; this
+          #    check is therefore trust-in-issuer, not proof.
+          if r.get('signatureValid') is not True:
+              fail.append('signature not valid according to the issuer')
+
+          # 2. It authorises a DEPLOY, not some cheaper action.
+          if r.get('actionType') != 'deploy':
+              fail.append(f"actionType is {r.get('actionType')!r}, expected 'deploy'")
+
+          # 3. Issued under the deploy profile.
+          if 'deploy@' not in (r.get('profileId') or ''):
+              fail.append(f"profileId {r.get('profileId')!r} is not a deploy profile")
+
+          # 4. Fresh.
+          age = time.time() - float(r.get('timestamp') or 0)
+          if age > max_age:
+              fail.append(f'receipt is {int(age)}s old, limit {max_age}s')
+          if age < -300:
+              fail.append('receipt timestamp is in the future')
+
+          # 5. THE check: it binds THIS commit.
+          #    Canonicalisation is the profile's content_binding kind:"text" —
+          #    NFC, LF line endings, trim — reimplemented here on purpose. The
+          #    verifier must not depend on the software it is verifying.
+          binding = r.get('contentBinding') or {}
+          if binding.get('kind') != 'text':
+              fail.append(f"unsupported contentBinding {binding!r}")
+          else:
+              canon = unicodedata.normalize('NFC', sha).replace('\r\n', '\n').replace('\r', '\n').strip()
+              expected = 'sha256:' + hashlib.sha256(canon.encode('utf-8')).hexdigest()
+              if r.get('contentHash') != expected:
+                  fail.append('receipt does NOT bind this commit — it authorises different code')
+
+          # NOT CHECKED, and it must not be claimed: repository, environment and
+          # pipeline live in executionContext, which the public projection
+          # redacts. A receipt for one environment is indistinguishable from
+          # another here. Closing this needs declared disclosure — see
+          # content/0.5/review.md.
+
+          if fail:
+              for f in fail:
+                  print(f"::error::{f}")
+              sys.exit(1)
+
+          print(f"Receipt verified. Authorised by {(r.get('identity') or {}).get('name', 'unknown')} "
+                f"at {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime(r['timestamp']))}.")
+          PY
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Only runs if verify passed. The Vercel token lives in the `production`
+  # environment, so a workflow that skipped verify could not reach it.
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout the APPROVED commit
         uses: actions/checkout@v6
+        with:
+          # Load-bearing. Building the branch head instead would let a receipt
+          # for one commit ship another — and the receipt would still verify,
+          # certifying something false. That is worse than no receipt.
+          ref: ${{ inputs.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci || npm install
         working-directory: ./website
 
-      - name: Build site
+      - name: Build with deploy provenance
+        working-directory: ./website
+        env:
+          PUBLIC_DEPLOY_SHA: ${{ inputs.sha }}
+          PUBLIC_DEPLOY_RECEIPT: ${{ inputs.receipt_id }}
         run: npm run build
+
+      - name: Deploy to Vercel
         working-directory: ./website
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx --yes vercel@latest deploy ./dist \
+            --prod --yes --token "$VERCEL_TOKEN" \
+            --archive=tgz
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./website/dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Summary
+        run: |
+          echo "### Deployed under human authority" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- commit: \`${{ inputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- receipt: ${{ env.AS_BASE }}/r/${{ inputs.receipt_id }}" >> $GITHUB_STEP_SUMMARY
