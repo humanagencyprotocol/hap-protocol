@@ -1,33 +1,36 @@
 name: Vercel credential check (temporary)
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_url:
+        description: Build URL to resolve (read-only, nothing is promoted)
+        required: true
+        default: https://human-agency-protocol-2tp84m1i3-sublinme.vercel.app
 jobs:
   check:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Ask the Vercel API directly
+      - name: Resolve a build URL to a deployment id
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DEPLOYMENT_URL: ${{ inputs.deployment_url }}
         run: |
-          # Never print the token. Only status codes and short bodies.
-          echo "token length: ${#VERCEL_TOKEN}"
-          echo "org id  length: ${#VERCEL_ORG_ID} (starts: ${VERCEL_ORG_ID:0:5})"
-          echo "proj id length: ${#VERCEL_PROJECT_ID} (starts: ${VERCEL_PROJECT_ID:0:5})"
-
-          echo "--- /v2/user (is the token valid at all?) ---"
-          curl -s -o /tmp/u -w 'status=%{http_code}\n' \
-            -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user
-          head -c 200 /tmp/u; echo
-
-          echo "--- /v2/teams (which teams can it see?) ---"
-          curl -s -o /tmp/t -w 'status=%{http_code}\n' \
-            -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/teams
-          python3 -c "import json;d=json.load(open('/tmp/t'));print([ (t.get('slug'),t.get('id')) for t in d.get('teams',[])][:5])" 2>/dev/null || head -c 200 /tmp/t
-
-          echo "--- the project, scoped to the org id ---"
-          curl -s -o /tmp/p -w 'status=%{http_code}\n' \
+          host="${DEPLOYMENT_URL#https://}"; host="${host#http://}"; host="${host%%/*}"
+          echo "host: $host"
+          code=$(curl -s -o /tmp/d -w '%{http_code}' \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
-          python3 -c "import json;d=json.load(open('/tmp/p'));print('project:',d.get('name') or d.get('error'))" 2>/dev/null || head -c 200 /tmp/p
+            "https://api.vercel.com/v13/deployments/$host?teamId=$VERCEL_ORG_ID")
+          echo "status=$code"
+          python3 -c "
+import json
+d = json.load(open('/tmp/d'))
+if 'error' in d: print('ERROR:', d['error']); raise SystemExit(0)
+print('id       :', d.get('uid') or d.get('id'))
+print('state    :', d.get('readyState') or d.get('status'))
+print('target   :', d.get('target'))
+print('project  :', (d.get('project') or {}).get('id') or d.get('projectId'))
+print('commit   :', (d.get('meta') or {}).get('githubCommitSha','')[:7])
+"
