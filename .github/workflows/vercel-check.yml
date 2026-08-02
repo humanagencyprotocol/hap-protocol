@@ -6,6 +6,7 @@ on:
         description: Build URL to resolve (read-only, nothing is promoted)
         required: true
         default: https://human-agency-protocol-2tp84m1i3-sublinme.vercel.app
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -20,17 +21,20 @@ jobs:
         run: |
           host="${DEPLOYMENT_URL#https://}"; host="${host#http://}"; host="${host%%/*}"
           echo "host: $host"
-          code=$(curl -s -o /tmp/d -w '%{http_code}' \
+          curl -s -o deployment.json -w 'status=%{http_code}\n' \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v13/deployments/$host?teamId=$VERCEL_ORG_ID")
-          echo "status=$code"
-          python3 -c "
-import json
-d = json.load(open('/tmp/d'))
-if 'error' in d: print('ERROR:', d['error']); raise SystemExit(0)
-print('id       :', d.get('uid') or d.get('id'))
-print('state    :', d.get('readyState') or d.get('status'))
-print('target   :', d.get('target'))
-print('project  :', (d.get('project') or {}).get('id') or d.get('projectId'))
-print('commit   :', (d.get('meta') or {}).get('githubCommitSha','')[:7])
-"
+            "https://api.vercel.com/v13/deployments/$host?teamId=$VERCEL_ORG_ID"
+
+          python3 - <<'PY'
+          import json, os
+          d = json.load(open('deployment.json'))
+          if 'error' in d:
+              print('ERROR:', d['error'])
+              raise SystemExit(1)
+          print('id      :', d.get('uid') or d.get('id'))
+          print('state   :', d.get('readyState') or d.get('status'))
+          print('target  :', d.get('target'))
+          print('project :', d.get('projectId') or (d.get('project') or {}).get('id'))
+          print('matches :', (d.get('projectId') or '') == os.environ['VERCEL_PROJECT_ID'])
+          print('commit  :', (d.get('meta') or {}).get('githubCommitSha', '')[:7])
+          PY
