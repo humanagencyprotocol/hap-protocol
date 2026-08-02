@@ -37,6 +37,7 @@ hap-googlecalendar-mcp/
 
 # E2E tests (separate repository)
 hap-e2e/
+hap-deploy-mcp/
 
 # Local image assets (not tracked in umbrella repo)
 images/
