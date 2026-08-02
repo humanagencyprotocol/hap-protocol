@@ -1,0 +1,93 @@
+name: Build the website artifact
+
+# The built site is committed, and Vercel serves it without building — see
+# website/vercel.json. That is what makes a release verifiable: the bytes a
+# human opens are the bytes in the repo, and git's commit sha is already a
+# digest over them. No separate hashing step, no manifest format to specify.
+#
+# ONLY this workflow writes website/dist. A hand-committed artifact would let
+# the repo hold source and output that disagree, which is precisely the drift
+# the commit sha is supposed to rule out. Build locally as much as you like;
+# just never commit the result.
+#
+# Note the paths below deliberately exclude website/dist, so this cannot
+# trigger itself. Pushes made with GITHUB_TOKEN do not start workflows either,
+# so there are two independent reasons this does not loop.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/src/**'
+      - 'website/public/**'
+      - 'website/scripts/**'
+      - 'website/astro.config.mjs'
+      - 'website/package.json'
+      - 'website/package-lock.json'
+      - 'content/**'
+      - '.github/workflows/build-website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Two builds racing would fight over the same file. Queue instead of cancel:
+# a cancelled run could leave the artifact behind its source.
+concurrency:
+  group: build-website
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install
+        working-directory: website
+        run: npm ci
+
+      - name: Build
+        working-directory: website
+        env:
+          # A CI build has none of Vercel's git variables, so the footer would
+          # silently render nothing. Supply the source commit explicitly.
+          #
+          # It names the commit the artifact was BUILT FROM, not the commit that
+          # contains the artifact — an artifact cannot carry the sha of the
+          # commit carrying it. Naming the source is the more useful answer.
+          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+        run: npm run build
+
+      - name: Commit the artifact, if it changed
+        run: |
+          set -euo pipefail
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git add website/dist
+          if git diff --cached --quiet; then
+            echo 'Artifact unchanged — nothing to commit.'
+            exit 0
+          fi
+
+          git commit -m "build: website artifact from ${GITHUB_SHA:0:7}
+
+          Built by CI from the source in this commit. Vercel serves these bytes
+          directly, so this is the artifact a release makes live."
+          git push
+
+          {
+            echo "### Artifact rebuilt"
+            echo ""
+            echo "- source: \`${GITHUB_SHA:0:7}\`"
+            echo "- files: $(find website/dist -type f | wc -l | tr -d ' ')"
+            echo ""
+            echo "Vercel will publish this as a **Staged** deployment. It goes"
+            echo "live only when a receipt authorises it."
+          } >> "$GITHUB_STEP_SUMMARY"

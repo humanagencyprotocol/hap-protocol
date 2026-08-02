@@ -1,5 +1,14 @@
-# build output
-dist/
+# build output — TRACKED ON PURPOSE, and written only by CI.
+#
+# Vercel serves dist/ directly instead of building (see vercel.json), so the
+# bytes here are the bytes that go live. That is what makes a release
+# verifiable: git's commit sha is already a digest over the artifact, so a
+# receipt binding the commit binds the exact site, not just its address.
+#
+# Never commit dist/ by hand. Build locally as much as you like — just let
+# .github/workflows/build-website.yml be the only thing that commits the
+# result, or the repo can end up holding source and output that disagree.
+
 # generated types
 .astro/
 
