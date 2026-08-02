@@ -5,14 +5,29 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Who does this token belong to?
+      - name: Ask the Vercel API directly
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          set -x
-          npx --yes vercel@latest whoami --token "$VERCEL_TOKEN" || echo "WHOAMI FAILED"
-          mkdir -p ctx && cd ctx
-          npx --yes vercel@latest pull --yes --environment=production --token "$VERCEL_TOKEN" || echo "PULL FAILED"
-          test -f .vercel/project.json && echo "LINK OK" || echo "NO LINK"
+          # Never print the token. Only status codes and short bodies.
+          echo "token length: ${#VERCEL_TOKEN}"
+          echo "org id  length: ${#VERCEL_ORG_ID} (starts: ${VERCEL_ORG_ID:0:5})"
+          echo "proj id length: ${#VERCEL_PROJECT_ID} (starts: ${VERCEL_PROJECT_ID:0:5})"
+
+          echo "--- /v2/user (is the token valid at all?) ---"
+          curl -s -o /tmp/u -w 'status=%{http_code}\n' \
+            -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user
+          head -c 200 /tmp/u; echo
+
+          echo "--- /v2/teams (which teams can it see?) ---"
+          curl -s -o /tmp/t -w 'status=%{http_code}\n' \
+            -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/teams
+          python3 -c "import json;d=json.load(open('/tmp/t'));print([ (t.get('slug'),t.get('id')) for t in d.get('teams',[])][:5])" 2>/dev/null || head -c 200 /tmp/t
+
+          echo "--- the project, scoped to the org id ---"
+          curl -s -o /tmp/p -w 'status=%{http_code}\n' \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"
+          python3 -c "import json;d=json.load(open('/tmp/p'));print('project:',d.get('name') or d.get('error'))" 2>/dev/null || head -c 200 /tmp/p
