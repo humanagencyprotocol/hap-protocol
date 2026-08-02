@@ -40,7 +40,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Full history: the build needs to look back for the last source commit,
+      # and the default shallow checkout has only one.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -52,16 +56,27 @@ jobs:
         working-directory: website
         run: npm ci
 
+      # A CI build has none of Vercel's git variables, so the footer would
+      # silently render nothing. Supply the source commit explicitly.
+      #
+      # NOT github.sha. On a manual run that is whatever HEAD happens to be —
+      # often the previous ARTIFACT commit — which both misreports provenance
+      # and changes the output, so every run would commit a "new" artifact and
+      # trigger a deployment with nothing behind it.
+      #
+      # The last commit touching anything other than dist is the commit that
+      # actually produced these bytes, and it is stable across reruns.
+      - name: Identify the source commit
+        run: |
+          set -euo pipefail
+          src=$(git log -1 --format=%H -- . ':(exclude)website/dist' || true)
+          echo "SOURCE_SHA=${src:-${GITHUB_SHA}}" >> "$GITHUB_ENV"
+          echo "Artifact will report being built from ${src:-$GITHUB_SHA}"
+
       - name: Build
         working-directory: website
         env:
-          # A CI build has none of Vercel's git variables, so the footer would
-          # silently render nothing. Supply the source commit explicitly.
-          #
-          # It names the commit the artifact was BUILT FROM, not the commit that
-          # contains the artifact — an artifact cannot carry the sha of the
-          # commit carrying it. Naming the source is the more useful answer.
-          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          VERCEL_GIT_COMMIT_SHA: ${{ env.SOURCE_SHA }}
         run: npm run build
 
       - name: Commit the artifact, if it changed
@@ -76,7 +91,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "build: website artifact from ${GITHUB_SHA:0:7}
+          git commit -m "build: website artifact from ${SOURCE_SHA:0:7}
 
           Built by CI from the source in this commit. Vercel serves these bytes
           directly, so this is the artifact a release makes live."
@@ -85,7 +100,7 @@ jobs:
           {
             echo "### Artifact rebuilt"
             echo ""
-            echo "- source: \`${GITHUB_SHA:0:7}\`"
+            echo "- source: \`${SOURCE_SHA:0:7}\`"
             echo "- files: $(find website/dist -type f | wc -l | tr -d ' ')"
             echo ""
             echo "Vercel will publish this as a **Staged** deployment. It goes"
