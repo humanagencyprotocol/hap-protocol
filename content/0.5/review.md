@@ -437,3 +437,47 @@ A new provider (Outlook) reuses the profile and engine unchanged, supplying only
 ### Status
 
 Reference implementation (Suveren gateway, `email`): the static read gate and age enforcement are landed and verified live against real Gmail; query-composition hardening is landed with adversarial tests. The read window is now a **local per-integration setting** as described above — live-editable, taking precedence over the signed `read_max_age_days` bound, which remains as a fallback so existing grants keep working; with neither set, reads still fail closed. Not yet built: per-correspondent overrides, resource scope on reads (calendar's `allowed_calendars` currently binds writes only), and default-deny for undeclared read governance. The first-cut coverage code from the retired design is superseded and pending removal. No external integrator depends on any of it → future direction under the promotion rule. It remains the highest-leverage open area on the *read* surface: unspecified, read authority is either unenforced or enforced against the wrong thing. Full design, UX, use cases and edge cases: `doc/read-authorization-identity-coverage.md`.
+
+## Content Binding Over Declared Fields (targets v0.6)
+
+Content binding has two modes, and neither is the general case. `kind:"text"` hashes a **single** field — one declared by the manifest, or auto-detected from a prose vocabulary. `kind:"jcs"` hashes the **whole** tool-argument payload. Binding several things therefore needs no new cryptography; what is missing is the ability to say *which* things.
+
+### The gap is not theoretical: approved content, unapproved recipients
+
+A profile that binds prose with `kind:"text"` binds the body and nothing else. The receipt then proves *"this text was approved"* — not *"…to be sent to these recipients."* An Executor may take approved wording and deliver it elsewhere, and the receipt still verifies: **a receipt that verifies while certifying something no one agreed to**, which is worse than no receipt, because it manufactures confidence. The same shape appears wherever an action has a payload beside its prose — an attached image on a publish, a payee on a charge, attendees on an invitation.
+
+### Who verifies decides what may be bound
+
+The obvious repair — bind the whole payload — fails on a question the mechanism does not currently ask: **who will verify this, and what will they be holding?**
+
+A hash over the whole call is checkable only by a party that knows the whole call. A pipeline receiving a dispatch does know it. **An email recipient does not: they hold the body, the subject and their own address, but not `bcc`.** Binding the full payload does not merely overbind — it makes verification *impossible for the party the binding exists to serve*. Publish is stronger still: the verifier is the public, who sees the post and nothing else.
+
+So `text` is too narrow and whole-payload `jcs` is too wide, and the general case is neither. **What is required is a declared subset**, chosen so that the intended verifier can reproduce it.
+
+### Proposal: a declared field list
+
+A profile MAY declare `fields` on its `content_binding` at `version:"2"`. The Gatekeeper constructs an object from exactly those keys and canonicalizes it by the declared `kind`. No new canonicalization is introduced.
+
+A field declared but absent at call time MUST be treated as a configuration fault and the call refused — never hashed as an empty value, which would look like a binding while committing to nothing. Field ordering MUST NOT affect the hash (JCS sorts keys). Adding or removing a bound field changes every resulting hash and is therefore a **breaking** profile change requiring a version bump, not a silent edit.
+
+`version:"1"` retains its current meaning exactly: `text` binds one field, `jcs` binds the entire payload. Existing receipts and verifiers continue to check unchanged.
+
+Selecting the subset is a design act with a stated rule: **bind everything the approving human is shown, and nothing the intended verifier cannot see.** For a message profile that means recipients, subject and body, and deliberately *not* blind recipients — omitting `bcc` is what allows a recipient to verify at all.
+
+### Conformance: what is displayed MUST be what is bound
+
+An implementation MUST NOT display, on an approval surface, a consequential parameter it does not bind; and MUST NOT bind a parameter it does not display. The two failures are distinct and both defeat the purpose. **Bound but not displayed** means the human committed to something never seen. **Displayed but not bound** means the Executor may alter it after approval, and the display was decoration — the reviewer's attention was spent on a value the receipt does not hold. Where another mechanism independently constrains a displayed parameter (a pipeline that checks the repository it is running in), that MUST be stated rather than left to coincidence.
+
+This is a conformance requirement and not a presentation guideline. The protocol elsewhere concedes that it verifies commitment, not comprehension; that concession is only defensible if what was shown and what was signed are the same thing.
+
+### Deferred: per-field commitments and selective disclosure
+
+A single hash over a subset is all-or-nothing at disclosure time: proving one field means revealing all of them. Proving *"the environment was production"* without revealing the artifact requires a commitment per field plus a hash over those commitments.
+
+That construction MUST NOT be adopted without a per-field random salt. Bound values are frequently short and drawn from small sets — an environment name, a currency, a rounded amount — and an unsalted per-field hash is recoverable by enumeration, turning a privacy-preserving commitment into a disclosure. A whole-object hash resists this incidentally; per-field hashes must do so deliberately.
+
+This is the same design as *Disclosure is declared, and silence means nothing is revealed* above — **multi-field binding and selective disclosure are one problem**, which is reason enough not to improvise half of it. The declared-field list is the half that closes a live gap and introduces no new primitives; commitments follow when a case genuinely requires disclosing one field while withholding another.
+
+### Status
+
+Not built. The mechanism is small — a field list and an object construction — and the part worth care is the conformance rule above, which is what makes the binding mean anything to the person approving. Priority follows exposure rather than novelty: message profiles first, since nothing else constrains their recipients; then publish; then deploy, whose unbound parameters are separately checked by the pipeline that consumes the receipt. Full analysis: `doc/content-binding-fields.md`.
