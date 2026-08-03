@@ -617,3 +617,69 @@ hr {
         padding: 0.5rem;
     }
 }
+
+/* ── Release badge ─────────────────────────────────────────────────────────
+   "Verify this release" in the header. Deliberately quiet: it makes no claim,
+   it invites a check. The result renders in a panel below, so a reader never
+   leaves the page at the moment they got curious. */
+.release-badge-wrap { position: relative; display: inline-flex; }
+
+.release-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    /* Buttons do NOT inherit colour — without this they fall back to the UA
+       default and vanish against a dark header. */
+    color: var(--text-secondary);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.12s, border-color 0.12s;
+}
+.release-badge:hover { color: var(--text-primary); border-color: var(--accent); }
+.release-badge .rb-dot {
+    width: 0.45rem; height: 0.45rem; border-radius: 50%;
+    background: var(--accent); flex: none;
+}
+
+.release-panel {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    left: 0;
+    z-index: 1100;
+    min-width: min(24rem, 90vw);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 0.6rem;
+    padding: 0.85rem 1rem;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+    text-align: left;
+}
+.release-panel .rp-head { font-size: 0.88rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--text-primary); }
+.release-panel .rp-ok { color: #15803d; }
+.release-panel .rp-warn { color: #b45309; }
+.release-panel .rp-dim { color: var(--text-tertiary); font-weight: 400; }
+.release-panel .rp-kv { display: grid; grid-template-columns: 6.5rem 1fr; gap: 0.2rem 0.8rem; font-size: 0.8rem; margin: 0; }
+.release-panel .rp-kv dt { color: var(--text-tertiary); }
+.release-panel .rp-kv dd { color: var(--text-primary); margin: 0; }
+.release-panel .rp-kv a { color: var(--accent); }
+.release-panel .rp-note { font-size: 0.76rem; color: var(--text-secondary); line-height: 1.5; margin: 0.6rem 0 0; }
+
+@media (prefers-color-scheme: dark) {
+    .release-panel { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5); }
+    .release-panel .rp-ok { color: #4ade80; }
+    .release-panel .rp-warn { color: #fbbf24; }
+}
+
+/* Mobile: keep the badge visible — hiding it would contradict the reason for
+   moving this out of the footer. Only the panel needs to reflow. */
+@media (max-width: 768px) {
+    .release-badge { font-size: 0.7rem; padding: 0.2rem 0.45rem; }
+    .release-panel { position: fixed; left: 0.75rem; right: 0.75rem; min-width: 0; top: calc(var(--nav-height) + 0.5rem); }
+}

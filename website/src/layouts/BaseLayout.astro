@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { siteConfig } from '../config';
 import QRCode from 'qrcode';
+import ReleaseBadge from '../components/ReleaseBadge.astro';
 
 interface Props {
   title: string;
@@ -53,6 +54,7 @@ const shareTitle = title.replace(/^(HAP|Human Agency Protocol)\s*[-–—|:]\s*/
             <div class="logo-group">
                 <a href="/" class="logo">Human Agency Protocol</a>
                 <span class="version-badge">v{version}</span>
+                <ReleaseBadge />
             </div>
             <button class="nav-share" id="share-toggle" type="button" aria-label="Share this page">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

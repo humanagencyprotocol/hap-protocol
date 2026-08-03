@@ -1,0 +1,180 @@
+---
+/**
+ * Release badge — "Released under Suveren.ai".
+ *
+ * This page is a released artifact. The claim worth making about it is that a
+ * human approved these bytes going live, and the point of HAP is that such a
+ * claim is CHECKABLE rather than asserted. So the badge does not assert
+ * anything: it invites the check and runs it in place.
+ *
+ * Why it cannot simply carry the receipt id
+ * -----------------------------------------
+ * A release activates bytes that already exist, so the artifact was built
+ * before its receipt existed. Injecting the id would mean rebuilding, which is
+ * what promotion avoids — the same circularity as a page containing its own
+ * fingerprint. What the page CAN know at build time is its own artifact URL,
+ * and that is exactly what a deploy receipt binds.
+ *
+ * So we bake the HASH of the artifact URL, and nothing else. On click, the
+ * browser asks the Authority Server which receipts bind that hash.
+ *
+ * Three deliberate properties
+ * ---------------------------
+ * 1. NOTHING happens on page load. No request, no state, no dependency on the
+ *    Authority Server being reachable. The cost is paid only by a reader who
+ *    asked a question.
+ * 2. The label states GOVERNANCE, not proof: this site's releases go through
+ *    Suveren's authority. True here by construction — promotion is receipt-gated.
+ *    It deliberately avoids "verify", which would promise the reader an
+ *    independent check they cannot perform (see the panel copy). Do NOT put this
+ *    badge on a surface whose releases are not actually gated; there it is
+ *    simply false.
+ * 3. "No receipt" and "could not check" never merge. The first can also mean
+ *    the URL was canonicalized differently; the second is evidence of nothing.
+ *    Collapsing either into an accusation would make the mechanism cry wolf.
+ *
+ * The hash must match what the Gatekeeper bound, so the normal form here is the
+ * one the connector applies before the value is shown for approval:
+ * `https://<lowercase-host>` (see suveren-gateway arg-normalization.ts), then
+ * the v0.5 text canonicalization, then SHA-256.
+ */
+import { createHash } from 'node:crypto';
+
+const AS_BASE = import.meta.env.PUBLIC_AS_BASE ?? 'https://www.suveren.ai';
+
+/** The immutable, deployment-specific host — the artifact identifier a release binds. */
+const artifactHost = process.env.VERCEL_URL ?? process.env.PUBLIC_ARTIFACT_URL ?? '';
+
+/** hap-core canonicalizeText — NFC, LF, strip trailing whitespace, drop trailing blanks. */
+function canonicalizeText(input: string): string {
+  return input
+    .normalize('NFC')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+$/, ''))
+    .join('\n')
+    .replace(/\n+$/, '');
+}
+
+/** The gateway's `url` normal form: scheme added, host lowercased, nothing else. */
+function normalizeUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const withScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const url = new URL(withScheme);
+    if (!url.hostname) return '';
+    const scheme = url.protocol.replace(/:$/, '').toLowerCase();
+    const defaultPort =
+      (scheme === 'https' && url.port === '443') || (scheme === 'http' && url.port === '80');
+    return `${scheme}://${url.hostname.toLowerCase()}${url.port && !defaultPort ? `:${url.port}` : ''}`;
+  } catch {
+    return '';
+  }
+}
+
+const normalized = normalizeUrl(artifactHost);
+const contentHash = normalized
+  ? `sha256:${createHash('sha256').update(canonicalizeText(normalized), 'utf8').digest('hex')}`
+  : '';
+---
+
+{contentHash && (
+  <div class="release-badge-wrap">
+    <button
+      type="button"
+      class="release-badge"
+      id="release-badge"
+      data-hash={contentHash}
+      data-as={AS_BASE}
+      aria-expanded="false"
+      aria-controls="release-panel"
+    >
+      <span class="rb-dot" aria-hidden="true"></span>
+      Released under Suveren.ai
+    </button>
+    <div class="release-panel" id="release-panel" hidden></div>
+  </div>
+)}
+
+<script>
+  const btn = document.getElementById('release-badge') as HTMLButtonElement | null;
+  const panel = document.getElementById('release-panel');
+  if (btn && panel) {
+    const AS = btn.dataset.as!;
+    const hash = btn.dataset.hash!;
+    let done = false;
+
+    const esc = (t: unknown) =>
+      String(t).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c]!);
+
+    const show = (html: string) => {
+      panel.innerHTML = html;
+      panel.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+    };
+
+    const renderFound = (r: any) => {
+      // A hash can resolve to SEVERAL receipts: an artifact released, rolled
+      // back from, then released again. The newest is the promotion that put
+      // these bytes live; the rest are named rather than hidden, because
+      // approvers can differ between releases.
+      const who = r.identity?.name ? esc(r.identity.name) : 'a decision owner';
+      const via = r.identity ? ` <span class="rp-dim">· verified by ${esc(r.issuer)}</span>` : '';
+      return `
+        <p class="rp-head rp-ok">This build was approved before it went live</p>
+        <dl class="rp-kv">
+          <dt>Approved by</dt><dd>${who}${via}</dd>
+          <dt>Released</dt><dd>${new Date(r.timestamp * 1000).toLocaleString()}</dd>
+          <dt>Signature</dt><dd class="rp-ok">valid</dd>
+          <dt>Receipt</dt><dd><a href="${esc(AS)}/r/${encodeURIComponent(r.id)}" target="_blank" rel="noopener">${esc(r.id).slice(0, 8)}… — full receipt ↗</a></dd>
+        </dl>
+        <p class="rp-note"><strong>What this does not show.</strong> This page told Suveren which
+        build it is. So you are seeing that a human approved releasing <em>that</em> build — not that
+        the bytes you are reading are those bytes. A page could name a build it is not.</p>
+        <p class="rp-note">Closing that gap needs access to the hosting account: list the project's
+        deployments, find the one whose address matches this receipt, and check it is the deployment
+        currently serving this domain. That audit also recovers the commit it was built from.
+        <a href="https://github.com/humanagencyprotocol/hap-protocol/blob/main/docs/release-audit.md"
+           target="_blank" rel="noopener">How to audit a release ↗</a></p>`;
+    };
+
+    btn.addEventListener('click', async () => {
+      if (!panel.hidden) {
+        panel.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+        return;
+      }
+      if (done) {
+        panel.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+        return;
+      }
+      show('<p class="rp-note">Checking with the Authority Server…</p>');
+      try {
+        const res = await fetch(`${AS}/api/as/receipts/by-content/${encodeURIComponent(hash)}`);
+        const body = await res.json();
+        if (res.ok && Array.isArray(body.receipts) && body.receipts.length) {
+          const extra =
+            body.receipts.length > 1
+              ? `<p class="rp-note">Released ${body.receipts.length} times — the most recent is shown.</p>`
+              : '';
+          show(renderFound(body.receipts[0]) + extra);
+        } else {
+          show(`
+            <p class="rp-head rp-warn">No receipt found for this build</p>
+            <p class="rp-note">${esc(body.note ?? 'No receipt issued there binds this content.')}</p>`);
+        }
+        done = true;
+      } catch {
+        // Deliberately NOT "no receipt". An unreachable Authority Server is
+        // evidence of nothing, and merging the two would turn a network blip
+        // into an accusation.
+        show(`
+          <p class="rp-head">Could not reach the Authority Server</p>
+          <p class="rp-note">This is not the same as “no receipt”. The check could not run, which
+          says nothing either way about whether this build was approved.</p>`);
+      }
+    });
+  }
+</script>
