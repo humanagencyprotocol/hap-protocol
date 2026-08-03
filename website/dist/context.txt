@@ -2832,6 +2832,30 @@ Every string entering the bound object — at any depth, including inside arrays
 
 Array order MUST be preserved: reordering recipients is a change worth catching, and no transport reorders them. Values MUST NOT be otherwise normalized — in particular, addresses MUST NOT be lowercased, since the local part is case-sensitive per RFC 5321 and this layer has no standing to make that semantic claim.
 
+### Conformance: an identifier MUST have one spelling
+
+A binding hashes an exact string, so two spellings of one value are two
+bindings. For prose this never bites — nobody writes a body two ways by
+accident. For an identifier it is the normal case: `https://x.app` and
+`https://x.app/` name the same build and produce different hashes.
+
+Where a profile binds an identifier rather than prose, its normal form MUST be
+declared, and the Gatekeeper MUST apply it **before the value is shown for
+approval** — not merely before hashing. Normalizing later would bind a string
+the approver never saw, which is the failure the display rule above forbids.
+Applied early, the value approved, the value bound, and the value a verifier
+can later reproduce are one string.
+
+The consequence of leaving this undeclared is worse than a mismatch. A receipt
+that cannot be found reads as *no receipt exists*, so a trailing slash is
+indistinguishable from an action that was never authorized at all. A mechanism
+whose false alarm and true alarm look identical raises neither.
+
+Normalization belongs next to the declaration that names the bound field — the
+connector, where a profile is deliberately host-agnostic about which identifier
+its artifact carries. Adding or changing a rule moves every hash it produced, so
+it is a breaking change on the same footing as adding a bound field.
+
 ### Conformance: a bound value MUST survive transport
 
 A binding is only worth something if the intended verifier can reproduce it from what they actually received. An implementation MUST NOT bind a field the transport will alter in delivery.
