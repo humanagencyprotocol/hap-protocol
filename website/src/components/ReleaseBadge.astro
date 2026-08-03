@@ -42,8 +42,19 @@ import { createHash } from 'node:crypto';
 
 const AS_BASE = import.meta.env.PUBLIC_AS_BASE ?? 'https://www.suveren.ai';
 
-/** The immutable, deployment-specific host — the artifact identifier a release binds. */
-const artifactHost = process.env.VERCEL_URL ?? process.env.PUBLIC_ARTIFACT_URL ?? '';
+/**
+ * The SOURCE COMMIT this build came from — supplied by the build workflow, and
+ * already shown in the footer as "Built from <sha>".
+ *
+ * Not the deployment URL. That URL identifies the bytes exactly, but it is
+ * assigned to them AFTER they exist, so a page can never carry its own. This
+ * site is built in CI and the artifact committed to git; Vercel only serves the
+ * bytes. The commit is therefore both knowable at build time and, because the
+ * built artifact is public in the repo, checkable by anyone: read the commit,
+ * find the artifact built from it, compare it with what was delivered.
+ */
+const sourceCommit =
+  process.env.PUBLIC_DEPLOY_SHA ?? process.env.VERCEL_GIT_COMMIT_SHA ?? '';
 
 /** hap-core canonicalizeText — NFC, LF, strip trailing whitespace, drop trailing blanks. */
 function canonicalizeText(input: string): string {
@@ -56,24 +67,13 @@ function canonicalizeText(input: string): string {
     .replace(/\n+$/, '');
 }
 
-/** The gateway's `url` normal form: scheme added, host lowercased, nothing else. */
-function normalizeUrl(value: string): string {
+/** The gateway's `sha` normal form: trimmed and lowercased. One spelling per commit. */
+function normalizeSha(value: string): string {
   const trimmed = value.trim();
-  if (!trimmed) return '';
-  const withScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed) ? trimmed : `https://${trimmed}`;
-  try {
-    const url = new URL(withScheme);
-    if (!url.hostname) return '';
-    const scheme = url.protocol.replace(/:$/, '').toLowerCase();
-    const defaultPort =
-      (scheme === 'https' && url.port === '443') || (scheme === 'http' && url.port === '80');
-    return `${scheme}://${url.hostname.toLowerCase()}${url.port && !defaultPort ? `:${url.port}` : ''}`;
-  } catch {
-    return '';
-  }
+  return /^[0-9a-fA-F]{7,64}$/.test(trimmed) ? trimmed.toLowerCase() : '';
 }
 
-const normalized = normalizeUrl(artifactHost);
+const normalized = normalizeSha(sourceCommit);
 const contentHash = normalized
   ? `sha256:${createHash('sha256').update(canonicalizeText(normalized), 'utf8').digest('hex')}`
   : '';
