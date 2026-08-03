@@ -484,6 +484,18 @@ Every string entering the bound object — at any depth, including inside arrays
 
 Array order MUST be preserved: reordering recipients is a change worth catching, and no transport reorders them. Values MUST NOT be otherwise normalized — in particular, addresses MUST NOT be lowercased, since the local part is case-sensitive per RFC 5321 and this layer has no standing to make that semantic claim.
 
+### Conformance: a bound value MUST survive transport
+
+A binding is only worth something if the intended verifier can reproduce it from what they actually received. An implementation MUST NOT bind a field the transport will alter in delivery.
+
+This is not hypothetical, and it was not found by reading the design. A live send bound a subject containing an em-dash; RFC 5322 headers are ASCII-only and the connector wrote raw UTF-8, so it arrived as `Ã¢Â€Â”` and the recipient could not reproduce the hash. Every layer behaved correctly — the receipt bound exactly what the human approved — and the check still failed.
+
+**A false mismatch is worse than no binding.** A verifier who sees a mismatch on honest mail learns that mismatches are noise, and the next real one is dismissed too. A binding that cries wolf has negative value, and the failure is silent from the sender's side: the receipt looks perfect to everyone except the one party the binding exists to serve.
+
+The repair belongs at the boundary, not in the binding. The value is hashed as approved and encoded for transport on the way out, in that order — encoding before hashing would bind the wire form and force every verifier to reproduce the transport's quirks instead of reading their mail. Which argument needs which encoding is declared by the connector; the encodings themselves belong to the engine, so a second connector with the same problem is a declaration rather than new code.
+
+Implementations SHOULD assume this class of defect is present until a bound field has been verified against a genuinely delivered copy. Header encoding, line-ending rewriting, whitespace folding and Unicode normalization are all transport behaviours that a local test reproducing neither the transport nor the recipient will not reveal.
+
 ### Conformance: what is displayed MUST be what is bound
 
 An implementation MUST NOT display, on an approval surface, a consequential parameter it does not bind; and MUST NOT bind a parameter it does not display. The two failures are distinct and both defeat the purpose. **Bound but not displayed** means the human committed to something never seen. **Displayed but not bound** means the Executor may alter it after approval, and the display was decoration — the reviewer's attention was spent on a value the receipt does not hold. Where another mechanism independently constrains a displayed parameter (a pipeline that checks the repository it is running in), that MUST be stated rather than left to coincidence.
