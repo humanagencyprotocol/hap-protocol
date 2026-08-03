@@ -20,6 +20,9 @@ on:
         description: Target environment (recorded; see the note in verify)
         required: false
         default: production
+      commit:
+        description: Source commit this build was produced from — what the receipt binds
+        required: true
 
 permissions:
   contents: read
@@ -39,6 +42,7 @@ jobs:
         env:
           RECEIPT_ID: ${{ inputs.receipt_id }}
           DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+          COMMIT: ${{ inputs.commit }}
           # A receipt is a bearer proof here — handed to a third party rather
           # than used in-process, which no other HAP integration does. Replaying
           # one re-releases the SAME build (a no-op), but an OLD receipt could
@@ -49,6 +53,7 @@ jobs:
           set -euo pipefail
           echo "Receipt : $RECEIPT_ID"
           echo "Build   : $DEPLOYMENT_URL"
+          echo "Commit  : $COMMIT"
 
           http_code=$(curl -sS -o receipt.json -w '%{http_code}' \
             "$AS_BASE/api/as/public-receipt/$RECEIPT_ID" || true)
@@ -62,6 +67,7 @@ jobs:
 
           r = json.load(open('receipt.json'))
           url = os.environ['DEPLOYMENT_URL']
+          commit = os.environ['COMMIT']
           max_age = int(os.environ['MAX_AGE_SECONDS'])
           fail = []
 
@@ -95,11 +101,24 @@ jobs:
           if binding.get('kind') != 'text':
               fail.append(f'unsupported contentBinding {binding!r}')
           else:
-              canon = unicodedata.normalize('NFC', url).replace('\r\n', '\n').replace('\r', '\n').strip()
+              # deploy@0.8 binds the SOURCE COMMIT, not the deployment URL. The URL
+              # names the bytes exactly but is assigned after they exist, so a page
+              # can never carry its own — and a page that cannot name its approval
+              # cannot be checked by whoever is reading it. Normal form is the
+              # gateway's `sha`: trimmed, lowercased.
+              canon = unicodedata.normalize('NFC', commit.strip().lower())
               expected = 'sha256:' + hashlib.sha256(canon.encode('utf-8')).hexdigest()
               if r.get('contentHash') != expected:
-                  fail.append('receipt does NOT bind this build — it authorises different bytes')
+                  fail.append('receipt does NOT bind this commit — it authorises a different release')
 
+          # NOT CHECKED, and not to be claimed: that the artifact being promoted
+          # was BUILT from this commit. Binding a commit rather than the bytes
+          # leaves that gap open — a different artifact could name the same
+          # source. The check is possible here (the artifact commit message
+          # records its source) and is simply not written yet. Until it is,
+          # this proves a human approved releasing this COMMIT, not that these
+          # BYTES came from it.
+          #
           # NOT CHECKED, and not to be claimed: repository, environment and
           # pipeline live in executionContext, which the public projection
           # redacts. Closing this needs the declared-disclosure work in
