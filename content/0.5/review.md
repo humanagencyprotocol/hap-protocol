@@ -458,11 +458,31 @@ So `text` is too narrow and whole-payload `jcs` is too wide, and the general cas
 
 A profile MAY declare `fields` on its `content_binding` at `version:"2"`. The Gatekeeper constructs an object from exactly those keys and canonicalizes it by the declared `kind`. No new canonicalization is introduced.
 
-A field declared but absent at call time MUST be treated as a configuration fault and the call refused — never hashed as an empty value, which would look like a binding while committing to nothing. Field ordering MUST NOT affect the hash (JCS sorts keys). Adding or removing a bound field changes every resulting hash and is therefore a **breaking** profile change requiring a version bump, not a silent edit.
+Field ordering MUST NOT affect the hash (JCS sorts keys). Adding or removing a bound field changes every resulting hash and is therefore a **breaking** profile change requiring a version bump, not a silent edit.
 
 `version:"1"` retains its current meaning exactly: `text` binds one field, `jcs` binds the entire payload. Existing receipts and verifiers continue to check unchanged.
 
 Selecting the subset is a design act with a stated rule: **bind everything the approving human is shown, and nothing the intended verifier cannot see.** For a message profile that means recipients, subject and body, and deliberately *not* blind recipients — omitting `bcc` is what allows a recipient to verify at all.
+
+#### Absence is sometimes a fact and sometimes a fault
+
+An earlier draft of this entry required that any declared field absent at call time be treated as a configuration fault. Implementation showed that rule to be too blunt: a connector declares `cc` as an ordinary optional argument, and most messages legitimately carry none, so a literal reading refuses ordinary sends. The distinction the mechanism actually needs is between an absence that describes the world and an absence that means the call is not the call the profile thinks it is.
+
+A profile therefore MAY declare `required_fields`, a subset of `fields`. An absent **optional** field is omitted from the hashed object; an absent **required** field MUST refuse the call. A value that is null, or empty after canonicalization, counts as absent — the two MUST NOT be distinguished, or the same message hashes differently depending on whether a connector sent `""` or nothing. If no declared field carries a value the call MUST be refused whatever `required_fields` says, because that hash would commit to nothing while reading exactly like one that commits to everything.
+
+Omission is safe precisely because the field list is published with the receipt: a verifier holding a message with a `Cc` header knows `cc` is in scope and includes it, so a recipient added after approval still breaks the hash. The rule both sides follow is deterministic, and neither side needs to guess.
+
+#### The binding covers actions, not whole profiles
+
+A profile gates more than its content-bearing calls — `email` also gates deletes, which carry an identifier and no content. A field binding that applied to every gated action under the profile would refuse those, since the required fields are structurally absent.
+
+A field binding therefore MAY declare `appliesTo`, using the same action-type vocabulary as a bound. It MUST be read **strictly**: an action type that is undeclared is NOT covered. This is deliberately the opposite of how a bound reads the same key, where an unknown action type enforces the bound — the two directions are not symmetric. An extra bound is a tighter limit; an extra content binding is a refused legitimate action. An implementation that finds a gated write with no declared action type under a content-binding profile SHOULD say so, because the receipt it issues will bind nothing.
+
+#### Canonicalization inside the object
+
+Every string entering the bound object — at any depth, including inside arrays — MUST be canonicalized by the `text` rule (NFC, LF, trailing per-line whitespace stripped, trailing blank lines removed) before serialization. This is not a new primitive; it is the existing `kind:"text"` rule applied per string rather than to one field, and it is what makes the binding checkable at all. The party verifying an email holds the **delivered** copy, whose body has CRLF line endings and transport-added trailing whitespace. JCS embeds strings verbatim, so without this rule the intended verifier could never reproduce the hash — the binding would be sound and useless.
+
+Array order MUST be preserved: reordering recipients is a change worth catching, and no transport reorders them. Values MUST NOT be otherwise normalized — in particular, addresses MUST NOT be lowercased, since the local part is case-sensitive per RFC 5321 and this layer has no standing to make that semantic claim.
 
 ### Conformance: what is displayed MUST be what is bound
 
@@ -480,4 +500,6 @@ This is the same design as *Disclosure is declared, and silence means nothing is
 
 ### Status
 
-Not built. The mechanism is small — a field list and an object construction — and the part worth care is the conformance rule above, which is what makes the binding mean anything to the person approving. Priority follows exposure rather than novelty: message profiles first, since nothing else constrains their recipients; then publish; then deploy, whose unbound parameters are separately checked by the pipeline that consumes the receipt. Full analysis: `doc/content-binding-fields.md`.
+Reference implementation (hap-core, Suveren gateway, Suveren Authority Server): `fields`, `required_fields` and `appliesTo` are landed, with the field list signed into the receipt and published on the verify page so a third party knows what the hash covers — a scope that were recorded but unsigned could be re-presented as narrower than it was. `email@0.5` is the first profile to adopt it, binding `to`, `cc`, `subject` and `body`, requiring `to` and `body`, and scoped to sends; `email@0.4` is retained unchanged, so grants issued against it keep their body-only binding and nothing needs migrating. The interactive verifier reconstructs the bound object from delivered values and shows the exact canonical bytes, because `fields` records the bound keys but not their JSON types and a wrong guess must be visible rather than surfacing as an unexplained mismatch.
+
+Not yet built: `publish` (post text is bound, an attached image is not) and `deploy` (which adopts the mechanism once a case needs it — its unbound parameters are separately checked by the pipeline that consumes the receipt, which is the "stated rather than coincidental" case the conformance rule above demands). Also unbuilt: any enforcement of that conformance rule. It is currently a requirement an implementation can violate silently, and the live example is an approval surface that displays `bcc` while the binding deliberately omits it — defensible only because review-mode proposal matching independently pins the whole argument set, which is exactly the kind of second mechanism the rule says MUST be stated. Full analysis: `doc/content-binding-fields.md`.
