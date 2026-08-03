@@ -111,13 +111,11 @@ jobs:
               if r.get('contentHash') != expected:
                   fail.append('receipt does NOT bind this commit — it authorises a different release')
 
-          # NOT CHECKED, and not to be claimed: that the artifact being promoted
-          # was BUILT from this commit. Binding a commit rather than the bytes
-          # leaves that gap open — a different artifact could name the same
-          # source. The check is possible here (the artifact commit message
-          # records its source) and is simply not written yet. Until it is,
-          # this proves a human approved releasing this COMMIT, not that these
-          # BYTES came from it.
+          # Not checked HERE: that the artifact being promoted was built from
+          # this commit. That check exists, in `promote` — it needs the host
+          # credentials, which this job deliberately does not have. Together the
+          # two establish both halves: a human approved this commit, and these
+          # bytes came from it.
           #
           # NOT CHECKED, and not to be claimed: repository, environment and
           # pipeline live in executionContext, which the public projection
@@ -158,6 +156,7 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+          COMMIT: ${{ inputs.commit }}
         run: |
           set -euo pipefail
           host="${DEPLOYMENT_URL#https://}"; host="${host#http://}"; host="${host%%/*}"
@@ -181,6 +180,33 @@ jobs:
           if d.get('readyState') != 'READY':
               print(f"::error::build is {d.get('readyState')}, not READY")
               raise SystemExit(1)
+
+          # THE PROVENANCE CHECK. The receipt binds a source COMMIT, not these
+          # bytes — that is the price of a value a released page can carry. The
+          # gap it leaves is that a different artifact could name the same
+          # source, and this is where it closes: the build being promoted must
+          # have been produced by the artifact commit that records the approved
+          # commit as its source.
+          #
+          # Runs here rather than in `verify` because only this job holds the
+          # host credentials, by design — verify must stay reachable without
+          # them.
+          approved = os.environ['COMMIT'].strip().lower()
+          meta = d.get('meta') or {}
+          artifact_sha = (meta.get('githubCommitSha') or '').strip().lower()
+          artifact_msg = meta.get('githubCommitMessage') or ''
+          if not artifact_sha:
+              print('::error::the host did not report which commit produced this build')
+              raise SystemExit(1)
+          # The artifact commit either IS the approved commit, or records it as
+          # the source it was built from (the build workflow writes exactly
+          # "build: website artifact from <sha>").
+          if artifact_sha != approved and approved[:7] not in artifact_msg.lower():
+              print(f'::error::this build came from {artifact_sha[:7]} '
+                    f'({artifact_msg.splitlines()[0] if artifact_msg else "no message"}), '
+                    f'which does not record {approved[:7]} as its source')
+              raise SystemExit(1)
+          print(f'Provenance OK: build {artifact_sha[:7]} came from approved commit {approved[:7]}.')
 
           # This endpoint returns the identifier as `id`. An earlier version
           # read `uid`, which is absent here — it survived review because the
