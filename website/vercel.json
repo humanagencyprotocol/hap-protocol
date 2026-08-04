@@ -4,5 +4,27 @@
   "installCommand": "echo 'no install — the artifact is committed'",
   "buildCommand": "echo 'no build — the artifact is committed'",
   "outputDirectory": "dist",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- dist"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- dist",
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/service", "destination": "/protocol", "permanent": true },
+    { "source": "/gatekeeper", "destination": "/protocol", "permanent": true }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+      ]
+    },
+    {
+      "source": "/(llms.txt|context.txt)",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
 }

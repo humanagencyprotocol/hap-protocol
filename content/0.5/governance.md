@@ -3,6 +3,7 @@ title: "Human Agency Protocol — Governance"
 version: "Version 0.5"
 date: "June 2026"
 status: "Normative — full prose"
+description: "How HAP is governed: invariant constraints instead of institutions. No central authority, no registry, no approval process — conformance is enforced locally."
 ---
 
 HAP is governed by invariant constraints, not institutions.

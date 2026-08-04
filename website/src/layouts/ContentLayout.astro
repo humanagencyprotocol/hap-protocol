@@ -1,8 +1,12 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import { siteConfig } from '../config';
 
 interface Props {
   title: string;
+  description?: string;
+  lang?: string;
+  noindex?: boolean;
   version?: string;
   date?: string;
   nextPage?: { url: string; label: string };
@@ -10,11 +14,91 @@ interface Props {
   headings?: { depth: number; slug: string; text: string }[];
 }
 
-const { title, version, date, nextPage, breadcrumb, headings = [] } = Astro.props;
+const {
+  title,
+  description,
+  lang = 'en',
+  noindex = false,
+  version,
+  date,
+  nextPage,
+  breadcrumb,
+  headings = [],
+} = Astro.props;
 const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+
+// Several spec documents are titled "Human Agency Protocol — <part>". Prefixing
+// those with "HAP - " spends 47 characters of the SERP line saying the brand
+// twice, so the prefix is only added when the title does not already carry it.
+const hasBrand = /human agency protocol|^HAP\b/i.test(title);
+const pageTitle = hasBrand ? title : `HAP - ${title}`;
+
+const origin = (Astro.site ?? new URL(siteConfig.url)).origin;
+const currentPath = Astro.url.pathname;
+const canonicalPath = currentPath !== '/' ? currentPath.replace(/\/$/, '') : '/';
+const pageUrl = new URL(canonicalPath, origin).href;
+
+// Frontmatter dates are human strings ("June 2026"); schema.org wants ISO 8601
+// and parsers drop anything else. Built from local date parts, not
+// toISOString(): the UTC conversion would shift "June 2026" to May 31 on any
+// build machine east of Greenwich.
+const parsedDate = date ? new Date(date) : undefined;
+const publishedIso =
+  parsedDate && !Number.isNaN(parsedDate.valueOf())
+    ? [
+        parsedDate.getFullYear(),
+        String(parsedDate.getMonth() + 1).padStart(2, '0'),
+        String(parsedDate.getDate()).padStart(2, '0'),
+      ].join('-')
+    : undefined;
+
+// The spec pages are the citable artefacts on this site — mark them up as such
+// so they can surface as documents rather than as anonymous pages.
+const articleSchema: Record<string, unknown> = {
+  '@type': 'TechArticle',
+  '@id': `${pageUrl}#article`,
+  headline: title,
+  name: title,
+  url: pageUrl,
+  inLanguage: 'en',
+  isPartOf: { '@id': `${origin}/#website` },
+  publisher: { '@id': `${origin}/#organization` },
+  license: 'https://opensource.org/licenses/MIT',
+  ...(description ? { description } : {}),
+  ...(version ? { version } : {}),
+  ...(publishedIso ? { datePublished: publishedIso } : {}),
+};
+
+// Back the breadcrumb bar that already renders visually with real markup.
+const crumbs = [{ url: '/', label: 'Home' }, ...(breadcrumb ?? [])];
+const breadcrumbSchema: Record<string, unknown> = {
+  '@type': 'BreadcrumbList',
+  '@id': `${pageUrl}#breadcrumb`,
+  itemListElement: [
+    ...crumbs.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.label,
+      item: new URL(item.url, origin).href,
+    })),
+    {
+      '@type': 'ListItem',
+      position: crumbs.length + 1,
+      name: title,
+      item: pageUrl,
+    },
+  ],
+};
 ---
 
-<BaseLayout title={`HAP - ${title}`}>
+<BaseLayout
+    title={pageTitle}
+    description={description}
+    lang={lang}
+    noindex={noindex}
+    ogType="article"
+    schema={noindex ? [] : [articleSchema, breadcrumbSchema]}
+>
     {breadcrumb && breadcrumb.length > 0 && (
         <nav class="breadcrumb-bar" aria-label="Breadcrumb">
             <div class="breadcrumb-inner">

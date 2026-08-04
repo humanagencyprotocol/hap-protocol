@@ -7,9 +7,24 @@ import ReleaseBadge from '../components/ReleaseBadge.astro';
 interface Props {
   title: string;
   description?: string;
+  /** Overrides the document language (e.g. the German Impressum). */
+  lang?: string;
+  /** Keeps legal / duplicate pages out of the index while staying reachable. */
+  noindex?: boolean;
+  /** og:type — 'website' for landing pages, 'article' for the spec documents. */
+  ogType?: 'website' | 'article';
+  /** Extra JSON-LD objects merged into the sitewide @graph. */
+  schema?: Record<string, unknown>[];
 }
 
-const { title, description = siteConfig.description } = Astro.props;
+const {
+  title,
+  description = siteConfig.description,
+  lang = 'en',
+  noindex = false,
+  ogType = 'website',
+  schema = [],
+} = Astro.props;
 const currentPath = Astro.url.pathname;
 const version = siteConfig.version;
 
@@ -28,9 +43,48 @@ const version = siteConfig.version;
 const deploySha = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.PUBLIC_DEPLOY_SHA;
 const deployShaShort = typeof deploySha === 'string' ? deploySha.slice(0, 7) : '';
 
-// Build-time QR code for the mobile share popup — an inline SVG of this page's
-// canonical URL, so no client-side JS or QR library is needed to render it.
-const pageUrl = new URL(currentPath, Astro.site ?? 'https://humanagencyprotocol.org').href;
+// One canonical URL per page, used by the QR code, <link rel="canonical">, and
+// the Open Graph tags alike — they must not be allowed to disagree.
+//
+// Astro emits directory-style output (/protocol/index.html), so the runtime
+// pathname can carry a trailing slash while every internal link is written
+// without one. Normalise to the no-slash form and let vercel.json redirect the
+// slashed variant, so exactly one URL is ever advertised.
+const origin = (Astro.site ?? new URL(siteConfig.url)).origin;
+const canonicalPath = currentPath !== '/' ? currentPath.replace(/\/$/, '') : '/';
+const pageUrl = new URL(canonicalPath, origin).href;
+const ogImageUrl = new URL(siteConfig.ogImage, origin).href;
+
+// Sitewide entity graph. Anchored with @id so page-level schema (TechArticle,
+// BreadcrumbList) can point back at the publisher instead of redeclaring it.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${origin}/#organization`,
+      name: siteConfig.title,
+      alternateName: 'HAP',
+      url: `${origin}/`,
+      logo: new URL('/favicon.svg', origin).href,
+      description: siteConfig.description,
+      // sameAs asserts identity, and HAP and Suveren are separate entities:
+      // HAP is the neutral open protocol, Suveren a commercial implementation
+      // based on it. Only the GitHub org is the same entity as this site.
+      // Suveren stays a factual reference (footer, llms.txt), not an identity.
+      sameAs: [siteConfig.github],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${origin}/#website`,
+      name: siteConfig.title,
+      url: `${origin}/`,
+      inLanguage: 'en',
+      publisher: { '@id': `${origin}/#organization` },
+    },
+    ...schema,
+  ],
+};
 const shareQrSvg = await QRCode.toString(pageUrl, {
   type: 'svg',
   margin: 0,
@@ -41,12 +95,37 @@ const shareTitle = title.replace(/^(HAP|Human Agency Protocol)\s*[-–—|:]\s*/
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang={lang}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
     <meta name="description" content={description}>
+    <link rel="canonical" href={pageUrl}>
+    {noindex && <meta name="robots" content="noindex, follow">}
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable context">
+    <link rel="alternate" type="application/rss+xml" title={`${siteConfig.title} — specification releases`} href="/rss.xml">
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml">
+
+    <meta property="og:type" content={ogType}>
+    <meta property="og:site_name" content={siteConfig.title}>
+    <meta property="og:locale" content={lang === 'de' ? 'de_AT' : 'en_US'}>
+    <meta property="og:title" content={title}>
+    <meta property="og:description" content={description}>
+    <meta property="og:url" content={pageUrl}>
+    <meta property="og:image" content={ogImageUrl}>
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Human Agency Protocol — no receipt, no execution.">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content={title}>
+    <meta name="twitter:description" content={description}>
+    <meta name="twitter:image" content={ogImageUrl}>
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 </head>
 <body>
     <nav>
@@ -110,8 +189,8 @@ const shareTitle = title.replace(/^(HAP|Human Agency Protocol)\s*[-–—|:]\s*/
                 <ul>
                     <li><a href="/governance">Governance</a></li>
                     <li><a href="/review">Review</a></li>
-                    <li><a href="https://www.humanagencyprotocol.com/" target="_blank" rel="noopener noreferrer">Get Started</a></li>
-                    <li><a href="https://github.com/humanagencyprotocol/hap-protocol">GitHub</a></li>
+                    <li><a href={siteConfig.implementation} target="_blank" rel="noopener">Suveren — a conforming implementation</a></li>
+                    <li><a href={siteConfig.github}>GitHub</a></li>
                 </ul>
             </div>
         </div>

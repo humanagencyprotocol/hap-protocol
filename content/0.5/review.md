@@ -1,8 +1,9 @@
 ---
-title: "Review"
+title: "Human Agency Protocol — Review and Future Directions"
 version: "Version 0.5"
 date: "June 2026"
 status: "Non-normative — future directions"
+description: "Non-normative v0.5 material: optional extensions and future directions an implementation may adopt or skip without affecting conformance."
 ---
 
 This document collects v0.5 material that is **specified but not required for conformance** — future directions, optional extensions, and topics deferred to a later version. A v0.5 implementation MAY implement any of these without losing conformance, and MAY skip all of them without losing conformance. It is kept as a dedicated document to keep `protocol.md` focused on the binding protocol surface.

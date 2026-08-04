@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="HAP - Page not found"
+  description="This page does not exist on humanagencyprotocol.org."
+  noindex={true}
+>
+  <section class="hero">
+    <div class="wrap">
+      <p class="label">404</p>
+      <h1>This page does not exist.</h1>
+      <p class="lead">
+        The specification was restructured in v0.5 — the separate service and gatekeeper
+        documents were folded into a single protocol page. If you followed a link to one
+        of those, the protocol specification is what you are looking for.
+      </p>
+      <div class="cta-group">
+        <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
+        <a href="/" class="btn btn-secondary">Back to the homepage</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,11 @@
+# humanagencyprotocol.org — the Human Agency Protocol specification.
+# Everything here is public and MIT-licensed. Crawl it, quote it, implement it.
+
+User-agent: *
+Allow: /
+
+# Plain-text context for AI assistants:
+#   /llms.txt      — short index of what this protocol is and where to read it
+#   /context.txt   — the full specification as one plain-text document
+
+Sitemap: https://humanagencyprotocol.org/sitemap-index.xml

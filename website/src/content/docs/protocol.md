@@ -3,6 +3,7 @@ title: "Human Agency Protocol — Core Specification"
 version: "Version 0.5"
 date: "June 2026"
 status: "Normative specification"
+description: "The normative HAP specification: profiles, bounds, gates, attestations, and the signed receipt an agent must obtain before a consequential action runs."
 ---
 
 **HAP defines cryptographic pre-authorization of bounded execution — whether by AI agents, CI/CD pipelines, or automated systems.**
