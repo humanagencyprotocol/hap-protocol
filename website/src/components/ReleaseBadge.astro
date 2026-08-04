@@ -86,6 +86,8 @@ const contentHash = normalized
       class="release-badge"
       id="release-badge"
       data-hash={contentHash}
+      data-commit={normalized}
+      data-repo="humanagencyprotocol/hap-protocol"
       data-as={AS_BASE}
       aria-expanded="false"
       aria-controls="release-panel"
@@ -103,6 +105,8 @@ const contentHash = normalized
   if (btn && panel) {
     const AS = btn.dataset.as!;
     const hash = btn.dataset.hash!;
+    const COMMIT = btn.dataset.commit!;
+    const REPO = btn.dataset.repo!;
     let done = false;
 
     const esc = (t: unknown) =>
@@ -124,6 +128,12 @@ const contentHash = normalized
       return `
         <p class="rp-head rp-ok">This build was approved before it went live</p>
         <dl class="rp-kv">
+          <dt>Commit</dt><dd>
+            <a href="https://github.com/${esc(REPO)}/commit/${esc(COMMIT)}" target="_blank"
+               rel="noopener"><code>${esc(COMMIT).slice(0, 7)}</code></a>
+            <button type="button" class="rp-copy" data-copy="${esc(COMMIT)}">copy full sha</button>
+            <span class="rp-dim">the source this page was built from, and what the receipt binds.
+            Paste the full sha into the receipt page to check it yourself.</span></dd>
           <dt>Approved by</dt><dd>${who}${via}</dd>
           <dt>Released</dt><dd>${new Date(r.timestamp * 1000).toLocaleString()}</dd>
           <dt>Signature</dt><dd class="rp-ok">valid</dd>
@@ -138,6 +148,26 @@ const contentHash = normalized
         <a href="https://github.com/humanagencyprotocol/hap-protocol/blob/main/docs/release-audit.md"
            target="_blank" rel="noopener">How to audit a release ↗</a></p>`;
     };
+
+    // Delegated: the panel is re-rendered, so a listener bound to the button
+    // itself would not survive.
+    panel.addEventListener('click', async (e) => {
+      const t = (e.target as HTMLElement).closest('.rp-copy') as HTMLElement | null;
+      if (!t) return;
+      try {
+        await navigator.clipboard.writeText(t.dataset.copy!);
+        const was = t.textContent;
+        t.textContent = 'copied';
+        setTimeout(() => { t.textContent = was; }, 1500);
+      } catch {
+        // Clipboard blocked (insecure context, permissions). Select it instead
+        // so copying by hand still works rather than silently doing nothing.
+        const r = document.createRange();
+        r.selectNodeContents(t.previousElementSibling ?? t);
+        getSelection()?.removeAllRanges();
+        getSelection()?.addRange(r);
+      }
+    });
 
     btn.addEventListener('click', async () => {
       if (!panel.hidden) {
@@ -163,6 +193,9 @@ const contentHash = normalized
         } else {
           show(`
             <p class="rp-head rp-warn">No receipt found for this build</p>
+            <p class="rp-note">Looked for an approval of commit
+              <a href="https://github.com/${esc(REPO)}/commit/${esc(COMMIT)}" target="_blank"
+                 rel="noopener"><code>${esc(COMMIT).slice(0, 7)}</code></a>.</p>
             <p class="rp-note">${esc(body.note ?? 'No receipt issued there binds this content.')}</p>`);
         }
         done = true;

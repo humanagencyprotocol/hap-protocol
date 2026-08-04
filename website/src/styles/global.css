@@ -683,3 +683,18 @@ hr {
     .release-badge { font-size: 0.7rem; padding: 0.2rem 0.45rem; }
     .release-panel { position: fixed; left: 0.75rem; right: 0.75rem; min-width: 0; top: calc(var(--nav-height) + 0.5rem); }
 }
+
+/* Copy control inside the release panel. The verifier hashes the FULL sha —
+   the short form returns "no match", which reads as "not approved". */
+.release-panel .rp-copy {
+    font: inherit;
+    font-size: 0.72rem;
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.35rem;
+    color: var(--text-secondary);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+.release-panel .rp-copy:hover { color: var(--text-primary); border-color: var(--accent); }
