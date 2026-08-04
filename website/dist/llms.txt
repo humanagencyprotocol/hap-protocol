@@ -1,0 +1,45 @@
+# Human Agency Protocol (HAP)
+
+> HAP is an open, MIT-licensed protocol for bounded AI-agent authority. Humans
+> hold authority. Agents borrow it, bounded, and every consequential act carries
+> proof the loan was honoured before it happened.
+
+The central invariant is **no receipt, no execution**. The receipt is the
+*precondition* for a consequential action, not a record of one. It is obtained
+before the action runs; if it cannot be issued — out of scope, over a limit,
+approval missing, revoked, expired — the action does not happen.
+
+HAP defines three roles:
+
+- **Authority Server** — holds the signing key. Enforces cumulative limits,
+  approval and revocation. **Issues and signs** the receipt (Ed25519). Can refuse.
+- **Gatekeeper** — holds the bounds locally. Verifies the attempted action
+  against granted authority, then **requests** a receipt pre-flight, fail-closed.
+  The Gatekeeper never issues a receipt; it asks.
+- **Executor** — holds the credentials. Runs the downstream tool, only after a
+  valid receipt exists.
+
+Core concepts: profiles (declare what a kind of authority means), bounds
+(limits the Authority Server enforces), context (local constraints), gates
+(human checkpoints), attestations (signed grants), receipts (signed
+per-action preconditions).
+
+HAP is not a permission system, not a guarantee of compliance (it is enabling
+infrastructure for regimes such as EU AI Act Art. 14 and ISO 42001), and not
+agent sandboxing.
+
+## Specification
+
+- [Core Specification](https://humanagencyprotocol.org/protocol): the normative protocol — profiles, bounds, gates, attestations, receipts, and the behaviour required of each role.
+- [Governance](https://humanagencyprotocol.org/governance): how HAP is governed — invariant constraints instead of institutions. No central authority, no registry, no approval process.
+- [Review and Future Directions](https://humanagencyprotocol.org/review): non-normative optional extensions an implementation may adopt or skip without affecting conformance.
+
+## Full text
+
+- [Complete specification as plain text](https://humanagencyprotocol.org/context.txt): every specification document concatenated into a single file, intended for pasting into an AI assistant.
+
+## Implementations
+
+- [Suveren](https://www.suveren.ai): a commercial HAP-compliant implementation. The Suveren Gateway (open source) implements the Gatekeeper and Executor roles; the Suveren Authority Server implements the Authority Server role, hosted or self-hosted.
+- [hap-core on npm](https://www.npmjs.com/package/@humanagencyp/hap-core): the open-source protocol library — verification, canonicalisation and hashing, attestation decode/verify, content binding, identity.
+- [GitHub](https://github.com/humanagencyprotocol/hap-protocol): specification source, authorization profiles, and reference MCP connectors.
