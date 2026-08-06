@@ -65,3 +65,6 @@ prompts.md
 
 # MCP config (local)
 .mcp.json
+
+# scratch/session working files — never tracked
+temp/
