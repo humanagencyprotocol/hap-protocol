@@ -156,11 +156,11 @@ Source: https://github.com/humanagencyprotocol/hap-gateway
 
 ---
 
-## HAP Service Provider
+## HAP Authority Server
 
-**Status: live at humanagencyprotocol.com. Signing real attestations today.**
+**Status: live at suveren.ai. Signing real attestations today.**
 
-The Service Provider is the authorization backend. It tracks who has authority to authorize what, signs Ed25519 attestations that prove human commitment, and stores the receipts of every action executed under those attestations. Use it solo or in teams.
+The Authority Server is the authorization backend. It tracks who has authority to authorize what, signs Ed25519 attestations that prove human commitment, and stores the receipts of every action executed under those attestations. Use it solo or in teams.
 
 **What it does:**
 
@@ -169,7 +169,7 @@ The Service Provider is the authorization backend. It tracks who has authority t
 - **Receipts** — Every action produces a signed receipt — cryptographic proof of what was done, when, and under which authorization.
 - **Public verification** — Open endpoints let third parties (auditors, regulators, insurers) independently confirm any authorization or receipt without trusting the operator.
 
-**Division of responsibility:** The Service Provider answers "who has authority to authorize what." The Gateway answers "is this specific tool call authorized right now." The receipt proves it happened within bounds.
+**Division of responsibility:** The Authority Server answers "who has authority to authorize what." The Gateway answers "is this specific tool call authorized right now." The receipt proves it happened within bounds.
 
 ---
 
@@ -195,7 +195,7 @@ Profiles are referenced by ID (e.g., \`charge@0.4\`) and are immutable once publ
 
 All profiles require the same six gates: bounds, problem, objective, tradeoff, commitment, and decision owner.
 
-**Community profiles:** Anyone can publish profiles through the Service Provider. Published profiles are immutable and versioned. There is no central approval process — trust is local to each operator.
+**Community profiles:** Anyone can publish profiles through the Authority Server. Published profiles are immutable and versioned. There is no central approval process — trust is local to each operator.
 
 Source: https://github.com/humanagencyprotocol/hap-profiles
 
@@ -208,7 +208,7 @@ HAP is not a paper spec. Every component described above is implemented and runn
 - **Specification** — v${version}, published in \`content/${version}/\` (open source)
 - **Agent Gateway** — open source, Docker image at \`ghcr.io/humanagencyprotocol/hap-gateway\`
 - **Authority Profiles** — open source, 7 v0.4 profiles at github.com/humanagencyprotocol/hap-profiles
-- **Service Provider** — hosted service at humanagencyprotocol.com (not open source; runs the signing backend and public verification endpoints)
+- **Authority Server** — hosted service at suveren.ai (not open source; runs the signing backend and public verification endpoints)
 - **MCP integrations** — CRM, records, LinkedIn, Gmail, Mollie reference implementations
 
 An AI agent reading this context can connect to a running HAP gateway today and operate within bounds.

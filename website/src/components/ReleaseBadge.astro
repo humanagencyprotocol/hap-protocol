@@ -142,11 +142,9 @@ const contentHash = normalized
         <p class="rp-note"><strong>What this does not show.</strong> This page told Suveren which
         build it is. So you are seeing that a human approved releasing <em>that</em> build — not that
         the bytes you are reading are those bytes. A page could name a build it is not.</p>
-        <p class="rp-note">Closing that gap needs access to the hosting account: list the project's
-        deployments, find the one whose address matches this receipt, and check it is the deployment
-        currently serving this domain. That audit also recovers the commit it was built from.
-        <a href="https://github.com/humanagencyprotocol/hap-protocol/blob/main/docs/release-audit.md"
-           target="_blank" rel="noopener">How to audit a release ↗</a></p>`;
+        <p class="rp-note">Closing that gap needs the source: this build's commit is public, so
+        anyone can check out the artifact built from it and compare it with what was delivered —
+        no access to our hosting account required.</p>`;
     };
 
     // Delegated: the panel is re-rendered, so a listener bound to the button
