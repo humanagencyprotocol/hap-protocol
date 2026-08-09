@@ -540,3 +540,71 @@ This is the same design as *Disclosure is declared, and silence means nothing is
 Reference implementation (hap-core, Suveren gateway, Suveren Authority Server): `fields`, `required_fields` and `appliesTo` are landed, with the field list signed into the receipt and published on the verify page so a third party knows what the hash covers — a scope that were recorded but unsigned could be re-presented as narrower than it was. `email@0.5` is the first profile to adopt it, binding `to`, `cc`, `subject` and `body`, requiring `to` and `body`, and scoped to sends; `email@0.4` is retained unchanged, so grants issued against it keep their body-only binding and nothing needs migrating. The interactive verifier reconstructs the bound object from delivered values and shows the exact canonical bytes, because `fields` records the bound keys but not their JSON types and a wrong guess must be visible rather than surfacing as an unexplained mismatch.
 
 Not yet built: `publish` (post text is bound, an attached image is not) and `deploy` (which adopts the mechanism once a case needs it — its unbound parameters are separately checked by the pipeline that consumes the receipt, which is the "stated rather than coincidental" case the conformance rule above demands). Also unbuilt: any enforcement of that conformance rule. It is currently a requirement an implementation can violate silently, and the live example is an approval surface that displays `bcc` while the binding deliberately omits it — defensible only because review-mode proposal matching independently pins the whole argument set, which is exactly the kind of second mechanism the rule says MUST be stated. Full analysis: `doc/content-binding-fields.md`.
+
+## Authority Remains with the Decision Owner; Automation Executes Under Mandate (discussion, targets v0.6)
+
+This specification already states that an agent carries no independent authority: it is an Executor, and every consequential call is checked against a grant it does not hold. Yet the vocabulary throughout says a human **delegates authority to** an agent, and that a grant is a **bounded authority** the agent **receives**.
+
+Those cannot both be true. The wording concedes the thing the architecture refuses.
+
+### The wording is what is wrong, not the design
+
+The implementation is already correct. **No authority-bearing credential, attestation, or signing key is placed in the agent's possession.** The agent receives a brief describing its bounds — that much is transferred, and must be, or it could not stay inside them. What it never receives is anything it could present as proof of authority.
+
+It requests execution; the Gatekeeper evaluates each consequential call against a mandate held elsewhere; execution may still be refused. There is no artefact an agent holds by which it could be said to carry authority.
+
+So this is not a change of position. It is the vocabulary catching up with a design decision already made and already enforced.
+
+### The claim, stated architecturally
+
+A tempting formulation — *authority cannot be delegated* — is wrong and would not survive a lawyer. Conferring authority on an agent is what agency law is for.
+
+An equally tempting repair — *an AI is not a legal person, so it cannot hold authority* — makes the protocol depend on a doctrine that may not hold everywhere or forever.
+
+Neither is needed. The claim is about what this protocol models:
+
+> **HAP does not model an automated system as an authority holder.** Authority remains with the accountable human or institution — the Decision Owner. The automated system executes under a bounded mandate issued under that authority.
+
+If some jurisdiction later grants autonomous systems a legal status of their own, the security model is unchanged, because it never rested on their lacking one.
+
+### Four terms, kept apart
+
+**Authority** — the legitimate power to decide that a consequence may occur. Held by the Decision Owner, or by an institution through accountable humans. Not held by the agent.
+
+**Mandate** — a bounded, revocable instruction issued under that authority, permitting a defined class of execution: scope, limits, context, expiry, commitment mode, approvers. An attestation records one.
+
+**Capability** — what the agent can technically do through a tool or API, irrespective of whether it may.
+
+**Execution** — one attempted consequence, evaluated against the mandate before it may run.
+
+The invariant is unchanged and gains a second sentence:
+
+> **No receipt, no execution. A mandate constrains execution; it does not transfer authority.**
+
+### Identity is not authority
+
+An implementation may track which model, process or session performed something, for attribution and telemetry. That is useful and orthogonal.
+
+It does not follow that the agent becomes an authority holder, and HAP deliberately does not authorize agents. **It authorizes executions against mandates.** This exclusion is stated rather than left implicit, so that agent-level authorization is not added later in the belief that its absence was an oversight.
+
+### Why "mandate"
+
+It has a strong and familiar European analogue. A SEPA direct-debit mandate is a bounded, revocable instruction under which a third party may initiate collections while the payer retains the power to set limits, restrict who may collect, and cancel at any time. That is the same structure, and it is already understood by the finance and public-sector readers most likely to interrogate the model.
+
+The analogy is structural, not evidential: the SEPA definition itself speaks of consent and authorisation, so it cannot show that a mandate is legally distinct from an authorization. It shows that the *shape* is familiar.
+
+Translation needs care rather than a dictionary — in German, *Mandat* carries political and legal-representation connotations that may not transfer.
+
+### What does not change
+
+**Authority Server** keeps its name. It does not originate the mandate and does not hold the Decision Owner's authority. It verifies and records the authorization state a human created, enforces mandate limits, and issues signed attestations and execution receipts. The name stays accurate: infrastructure serving the authority relationship, not the party to it.
+
+**`authorization_id`, `authz_` identifiers, the attestation wire format.** An authorization is the record of a mandate being issued. Renaming signed identifiers would invalidate every existing grant to gain a synonym.
+
+**Decision Owner** already names the human who retains authority. No second term is introduced for the same role.
+
+### Honest scope
+
+This changes how the protocol is explained, not what any implementation does. No conformance requirement follows, no verification changes, and an implementation using the older vocabulary is not less conformant.
+
+It is recorded because the current wording undermines the strongest claim the protocol makes — and because a specification that describes its own architecture inaccurately invites the misreading it exists to prevent.
