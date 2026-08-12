@@ -32,7 +32,8 @@ agent sandboxing.
 
 - [Core Specification](https://humanagencyprotocol.org/protocol): the normative protocol — profiles, bounds, gates, attestations, receipts, and the behaviour required of each role.
 - [Governance](https://humanagencyprotocol.org/governance): how HAP is governed — invariant constraints instead of institutions. No central authority, no registry, no approval process.
-- [Review and Future Directions](https://humanagencyprotocol.org/review): non-normative optional extensions an implementation may adopt or skip without affecting conformance.
+- [Changelog](https://humanagencyprotocol.org/changelog): non-normative record of what each version promoted into the binding surface, under which rule, and what was retired.
+- [Review and Future Directions](https://humanagencyprotocol.org/review): non-normative forward ledger — open directions with their targets, deviation notes, and where the specification currently leads its reference implementation.
 
 ## Full text
 
