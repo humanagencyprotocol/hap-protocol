@@ -1,14 +1,14 @@
 ---
 title: "Human Agency Protocol — Review and Future Directions"
 version: "Version 0.5"
-date: "June 2026"
+date: "August 2026"
 status: "Non-normative — future directions"
 description: "Non-normative v0.5 material: optional extensions and future directions an implementation may adopt or skip without affecting conformance."
 ---
 
 This document collects v0.5 material that is **specified but not required for conformance** — future directions, optional extensions, and topics deferred to a later version. A v0.5 implementation MAY implement any of these without losing conformance, and MAY skip all of them without losing conformance. It is kept as a dedicated document to keep `protocol.md` focused on the binding protocol surface.
 
-The decision rule for promoting a future direction into the binding surface is: at least one reference implementation exercises it end-to-end **and** at least one external integrator depends on it. As of v0.5, only Content Provenance has a reference implementation (Suveren's `records`/`customers`); none has a dependent external integrator, so none is promoted.
+The decision rule for promoting a future direction into the binding surface is: at least one reference implementation exercises it end-to-end **and** at least one external integrator depends on it. Several directions below now satisfy the first condition — Content Provenance, Portable Tool-Gating Binding, Read Authorization and Content Binding Over Declared Fields each report a reference implementation in their own Status paragraphs. **None has a dependent external integrator, so none is promoted.** The second condition is the binding one, and it is the condition no amount of implementation work satisfies on its own.
 
 ---
 
@@ -274,13 +274,36 @@ If implemented, `stream` MUST be part of the **signed** attestation payload (oth
 
 The use cases that motivate decision streams (public project histories, regulatory audits of multi-step decisions) have not surfaced in any reference implementation since v0.3. v0.6 will re-review; if no integrator has asked by then, this direction retires.
 
+## The Authority Server Cannot Check Itself (invariant — targets `governance.md` in v0.6)
+
+Several limitations recorded in this document have the same shape, and stating the shape once is worth more than restating the limitation each time it recurs:
+
+> **An AS-side *check* is not a defence against the AS.**
+> **An AS-*signed artifact held by another party* is evidence a compromised AS cannot retroactively alter.**
+
+Both halves are load-bearing, and the second is the one that stops the first from proving too much.
+
+The first half retires a class of decorative control. If the only thing standing between a claim and its abuse is the Authority Server validating that claim, then against a compromised Authority Server nothing stands there at all. A requirement the AS records, a uniqueness check the AS performs, a key directory the AS serves — each is a control that holds against an honest operator and evaporates against a dishonest one. That is not a reason to remove them; it is a reason not to describe them as defences against the operator.
+
+The second half is why receipts are worth anything. An AS-signed artifact does not *prevent* a malicious operator. But once it is signed and in someone else's hands it cannot be rewritten, which is precisely why receipts outlive attestations (`protocol.md` → *Receipts Outlive Attestations*): expiring or revoking an authorization does not erase the record of what happened under it. Evidence and prevention are different properties, and the AS can supply the first without being trusted for the second.
+
+**What the invariant already catches in this document.** Cumulative bound enforcement is an AS-side check, and the section immediately below concedes exactly that ("it can over-authorize authorities the human *did* create"). The approver public-key directory (below, third bullet) is a second instance: keys served by the AS, unauthenticated, not bound into the signed payload. Neither observation is new — but they were reached separately, and a reader currently has no way to see that they are the same finding twice.
+
+**Consequence, and the item it creates.** Adopting the invariant requires auditing everything the specification currently describes as "enforced" and separating the two properties: what holds only against an honest AS, and what holds against a later-compromised one. That audit is substantial and is tracked as its own item; it does not gate stating the invariant. It must, however, actually be tracked — an invariant with no audit behind it is the same decorative control it was written to eliminate.
+
+**Normative home.** This belongs in `governance.md` alongside the Trust Model, not in a subsection of whichever feature surfaced it. It is recorded here first because it generalizes well beyond any single direction below, and because the owner co-signature work depends on it: co-signature exists to move authorization out of the class the first half describes and into the class the second half describes.
+
 ## Resilience to a Compromised Authority Server
 
 v0.5's threat model treats the Authority Server as **trusted to sign honestly and to enforce cumulative bounds, revocation, and approval** (see *Trust Model* in `governance.md`). The local Gatekeeper is the floor: it re-derives `gate_content_hashes` from locally-held content and enforces per-transaction bounds and context constraints, so a misbehaving AS cannot make an Executor run an action whose intent/context/bounds the human never authored locally. It can, however, over-authorize authorities the human *did* create (exceed cumulative caps, ignore a revocation, skip required approvals) and — because the human does not co-sign — it can fabricate authorization artifacts attributed to a Decision Owner. Hardening HAP against a fully compromised AS is a forward direction, not a v0.5 guarantee:
 
 - **Owner co-signatures.** Have the Decision Owner sign the attestation (or a commitment over its bounds/context/intent/mode) with their own key, so authorization is non-repudiable independent of the AS — and approvals are owner signatures rather than AS assertions. Highest-leverage: removes the AS's ability to forge authority, skip approvals, or flip commitment mode.
 - **Transparency log.** An append-only, independently auditable log of signed attestations and receipts, so a user can detect equivocation, forged authorizations under their DID, ignored revocations, or cumulative-cap violations.
-- **Approver public-key authenticity.** Under companion spec `intent-disclosure@0.1`, intent confidentiality holds against a passive AS and any interceptor, but the approver public keys used to wrap the content key are served by the AS unauthenticated and are not bound into the signed attestation. An actively malicious AS could substitute an attacker key and read intent (detectable after the fact, but already leaked). Bind the approver→pubkey map into the signed payload, or sign/pin the key directory.
+- **Approver public-key authenticity.** Under companion spec `intent-disclosure@0.1`, intent confidentiality holds against a passive AS and any interceptor, but the approver public keys used to wrap the content key are served by the AS unauthenticated and are not bound into the signed attestation. An actively malicious AS could substitute an attacker key and read intent (detectable after the fact, but already leaked).
+
+  The remedy must be read against the invariant above, which rules out the obvious half of it. **An AS signature over its own key directory is no defence** — that is the AS vouching for the AS. **Binding the approver→pubkey map into the signed attestation is worth doing but is not sufficient**: it makes *later* substitution detectable, while an AS that is already malicious at issuance simply signs the attacker's key into the payload. What actually holds is a key the verifier does not receive from the AS at all — pinned out of band, or carried in an independently resolvable identifier.
+
+  That points at the same answer reached for owner signing keys (key-bearing DIDs), but it does not transfer for free: these are **encryption** keys used to wrap a content key, whereas the `did:key` used elsewhere in this specification carries an Ed25519 **signing** key. Closing this properly requires either an identifier that carries an X25519 key or a defined derivation from the signing key — a decision not to be taken casually, and one this document should record rather than assume. Open.
 
 ## Identity Assurance (targets v0.6)
 
