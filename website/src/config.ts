@@ -5,6 +5,18 @@ export const siteConfig = {
   version: pkg.version,
   title: 'Human Agency Protocol',
   /**
+   * The positioning line, in plain text.
+   *
+   * Shown as the brand line above the title on every versioned specification
+   * document. The homepage sets the same words as its `<h1>` but cannot consume
+   * this string, because it wraps "authority" in an accent span — so that one
+   * copy is marked up by hand in `index.astro` and must be kept in step.
+   *
+   * Plain-english form of the v0.6 invariant: a mandate constrains execution;
+   * it does not transfer authority.
+   */
+  tagline: 'Give AI autonomy without giving it authority',
+  /**
    * Site-wide fallback description.
    *
    * Individual pages override this — see `description` in the docs collection

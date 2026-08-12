@@ -1,7 +1,7 @@
 ---
 title: "Human Agency Protocol — Governance"
-version: "Version 0.5"
-date: "June 2026"
+version: "Version 0.6"
+date: "August 2026"
 status: "Normative — full prose"
 description: "How HAP is governed: invariant constraints instead of institutions. No central authority, no registry, no approval process — conformance is enforced locally."
 ---
@@ -39,6 +39,8 @@ No executor (human or machine) may perform a consequential action unless precede
 
 This is the v0.5 strengthening of the v0.3 invariant. v0.3 required only the attestation. v0.5 requires both the attestation (proof of authorization) and the receipt (proof that the specific action was within bounds at the time of execution).
 
+v0.6 adds the second sentence of the invariant: **a mandate constrains execution; it does not transfer authority.** HAP does not model an automated system as an authority holder — authority remains with the Decision Owner, and the protocol authorizes executions against mandates, never agents (see `protocol.md` → *Authority, Mandate, Capability, Execution*).
+
 ### Invariant 2 — Explicit Human Decision Ownership
 
 Every attestation must reference at least one identifiable human Decision Owner. Collective, symbolic, or anonymous ownership is invalid.
@@ -52,10 +54,11 @@ Each Decision Owner is identified by DID. In group mode, execution is invalid if
 No semantic content may leave local custody by protocol design. ASes and Executors receive only:
 
 - Bounds (in plaintext, for AS enforcement)
-- Cryptographic hashes (`bounds_hash`, `context_hash`, `execution_context_hash`, `gate_content_hashes.intent`)
+- Cryptographic hashes (`bounds_hash`, `context_hash`, `execution_context_hash`, `gate_content_hashes.intent`, `contentHash`)
 - Structural metadata
-- Signatures
+- Signatures (the AS's, and any owner mandate/approval signatures)
 - DIDs and owner declarations
+- **By explicit owner opt-in only:** a disclosed identity (`subjects.disclose.name`) under Identity Assurance (`protocol.md` → *Identity Assurance*). This is the single carve-out to the list above, it exists only at `assurance: "high"`, and it is opt-in per authorization — never a protocol default. An AS that receives a name the owner did not explicitly choose to disclose violates this invariant.
 
 Context content, intent text, and any other narrative remain local.
 
@@ -79,7 +82,9 @@ Every authorized action must produce an AS-signed receipt before it executes. Th
 
 A Gatekeeper that fronts MCP tool calls (or any other tool-shaped surface) MUST gate every tool — including read-only tools — through a tool-gating manifest. There is no permissive default and no implicit categorization. `actionType` MUST be resolved from the manifest, never inferred from string patterns on tool names.
 
-A system that exposes ungated tool access, or that derives enforcement semantics from tool-name parsing, is not v0.5 compliant.
+A system that exposes ungated tool access, or that derives enforcement semantics from tool-name parsing, is not v0.5+ compliant.
+
+v0.6 extends the same fail-closed reading to the read path: a tool classified as a read that declares no applicable read governance MUST be denied (or carry an explicit, recorded exemption), and a resource scope enforced on writes MUST bind reads of the same resource (`protocol.md` → *Read Authorization*).
 
 ### Invariant 9 — Deterministic Signing
 
@@ -87,7 +92,19 @@ A system that exposes ungated tool access, or that derives enforcement semantics
 
 Attestation and receipt signatures MUST be produced over a deterministic JSON canonicalization (sorted keys, no insignificant whitespace, base64url signatures, RFC 8785 compatible). Implementations MUST publish at least one signing test vector so independent verifiers can confirm canonicalization parity.
 
-A system whose signatures depend on object insertion order or implementation-specific JSON serialization is not v0.5 compliant.
+A system whose signatures depend on object insertion order or implementation-specific JSON serialization is not v0.5+ compliant.
+
+### Invariant 10 — Complete Mediation
+
+> New in v0.6.
+
+A HAP deployment MUST ensure that every consequential capability within its scope is reachable **only** through a HAP-enforced boundary — either because no path to the effector exists that does not traverse the Gatekeeper (**path exclusivity**), or because the effector itself refuses to produce the consequential effect without a valid execution receipt (**receipt-demanding execution**).
+
+A receipt-demanding effector satisfies this invariant only where it establishes the authenticity, action class, scope binding, freshness, and replay protection appropriate to that action (see *Deployment Security Profile*). Verifying a signature alone is not mediation: it confirms the receipt is genuine, not that it authorizes this effect now.
+
+**Invariant 1 is conditional on this one.** A deployment that leaves an unmediated path to a consequential capability does not satisfy "no execution without attestation and receipt" for that capability, no matter how correctly its Gatekeeper behaves — the Gatekeeper is simply not on the path.
+
+HAP does not implement, and cannot verify, the isolation this invariant depends on. It states the requirement, defines the two ways to satisfy it, and specifies the operator obligations below.
 
 ---
 
@@ -118,11 +135,12 @@ Once provisioned, the local copy is the operator's source of truth for that `pro
 Profiles must fully specify:
 - Bounds schema (enforceable parameters)
 - `boundsSchema.actionTypes: string[]` — closed registry of valid `actionType` values (new in v0.5)
-- Context schema (operational scope, may be empty)
+- Context schema (operational scope, may be empty), including any `scopeKind` and `requiredFor` declarations (new in v0.6)
 - Execution context schema (cumulative tracking)
 - Required gates (`bounds`, `intent`, `commitment`, `decision_owner`)
 - TTL limits (default and max)
 - Retention minimum
+- Any optional v0.6 surfaces it adopts: `content_binding`, public-disclosure declaration, `ownerMandate` floor, `receipt_lookup`
 
 Ambiguous Profiles are unenforceable.
 
@@ -149,7 +167,7 @@ Profiles MUST NOT define:
 Any individual, team, or system may:
 
 - Implement the HAP protocol
-- Run a Authority Server
+- Run an Authority Server
 - Publish Profiles
 - Enforce HAP locally
 - Reject non-compliant executors
@@ -217,9 +235,11 @@ To support interoperability without institutional control, the HAP ecosystem mai
 - Attestation validation test cases (per-mode: `automatic`, `review`, `review_above_cap`)
 - Receipt validation test cases (success, `BOUND_EXCEEDED`, `CUMULATIVE_LIMIT_EXCEEDED`, `APPROVAL_REQUIRED`, `INVALID_ACTION_TYPE`)
 - Profile compliance checks (presence of `boundsSchema.actionTypes`, absence of `field.enum`, absence of `paths` arrays)
-- Tool-gating manifest schema validator
+- Tool-gating manifest schema validator (incl. `manifestVersion` and the closed transform vocabulary)
+- Content-binding canonicalization vectors (`text` rule, JCS field-binding objects, pinned hashes)
+- Mandate-projection vectors — (attestation payload, reconstructed `HAP-mandate` canonical bytes, signature) triples (new in v0.6)
 
-> **v0.5 deliverable.** A normative test-vector file MUST ship with `hap-core` so any third-party AS or Gatekeeper can self-verify canonicalization parity. The file location is implementation-defined; the format is JSON with one test case per top-level entry. Implementations that pass the vectors are conformant on those points.
+> **Deliverable (since v0.5).** A normative test-vector file MUST ship with `hap-core` so any third-party AS or Gatekeeper can self-verify canonicalization parity. The file location is implementation-defined; the format is JSON with one test case per top-level entry. Implementations that pass the vectors are conformant on those points.
 
 Running these tests is voluntary. Publishing results is optional.
 
@@ -258,6 +278,52 @@ Authority Servers are trusted parties. Their governance must be explicit:
 
 ---
 
+## Deployment Security Profile
+
+> New in v0.6.
+
+Complete Mediation (Invariant 10) is satisfied by the execution environment, not by the protocol. A conformant deployment MUST provide the following properties. They are stated as obligations so an operator, an auditor, or a security reviewer has a checklist rather than an inference.
+
+Each item states a **security property**. Where a topology is named it is an example of how the property is commonly achieved, never a definition of it: a deployment that achieves the property by other means is conformant, and one that matches the topology without achieving the property is not.
+
+**Credential and effector custody.** A deployment MUST ensure that possession of any credential available to the agent is **insufficient to cause a consequential effect without HAP authorization**. Under path exclusivity, credentials capable of causing the effect MUST remain behind the Gatekeeper boundary. Under receipt-demanding execution, the effector MAY be directly reachable by the agent, and the agent MAY hold a credential that reaches it, provided the effector independently validates a receipt before producing the effect. The credential then confers reachability, not consequential authority, and separating those two is the point of the strategy.
+
+**Executor access.** An Executor MUST either accept consequential commands only through the Gatekeeper boundary, or independently enforce valid execution receipts at its own execution boundary. Exposing a directly callable interface is a violation only in the first case.
+
+**Receipt-demanding effectors.** Where an effector enforces receipts itself, it MUST establish:
+
+1. **Authenticity** — the receipt is genuine and was issued by an Authority Server the effector trusts. Where the effector cannot verify the signature itself, this reduces to trusting the issuer, and MUST NOT be described as independent verification.
+2. **Action class** — the receipt authorizes this kind of action (`actionType`, and a `profileId` the effector expects). A receipt for a cheaper action MUST NOT release a costlier one.
+3. **Scope binding** — the receipt binds *this* effect, checked by recomputing the content hash from what is about to be executed. This is the load-bearing check; without it the receipt authorizes some action rather than this one.
+4. **Freshness** — the receipt falls within a validity window the effector defines, and its timestamp is not implausibly in the future. This is what stops an old receipt returning old, possibly vulnerable, state to production.
+5. **Replay protection, scaled to the action** — where repeating the action is itself the harm (a payment, a message send, an irreversible provisioning step), the effector MUST consume the receipt atomically so a second presentation fails. Where the effect is idempotent, the validity window MAY suffice; a spent-receipt store SHOULD NOT be mandated there, since it buys little and adds state, atomicity requirements, and new failure modes.
+6. **Honest scope statement** — the effector MUST document which properties it does not check, so an operator does not infer coverage that is absent.
+
+A verifier SHOULD NOT depend on the software it is verifying: an effector that recomputes the canonical form itself, rather than calling the library that produced it, keeps a defect in that library from becoming invisible to the check that exists to catch it.
+
+**Gatekeeper integrity.** The agent MUST NOT be able to modify, replace, reconfigure, restart into a different configuration, impersonate, intercept, or extract protected secrets from the Gatekeeper. *(Non-normative: this is commonly achieved by separating agent and Gatekeeper into distinct processes under distinct user accounts, containers, hosts, or hardware boundaries, scaled to the value of the effectors involved. Separation alone does not establish the property — two processes under one account may be able to attach to one another, and a privileged container or a VM with an exposed management interface provides less than its topology suggests.)*
+
+**Signing-key custody.** The Authority Server's signing key MUST NOT reside on any host the agent can reach. Where a profile or verifier policy requires a mandate `binding` above `raw`, the owner's signing key MUST be held in the custody that binding names and MUST NOT be exportable to software the agent can read.
+
+**Fail-closed everywhere.** Every dependency whose absence would otherwise permit execution MUST refuse instead: an unreachable Authority Server blocks, an unreadable profile blocks, an undeterminable resource scope blocks, an unparseable argument blocks. "Degraded mode" is not a conformant configuration.
+
+**Declared posture.** A deployment claiming HAP conformance SHOULD record, per consequential capability, which mediation strategy it relies on. This is a **declaration, not a proof** — HAP cannot verify it, in exactly the sense that `signing_surface` is a declaration (`protocol.md` → *Owner Mandate Signatures*). It carries information because there is no benefit in claiming a posture to a party who will weigh it, and none a verifier can check. It is recorded because a control that is assumed rather than stated is the failure mode this specification repeatedly forbids elsewhere.
+
+### Which strategy is available
+
+The two strategies are not interchangeable, and the choice is often not free:
+
+| Situation | Approach |
+|---|---|
+| Third-party effector you cannot modify (payments, mail, calendar) | **Path exclusivity only** — receipt-demanding execution is unavailable |
+| Effector you own, with a trigger that cannot be fully restricted (CI/CD, webhooks, internal APIs) | **Receipt-demanding**, subject to the six conditions above |
+| Effector you own, reachable only through a credential the Gatekeeper holds | Path exclusivity, or both |
+| High-value effector where topology cannot be guaranteed indefinitely | Both |
+
+Receipt-demanding execution requires an effector you control, or one whose operator has adopted the protocol. A third-party API cannot be made to demand receipts, and no amount of architecture on the deploying side changes that. Where it is unavailable, path exclusivity is the only option and its fragility must be carried knowingly — it depends on a topology holding for the life of the deployment, and nothing in the system reports when it stops holding.
+
+---
+
 ## Multi-AS Ecosystem
 
 The protocol supports multiple ASes:
@@ -273,13 +339,13 @@ The protocol supports multiple ASes:
 - ASes MAY federate approver authority (AS-A trusts AS-B's authority registry)
 - Cross-AS verification MUST be possible if both ASes are trusted
 
-> v0.5 does not specify cross-AS receipt federation. A single attestation lives on a single AS. Multi-AS federation for receipts is deferred to a future version.
+> The protocol does not yet specify cross-AS receipt federation (unchanged in v0.6). A single attestation lives on a single AS. Multi-AS federation for receipts is deferred to a future version.
 
 ---
 
 ## Approver Authority Governance
 
-In v0.5, required approvers are configured per group on the AS, not in profiles.
+Since v0.5, required approvers are configured per group on the AS, not in profiles.
 
 ### Within Groups
 
@@ -369,21 +435,36 @@ Every Authority Server, Profile, Executor, or App identifies itself via a public
 
 There is no global trust anchor.
 
-**Scope of AS trust.** Choosing to trust an Authority Server's key means trusting it to **sign honestly and to enforce cumulative bounds, revocation, and approval**. The local Gatekeeper is the counterweight: it re-derives `gate_content_hashes` from locally-held content and enforces per-transaction bounds and context constraints, so a misbehaving AS cannot cause an Executor to run an action the human never authored locally. A *compromised* AS can still over-authorize authorities the human did create and — because the human does not co-sign — fabricate authorization artifacts attributed to a Decision Owner. HAP v0.5 does not claim resistance to a fully compromised AS; defenses against that (owner co-signatures, a transparency log, approver-public-key authenticity) are forward directions tracked in `review.md` → "Resilience to a Compromised Authority Server."
+### The Authority Server Cannot Check Itself
+
+Several controls in this specification have the same shape, and stating the shape once is worth more than restating the limitation each time it recurs:
+
+> **An AS-side *check* is not a defence against the AS.**
+> **An AS-*signed artifact held by another party* is evidence a compromised AS cannot retroactively alter.**
+
+Both halves are load-bearing, and the second stops the first from proving too much.
+
+The first half retires a class of decorative control. If the only thing standing between a claim and its abuse is the Authority Server validating that claim, then against a compromised Authority Server nothing stands there at all. A requirement the AS records, a uniqueness check the AS performs, a key directory the AS serves — each holds against an honest operator and evaporates against a dishonest one. That is not a reason to remove such controls; it is a reason not to describe them as defences against the operator.
+
+The second half is why receipts are worth anything. An AS-signed artifact does not *prevent* a malicious operator. But once it is signed and in someone else's hands it cannot be rewritten — which is precisely why receipts outlive attestations: expiring or revoking an authorization does not erase the record of what happened under it. Evidence and prevention are different properties, and the AS can supply the first without being trusted for the second.
+
+The owner mandate signature (`protocol.md` → *Owner Mandate Signatures*) is this invariant applied: it exists to move authorization out of the class the first half describes (an AS assertion) and into the class the second half describes (a distributed, independently verifiable artifact). Instances the invariant catches inside this specification: cumulative bound enforcement (an AS-side check — conceded below), nonce consumption (AS-side, so defence-in-depth against third parties only), grant-level co-signature requirements (recorded by the AS, so assurance rather than enforcement), and any AS-served key directory, including an AS signature over its own key directory — that is the AS vouching for the AS.
+
+**Consequence.** Adopting this invariant obliges an audit of everything this specification describes as "enforced," separating what holds only against an honest AS from what holds against a later-compromised one. That audit is tracked as an open item in `review.md`; an invariant with no audit behind it is the same decorative control it was written to eliminate.
+
+**Scope of AS trust.** Choosing to trust an Authority Server's key means trusting it to **sign honestly and to enforce cumulative bounds, revocation, and approval**. The local Gatekeeper is the counterweight: it re-derives `gate_content_hashes` from locally-held content and enforces per-transaction bounds and context constraints, so a misbehaving AS cannot cause an Executor to run an action the human never authored locally. A *compromised* AS can still over-authorize authorities the human did create — cumulative state and pre-flight ordering are claims about a sequence only the AS witnesses, and that residue is stated honestly in `protocol.md` → *What this does and does not prove*. What v0.6 removes from the compromised-AS attack surface is **fabrication of authority**: where owners co-sign their mandates and approvals, the AS can no longer forge authorization artifacts attributed to a Decision Owner, fabricate or discard approvals, flip commitment mode, or extend a mandate's life. Attestations without owner mandate signatures retain the v0.5 posture. The remaining hardening directions (a witnessed transparency log, approver-public-key authenticity) are tracked in `review.md` → "Resilience to a Compromised Authority Server."
 
 ---
 
 ## Companion Specifications
 
-Some capabilities sit outside HAP Core but interoperate through it. v0.5 introduces the notion of a **companion specification** — an optional, independently versioned document that defines an extension surface. Companion specs MAY be implemented without affecting HAP Core conformance. A companion spec MUST NOT relax any HAP Core invariant; it MAY add new invariants applicable only to participants implementing the companion.
+Some capabilities sit outside HAP Core but interoperate through it. v0.5 introduced the notion of a **companion specification** — an optional, independently versioned document that defines an extension surface. Companion specs MAY be implemented without affecting HAP Core conformance. A companion spec MUST NOT relax any HAP Core invariant; it MAY add new invariants applicable only to participants implementing the companion.
 
 ### `output-provenance@0.1`
 
-Binds attestations to observable outputs (URLs, artifacts, configuration state) via an optional `output_ref` field in the profile's context schema. See `review.md` § "Output Provenance" for the design.
+Binds attestations to observable outputs (URLs, artifacts, configuration state) via an optional `output_ref` field in the profile's context schema. See `review.md` § "Output Provenance" for the design. **Profile-bound by design:** when a deployment-style profile adopts it, `output_ref` is promoted into that profile's normative surface — not into HAP Core. The companion-spec registration exists so the design has a stable name; it does not make Output Provenance a Core surface.
 
-### `decision-streams@0.1`
-
-Links attestations into a verifiable per-project chain via an optional signed `stream` block. See `review.md` § "Decision Streams" for the design.
+*(`decision-streams@0.1` was registered here in v0.5. The direction retired in v0.6 — no reference implementation since v0.3 and no integrator asked. The registration is withdrawn; the design record remains in the v0.5 archive.)*
 
 ### `intent-disclosure@0.1`
 
@@ -446,6 +527,8 @@ This is the integrity anchor: `intent_ciphertext`, `encrypted_keys`, and `approv
 - **C3.** When the approver set changes (e.g., an approver leaves the group), a **new** attestation with a new disclosure object MUST be issued for any subsequent action: the CEK is regenerated and re-wrapped for the new `approvers_frozen` set. Superseded wrapped keys MUST be retained for audit but MUST NOT be referenced by any future receipt. A receipt MUST only be issued against an attestation whose `approvers_frozen` matches the current required-approver set.
 
 As a companion spec, only `review` / `review_above_cap` deployments opt in; `automatic`-only deployments carry none of this. The Suveren reference AS and gateway implement this companion spec; see `protocol.md` *Intent canonicalization* for the shared hashing rule the chain depends on.
+
+**Known limitation (read against *The Authority Server Cannot Check Itself*).** The approver public keys used to wrap the CEK are served by the AS and are not bound into any signed payload — `intent_disclosure_hash` freezes the approver *set*, not their *keys*. Intent confidentiality therefore holds against a passive AS and any interceptor, but an actively malicious AS could substitute an attacker key at issuance. Binding the approver→key map into the signed payload would make *later* substitution detectable but cannot stop an AS already malicious at issuance; what would actually hold is a key the verifier never receives from the AS. That fix does not transfer for free from the owner-signing answer, because these are **encryption** (X25519) keys where `did:key` as used in this specification carries an Ed25519 **signing** key. Changing the hash definition is a breaking change, so it is deferred to `intent-disclosure@0.2`; the open design question is tracked in `review.md`.
 
 ---
 

@@ -2,7 +2,7 @@
 import { getEntry } from 'astro:content';
 import ContentLayout from '../layouts/ContentLayout.astro';
 
-const entry = await getEntry('docs', 'governance');
+const entry = await getEntry('docs', 'changelog');
 const { Content, headings } = await entry.render();
 ---
 
@@ -12,7 +12,7 @@ const { Content, headings } = await entry.render();
     version={entry.data.version}
     date={entry.data.date}
     headings={headings}
-    nextPage={{ url: '/changelog', label: 'Changelog' }}
+    nextPage={{ url: '/review', label: 'Review' }}
 >
     <Content />
 </ContentLayout>

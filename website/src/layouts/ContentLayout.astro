@@ -25,7 +25,19 @@ const {
   breadcrumb,
   headings = [],
 } = Astro.props;
-const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+// The sidebar is for moving between sections; a list long enough to need its own
+// scrolling has stopped doing that. protocol.md carries 100 `###` headings, which
+// buried its 27 sections in a 127-item list.
+//
+// Long documents therefore list sections only. Short ones keep the subsection
+// detail, because that is where their substance sits — review.md's open
+// directions are all `###` under a single `##`, so section-only would leave it
+// with four unusable entries. The threshold is a scannability limit, not a
+// property of any particular document.
+const TOC_SUBSECTION_LIMIT = 40;
+const sectionsOnly = headings.filter((h) => h.depth === 2);
+const withSubsections = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+const toc = withSubsections.length > TOC_SUBSECTION_LIMIT ? sectionsOnly : withSubsections;
 
 // Several spec documents are titled "Human Agency Protocol — <part>". Prefixing
 // those with "HAP - " spends 47 characters of the SERP line saying the brand
@@ -127,6 +139,10 @@ const breadcrumbSchema: Record<string, unknown> = {
             </aside>
         )}
         <article class:list={['content', { 'has-breadcrumb': breadcrumb && breadcrumb.length > 0 }]}>
+            {/* Versioned documents are the specification; the legal pages share this
+                layout but carry no version, and a positioning line does not belong
+                on an Impressum. */}
+            {version && <p class="doc-tagline">{siteConfig.tagline}</p>}
             {(version || date) && (
                 <div class="version-badge-top">
                     {version && <span class="version-pill">{version}</span>}
@@ -239,6 +255,19 @@ const breadcrumbSchema: Record<string, unknown> = {
         .doc-layout, .doc-layout.has-toc { grid-template-columns: minmax(0, 1fr); padding-top: 7rem; }
         .toc { display: none; }
         .doc-layout .content { max-width: 100%; }
+    }
+
+    /* Brand line above the document title — the same words the homepage leads
+       with, set as a masthead rather than a heading so it never competes with
+       the document's own <h1>. */
+    .doc-tagline {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 1.1rem;
+        text-wrap: balance;
     }
 
     .version-badge-top {

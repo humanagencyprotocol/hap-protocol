@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config';
 ---
 
 <BaseLayout
@@ -12,24 +13,36 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   ────────────────────────────────────────────────────────────────────────── -->
   <section class="hero">
     <div class="wrap">
-      <p class="label">Open Protocol · v0.5</p>
-      <h1><span class="hl">Human authorization</span> <br class="desktop-break">for consequential AI actions.</h1>
-      <p class="lead">
-        AI agents carry no authority or credentials of their own. Before an agent moves money,
-        changes records, sends communication, grants access, or touches infrastructure,
-        the action must receive a signed pre-execution receipt linked to human authorization.
-      </p>
-      <div class="cta-group">
-        <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
-        <button type="button" id="copy-spec" class="btn btn-secondary" data-src="/context.txt">Copy for your AI</button>
+      <div class="hero-body">
+        <p class="label">Open Protocol · v{siteConfig.version}</p>
+        {/* Same words as siteConfig.tagline, which the spec pages render as their
+            brand line. Marked up by hand here for the accent span, so the two
+            copies must be changed together. */}
+        <h1>Give AI autonomy <br class="desktop-break">without giving it <span class="hl">authority</span>.</h1>
+        <p class="lead">
+          A human sets what the automation may do — scope, limits, duration. Every consequential
+          action is checked against that mandate before it runs, and produces a signed receipt
+          proving the authorization existed first. Not a log written afterwards. A precondition.
+        </p>
+        <div class="cta-group">
+          <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
+          <button type="button" id="copy-spec" class="btn btn-secondary" data-src="/context.txt">Copy for your AI</button>
+        </div>
       </div>
+
+      <!-- Names what is below rather than saying "scroll": the reader learns the
+           next section, and the link works without JS or a pointing device. -->
+      <a class="scroll-cue" href="#invariant">
+        <span class="scroll-cue-label">See how it works</span>
+        <span class="scroll-cue-track" aria-hidden="true"></span>
+      </a>
     </div>
   </section>
 
   <!-- ──────────────────────────────────────────────────────────────────────
        3. NO RECEIPT. NO EXECUTION.
   ────────────────────────────────────────────────────────────────────────── -->
-  <section class="sec">
+  <section class="sec" id="invariant">
     <div class="wrap">
       <p class="label">The core invariant</p>
       <h2>No receipt. No execution.</h2>
@@ -46,19 +59,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <span class="receipt-tag">signed · pre-execution</span>
           </div>
           <dl class="receipt-fields">
-            <dt class="rf-key">decision_owner</dt>
-            <dd class="rf-val">did:eudi:at:9f21… <span class="rf-note">— authorizing human, via attestation</span></dd>
-            <dt class="rf-key">profile</dt>
-            <dd class="rf-val">charge@0.5</dd>
-            <dt class="rf-key">bounds_hash</dt>
-            <dd class="rf-val">sha256:7a91…</dd>
-            <dt class="rf-key">action_type</dt>
+            <dt class="rf-key">profileId</dt>
+            <dd class="rf-val">charge@0.4</dd>
+            <dt class="rf-key">actionType</dt>
             <dd class="rf-val">refund</dd>
-            <dt class="rf-key">execution</dt>
+            <dt class="rf-key">boundsHash</dt>
+            <dd class="rf-val">sha256:7a91… <span class="rf-note">— the mandate this ran under</span></dd>
+            <dt class="rf-key">executionContext</dt>
             <dd class="rf-val">order #4821 · €48.00</dd>
-            <dt class="rf-key">cumulative</dt>
-            <dd class="rf-val">€391 / €500 today <span class="rf-note">— AS-tracked</span></dd>
-            <dt class="rf-key">issued</dt>
+            <dt class="rf-key">cumulativeState</dt>
+            <dd class="rf-val">€391 / €500 today <span class="rf-note">— enforced by the Authority Server</span></dd>
+            <dt class="rf-key">subjects</dt>
+            <dd class="rf-val">did:key:z6Mk… <span class="rf-note">— authorizing human, disclosed opt-in</span></dd>
+            <dt class="rf-key">timestamp</dt>
             <dd class="rf-val">2026-05-23T14:22Z</dd>
             <dt class="rf-key">signature</dt>
             <dd class="rf-val">ed25519:8f3b…1b4c</dd>
@@ -82,38 +95,105 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 
   <!-- ──────────────────────────────────────────────────────────────────────
-       4. WHERE IT FITS
+       3b. ONE SIGNED ACT — THREE JOBS
+       The three columns state what holds TODAY (the Authority Server vouches).
+       The "what comes next" box is deliberate: co-signature is specified and
+       unbuilt, and naming that is more credible than implying it already ships.
+       Keep it in step with content/<version>/review.md — if the register moves,
+       this box moves.
   ────────────────────────────────────────────────────────────────────────── -->
   <section class="sec sec-alt">
+    <div class="wrap">
+      <p class="label">One signed act</p>
+      <h2>One receipt. Three jobs.</h2>
+      <p class="body-lead">
+        Most systems make you choose: a gate that blocks, or a log that explains.
+        The same signed artifact does both, and a third thing neither can.
+      </p>
+
+      <div class="jobs">
+        <div>
+          <div class="job-name"><span class="dir">Now</span>It runs, or it doesn't.</div>
+          <p>Every consequential action is checked against the mandate before it happens.
+            Not caught in a log afterwards. Prevented.</p>
+        </div>
+        <div>
+          <div class="job-name"><span class="dir">Outward</span>A stranger can check it.</div>
+          <p>Hand someone the receipt and they verify the signature and the content
+            themselves — no account, no relationship with you. Cryptography, not testimony.</p>
+        </div>
+        <div>
+          <div class="job-name"><span class="dir">Back</span>You can answer for it.</div>
+          <p>Evidence created before the act, not reconstructed after: which mandate,
+            which bounds, which content. What an auditor, an insurer, or a court asks for.</p>
+        </div>
+      </div>
+
+      <div class="today">
+        <p class="label">What holds today, and what comes next</p>
+        <p>
+          Today the Authority Server signs that the human authorized it — the chain holds
+          as far as you trust one operator's key. Next, the human's own key co-signs the
+          mandate. Then it holds <strong>without trusting any operator, including us</strong>.
+        </p>
+      </div>
+
+      <p class="soul">
+        The same receipt does all three. That is what a signed artifact can do
+        and a permission cannot.
+      </p>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────────────────────────
+       4. WHERE IT FITS
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec">
     <div class="wrap">
       <p class="label">Where it fits</p>
       <h2>HAP composes. It doesn't compete.</h2>
       <p class="body-lead">
-        HAP isn't another login, API gateway, or agent framework. It's the layer that
-        decides whether an already-reachable capability may be used for a
-        <strong>consequential action</strong> — with proof.
+        HAP isn't another login, API gateway, agent framework, sandbox, or policy engine.
+        It's the layer that decides whether an already-reachable capability may be
+        used for a <strong>consequential action</strong> — with proof.
       </p>
 
+      <!-- Vendor names are illustrative and deliberately singular per row: the
+           category carries the recognition, the example only makes it concrete.
+           These products rename faster than anything else in the table — if one
+           is stale, drop the parenthetical rather than chasing the rename. -->
       <table class="contrast">
         <thead>
           <tr><th>Layer</th><th>What it does</th></tr>
         </thead>
         <tbody>
           <tr><td class="old">OAuth / OpenID Connect</td><td class="old">Grants API access</td></tr>
-          <tr><td class="old">MCP</td><td class="old">Exposes tools to agents</td></tr>
           <tr><td class="old">Identity (EUDI, passkeys, WebAuthn)</td><td class="old">Proves who you are</td></tr>
-          <tr><td class="hap">HAP</td><td class="hap">Authorizes the consequential action — before it runs, with a signed receipt</td></tr>
+          <tr><td class="old">MCP</td><td class="old">Exposes tools to agents</td></tr>
+          <tr><td class="old">Agent identity and lifecycle <span class="eg">(e.g. Entra Agent ID)</span></td><td class="old">Governs which agents exist and what they may reach</td></tr>
+          <tr><td class="old">Agent platforms and policy engines <span class="eg">(e.g. Bedrock AgentCore)</span></td><td class="old">Run agents and evaluate configured rules per call</td></tr>
+          <tr><td class="hap">HAP</td><td class="hap">Authorizes the consequential execution — against a mandate a named human committed to, before it runs, with a signed receipt</td></tr>
         </tbody>
       </table>
 
+      <p class="compose-note">
+        Every other layer here answers <em>can this system reach that?</em> — an access
+        question, and each answers it well. None of them holds a bounded mandate a named
+        human committed to, and none produces an artifact a third party can verify for
+        themselves. HAP adds that layer and replaces none of them: keep your identity
+        provider, your agent platform, your policy engine, your sandbox and secrets
+        manager. Point them at the agent path, and put the mandate above.
+      </p>
+
       <p class="couplet"><span class="a">OAuth grants reachable capability.</span> <span class="b">HAP governs authorized use of that capability.</span></p>
+      <p class="couplet"><span class="a">Agent platforms decide what an agent may reach.</span> <span class="b">HAP records what a human actually mandated — and proves this act was inside it.</span></p>
     </div>
   </section>
 
   <!-- ──────────────────────────────────────────────────────────────────────
        5. COMMITMENT MODES
   ────────────────────────────────────────────────────────────────────────── -->
-  <section class="sec">
+  <section class="sec sec-alt">
     <div class="wrap">
       <p class="label">Commitment modes</p>
       <h2>You decide how much runs on its own.</h2>
@@ -146,7 +226,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <!-- ──────────────────────────────────────────────────────────────────────
        6. THE DISTINCTION
   ────────────────────────────────────────────────────────────────────────── -->
-  <section class="sec sec-alt">
+  <section class="sec">
     <div class="wrap">
       <p class="label">The distinction</p>
       <h2>Agents aren't employees. They're executors.</h2>
@@ -170,7 +250,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <!-- ──────────────────────────────────────────────────────────────────────
        7. TWO MODELS FOR AI AUTHORITY
   ────────────────────────────────────────────────────────────────────────── -->
-  <section class="sec">
+  <section class="sec sec-alt">
     <div class="wrap">
       <p class="label">The model choice</p>
       <h2>Two models for authorizing agents.</h2>
@@ -207,6 +287,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <td class="old">Agent acts under standing authority</td>
             <td class="hap">Agent acts only inside receipt-approved bounds</td>
           </tr>
+          <tr>
+            <td class="old">Post-incident, the answer is “the agent was permitted”</td>
+            <td class="hap">Post-incident, the answer is “this named person mandated this scope — here is the proof”</td>
+          </tr>
         </tbody>
       </table>
 
@@ -218,11 +302,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           consequential actions cannot run unless a human-linked authorization receipt
           exists before execution.
         </p>
+        <p class="general">
+          Wherever an organization must show a human stood behind an automated act —
+          regulation, audit, insurance, or litigation — the receipt is the artifact.
+        </p>
         <p class="caveat">
           HAP is Article-14-enabling infrastructure — not compliance on its own.
           Compliance still requires governance, training, documentation, and human
           competence.
         </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────────────────────────────────
+       7b. FOR WHOM
+  ────────────────────────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <div class="wrap">
+      <p class="label">For whom</p>
+      <h2>Three readers, one artifact.</h2>
+      <div class="audience-grid">
+        <div>
+          <div class="who">Engineering</div>
+          <p>Deploy agents on the infrastructure you already have. One enforcement point,
+            no new stack, whichever model you run.</p>
+        </div>
+        <div>
+          <div class="who">Compliance and audit</div>
+          <p>The same gate produces the evidence: who mandated it, what it covered,
+            proven before it ran.</p>
+        </div>
+        <div>
+          <div class="who">Legal and counterparties</div>
+          <p>Proof that survives leaving your organization — verifiable without trusting
+            the operator.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -293,8 +408,85 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .wrap { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
 
   /* ─── hero ────────────────────────────────────────────────────────────── */
+  /* Near-full viewport. `svh` rather than `vh` so mobile browser chrome does not
+     push the scroll cue off-screen and make the section jump on first scroll.
+     `min-height`, not `height`: on short viewports the content grows the section
+     instead of overflowing it. The nav is position:fixed, so its height is
+     reserved as padding rather than subtracted. */
   .hero {
-    padding: 8rem 0 7rem;
+    min-height: calc(100vh - 2rem);
+    min-height: calc(100svh - 2rem);
+    padding: calc(var(--nav-height) + 2rem) 0 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .hero .wrap { flex: 1; display: flex; flex-direction: column; }
+  .hero-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-bottom: 2rem;
+  }
+
+  /* ─── scroll cue ──────────────────────────────────────────────────────── */
+  /* Centred deliberately, against the page's left-aligned rhythm: bottom-centre
+     is where a reader already looks for a scroll affordance, and instant
+     recognition is worth more here than alignment consistency. The hero content
+     above stays left-aligned. */
+  .scroll-cue {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    padding-bottom: 2.5rem;
+    text-decoration: none;
+  }
+  .scroll-cue-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    /* Accent by default, not on hover — the muted grey was why it went unseen. */
+    color: var(--accent);
+    transition: color 0.2s;
+  }
+  .scroll-cue:hover .scroll-cue-label { color: var(--text-primary); }
+  .scroll-cue:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 2px; }
+  .scroll-cue-track {
+    position: relative;
+    width: 2px;
+    height: 56px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .scroll-cue-track::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 2px;
+    height: 18px;
+    background: var(--accent);
+    animation: cue-travel 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+  @keyframes cue-travel {
+    0%   { transform: translateY(-18px); opacity: 0; }
+    25%  { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { transform: translateY(56px); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /* Parked at the foot of the track — reads as "down" without moving. */
+    .scroll-cue-track::after { animation: none; transform: translateY(38px); opacity: 1; }
+  }
+
+  /* Short viewports (laptops, landscape phones): the cue costs more than it
+     gives once vertical space is tight. */
+  @media (max-height: 640px) {
+    .hero { min-height: 0; padding: calc(var(--nav-height) + 3rem) 0 4rem; }
+    .hero-body { padding-bottom: 0; }
+    .scroll-cue { display: none; }
   }
 
   .hero h1 {
@@ -348,6 +540,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
   .couplet .a { color: var(--text-secondary); }
   .couplet .b { display: block; color: var(--text-primary); font-weight: 700; }
+  /* Two class selectors, so this beats .couplet's 2.4rem top margin. */
+  .couplet + .couplet { margin-top: 1.4rem; }
+
+  /* The reach-vs-mandate argument — the load-bearing paragraph of this section. */
+  .compose-note {
+    margin-top: 2.2rem;
+    max-width: 700px;
+  }
+  .compose-note em { color: var(--text-primary); font-style: italic; }
 
   /* ─── spec strip ──────────────────────────────────────────────────────── */
   .spec-strip {
@@ -502,6 +703,69 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
   .neutrality strong { color: var(--text-secondary); }
 
+  /* ─── one signed act / three jobs ────────────────────────────────────── */
+  .jobs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-top: 2.6rem;
+    max-width: 1000px;
+  }
+  @media (max-width: 820px) { .jobs { grid-template-columns: 1fr; gap: 1.6rem; } }
+  .jobs > div { border-top: 2px solid var(--accent); padding-top: 1.1rem; }
+  .job-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    line-height: 1.35;
+    margin-bottom: 0.5rem;
+  }
+  .job-name .dir {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .jobs p { font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+
+  /* Co-signature is specified and unbuilt; this box says so rather than
+     letting the three columns above imply it already ships. */
+  .today {
+    margin-top: 2.6rem;
+    padding: 1.5rem 1.75rem;
+    background: var(--accent-subtle);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    max-width: 780px;
+  }
+  .today .label { color: var(--accent); margin-bottom: 0.5rem; }
+  .today p { color: var(--text-primary); font-size: 1rem; margin: 0; max-width: none; }
+
+  /* ─── audience grid ───────────────────────────────────────────────────── */
+  .audience-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 2.2rem;
+    max-width: 980px;
+  }
+  @media (max-width: 760px) { .audience-grid { grid-template-columns: 1fr; } }
+  .audience-grid > div {
+    padding: 1.2rem 1.3rem;
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+  }
+  .audience-grid .who {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+  }
+  .audience-grid p { font-size: 0.9rem; line-height: 1.55; margin: 0; }
+
   /* ─── contrast table ──────────────────────────────────────────────────── */
   table.contrast {
     width: 100%;
@@ -539,6 +803,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
   table.contrast td.hap { color: var(--text-primary); font-weight: 600; }
   table.contrast td.old { color: var(--text-secondary); }
+  /* Vendor examples sit quieter than the category they illustrate. */
+  table.contrast .eg { color: var(--text-tertiary); font-size: 0.86em; white-space: nowrap; }
   /* kill global alternating row bg on contrast tables */
   table.contrast tr:nth-child(even) { background: transparent; }
 
@@ -553,6 +819,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
   .a14 .label { color: var(--accent); margin-bottom: 0.6rem; }
   .a14 p { color: var(--text-primary); font-size: 1rem; margin-bottom: 0.6rem; }
+  .a14 .general { font-weight: 600; }
   .a14 .caveat {
     font-size: 0.875rem;
     color: var(--text-tertiary);
@@ -603,6 +870,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     /* override .sec p margin */
     margin-top: 1rem;
   }
+  /* .soul directly after the amber box needs room the 1rem default doesn't give */
+  .today + .soul { margin-top: 2.2rem; }
 
   /* ─── use cases / building blocks grid ───────────────────────────────── */
   .usecases {

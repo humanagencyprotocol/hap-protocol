@@ -1,9 +1,9 @@
 ---
 title: "Human Agency Protocol — Core Specification"
-version: "Version 0.5"
-date: "June 2026"
+version: "Version 0.6"
+date: "August 2026"
 status: "Normative specification"
-description: "The normative HAP specification: profiles, bounds, gates, attestations, and the signed receipt an agent must obtain before a consequential action runs."
+description: "The normative HAP specification: profiles, bounds, gates, attestations, content binding, read authorization, owner mandate signatures, and the signed receipt an agent must obtain before a consequential action runs."
 ---
 
 **HAP defines cryptographic pre-authorization of bounded execution — whether by AI agents, CI/CD pipelines, or automated systems.**
@@ -80,6 +80,8 @@ Both categories above are **attested** — Bounds via `bounds_hash`, Context via
 
 The governing rule is that **a limit lives in the same trust domain as its enforcement.** A constraint enforced through the signed receipt loop MUST be attested, so any relying party can verify it. A constraint enforced only by the local Gatekeeper, over the human's own data, need not be — there is no counterparty to prove it to, and an attested read limit that no receipt ever checks would be a signature over nothing. The exception proves the rule: where a read limit must be enforced by *another party against the human* — an organization capping a member's read reach — it re-enters the attested surface, because now there is a counterparty who must trust it.
 
+**Precedence (normative, v0.6).** Some profiles published before this rule carry read-shaped bounds inside the signed authorization (e.g. a `read_max_age_days` bound). Where an implementation supports both, the **local read policy governs** and the signed read bound is a **fallback** applying only to grants issued before a local policy was set. This is a deliberate, narrow exception to "only attested data is trusted": the signed value was a limit in the wrong trust domain, and freezing it into the grant promised an enforcement the receipt loop never checks. With neither a local policy nor a signed bound present, reads fail closed (see *Read Authorization*).
+
 ### Action vs. Execution
 
 The protocol uses two related but distinct terms:
@@ -93,7 +95,7 @@ The protocol uses two related but distinct terms:
 
 **Execution** is the carrying out of that action under specific constraints — which commitment mode, which owners must approve, what intent the human committed to.
 
-The Gatekeeper receives the bounds + context and attestation, reconstructs both hashes, and validates that they match. Only attested data is trusted — the Gatekeeper never accepts unattested parameters.
+The Gatekeeper receives the bounds + context and attestation, reconstructs both hashes, and validates that they match. On the consequential path, only attested data is trusted — the Gatekeeper never accepts unattested parameters for a write. Read policy is the stated exception (see *Bounds, Context, and Disclosure* above and *Read Authorization* below): it is deliberately local and un-attested, and where a legacy signed read bound and a local read policy both exist, the local policy governs and the signed bound is a fallback for grants that predate it.
 
 ### Protocol vs. Profile Layering
 
@@ -191,6 +193,22 @@ Implementations MUST assume:
 
 HAP does **not** assume trusted UIs, trusted executors, or honest automation.
 
+### What HAP does not secure
+
+> New in v0.6.
+
+HAP is an authorization and evidence layer. It is not a sandbox, a hypervisor, a secrets manager, or a network policy engine, and it MUST NOT be deployed as though it were. The following are preconditions supplied by the execution environment, not properties HAP provides:
+
+- operating-system, container, and hypervisor isolation
+- credential custody and vaulting
+- network segmentation and egress control
+- host hardening and patching
+- minimization of the trusted computing base
+
+The relationship is the same one TLS has to the operating system it runs on: TLS does not secure the host, and is not weakened by saying so — it is precise about what it protects and about what a compromised endpoint costs. HAP's guarantee is *this action was authorized against a human's bounded mandate, and there is portable proof*. It is not *this machine is trustworthy*.
+
+**The load-bearing assumption is complete mediation** (`governance.md` → *Invariant 10*): everything above holds only where a consequential capability cannot be reached except through a HAP-enforced boundary. Where an agent can reach an effector by another path, HAP's decision is not wrong — it is simply not consulted. The two ways to satisfy that condition, and the obligations each places on the deployment, are specified in `governance.md` → *Deployment Security Profile*.
+
 ---
 
 ## Roles
@@ -205,6 +223,28 @@ HAP does **not** assume trusted UIs, trusted executors, or honest automation.
 | **Executor** | Carries out the downstream tool call once the Gatekeeper has obtained a valid receipt. |
 
 > **Note on terminology and placement.** The Roles section is defined here, near the front, so the actors are named before the mechanisms that involve them.
+
+### Authority, Mandate, Capability, Execution
+
+New in v0.6, the protocol fixes four terms that earlier versions used loosely. The distinctions are load-bearing: the vocabulary must not concede what the architecture refuses.
+
+**Authority** — the legitimate power to decide that a consequence may occur. Held by the Decision Owner, or by an institution through accountable humans. Not held by the agent.
+
+**Mandate** — a bounded, revocable instruction issued under that authority, permitting a defined class of execution: scope, limits, context, expiry, commitment mode, approvers. An attestation records one.
+
+**Capability** — what the agent can technically do through a tool or API, irrespective of whether it may.
+
+**Execution** — one attempted consequence, evaluated against the mandate before it may run.
+
+*(Informally, implementation surfaces call an attestation-backed mandate a **grant** or an **authorization**. Both name the same thing: the attestation is the record of a mandate being issued. Signed identifiers such as `authorization_id` keep their names — renaming signed identifiers would invalidate existing artifacts to gain a synonym.)*
+
+> **HAP does not model an automated system as an authority holder.** Authority remains with the accountable human or institution — the Decision Owner. The automated system executes under a bounded mandate issued under that authority. A mandate constrains execution; it does not transfer authority.
+
+The design already enforces this: no authority-bearing credential, attestation, or signing key is ever placed in the agent's possession. The agent receives a brief describing its bounds — that much is transferred, and must be, or it could not stay inside them. What it never receives is anything it could present as proof of authority. It requests execution; the Gatekeeper evaluates each consequential call against a mandate held elsewhere; execution may still be refused.
+
+An implementation may track which model, process, or session performed something, for attribution and telemetry. That is useful and orthogonal. It does not make the agent an authority holder, and HAP deliberately does not authorize agents — **it authorizes executions against mandates**. This exclusion is stated so that agent-level authorization is not added later in the belief that its absence was an oversight.
+
+If some jurisdiction grants autonomous systems a legal status of their own, the security model is unchanged, because it never rested on their lacking one.
 
 ---
 
@@ -263,7 +303,7 @@ The hash is computed over the resulting byte sequence. This determinism is REQUI
 ### Normative Distinction
 
 Authorization States are required for attestation and Gatekeeper enforcement.
-Direction State (intent) is required by every profile in v0.5, but its semantic content remains outside protocol disclosure by default.
+Direction State (intent) is required by every profile since v0.5, but its semantic content remains outside protocol disclosure by default.
 
 Implementations MUST ensure all required states are resolved before attestation or execution.
 No skipping, no inference, no automated assumption.
@@ -284,7 +324,7 @@ A Decision Owner is invalid if the decision's declared consequences exceed the a
 
 ### Owner Authority
 
-In v0.5, authority is bound to a person's verified identity, not to an abstract domain. Each attestation records its Decision Owner(s) by DID in `resolved_owners`:
+Since v0.5, authority is bound to a person's verified identity, not to an abstract domain. Each attestation records its Decision Owner(s) by DID in `resolved_owners`:
 
 ```json
 {
@@ -346,26 +386,30 @@ Gate resolution is attested by the Authority Server based on signals from the Lo
 
 ## Profiles
 
-Profiles are the mechanism for authority-specific enforcement. v0.5 profiles are simpler than v0.3 profiles — they no longer carry execution paths, gate questions, or domain requirements.
+Profiles are the mechanism for authority-specific enforcement. v0.5+ profiles are simpler than v0.3 profiles — they no longer carry execution paths, gate questions, or domain requirements.
 
 A **Profile** defines:
 - bounds schema (enforceable constraints)
-- context schema (operational scope, may be empty)
+- context schema (operational scope, may be empty), including per-field `scopeKind` and `requiredFor` declarations
 - execution context schema (cumulative tracking fields)
 - field constraints
 - required gates
 - TTL policy (default and max)
 - retention minimum
+- optionally, a `content_binding` declaration (see *Content Binding*)
+- optionally, a public-disclosure declaration (see *Receipt Disclosure Is Declared*; the default is that nothing is disclosed)
+- optionally, an `ownerMandate` floor (see *Owner Mandate Signatures*)
+- optionally, a `receipt_lookup` opt-in (see *Receipt Lookup by Content*)
 
 HAP Core is not enforceable without at least one trusted Profile.
 
-Profiles are identified by `profile_id` and versioned independently. Once published, a profile version is immutable.
+Profiles are identified by `profile_id` and versioned independently. Once published, a profile version is immutable. **v0.6 states this strictly: *any* field change to a published profile version — including additive, OPTIONAL, or annotation-class fields — requires a new profile version.** There is no annotation exemption; whether a field touches the authority contract or only the receipt surface, it changes what operating under the profile *means*. (The v0.5-era in-place annotations that motivated this tightening are documented in `review.md` and are grandfathered as the last of their kind.)
 
 The URL-shaped form (e.g., `github.com/humanagencyprotocol/hap-profiles/charge@0.5`) is recommended for human readability and for one-time bootstrap fetching. The protocol does not require that the identifier resolve to a network location at runtime, and operators MUST NOT depend on runtime resolution for correctness. See `governance.md` § "Trust on First Use" for the operational rule.
 
 ### Universal Profiles
 
-In v0.5, profiles are universal: the same `charge@0.5` profile works for a solo developer in personal mode and a 500-person enterprise in group mode. Organizational policy (who must attest) is configured on the AS, not in the profile.
+Since v0.5, profiles are universal: the same `charge@0.5` profile works for a solo developer in personal mode and a 500-person enterprise in group mode. Organizational policy (who must attest) is configured on the AS, not in the profile.
 
 ### Bounds Schema
 
@@ -410,14 +454,14 @@ Note that `currency` and `action_type` are **not** in the bounds schema. They ar
 
 `actionType` registry — normative rules:
 
-1. Every v0.5 profile's `boundsSchema` MUST include a non-empty `actionTypes: string[]`.
+1. Every profile's `boundsSchema` (v0.5+) MUST include a non-empty `actionTypes: string[]`.
 2. Every receipt request's `actionType` MUST be a member of the profile's `actionTypes`. The AS MUST reject any other value with `INVALID_ACTION_TYPE` before reading bounds.
 3. The Gatekeeper MUST validate `actionType` locally against the same list before requesting a receipt.
 4. Adding a new `actionType` to a profile is a breaking change requiring a new profile version, because executors that were authorized under the prior version did not consent to the broader set.
 
 #### The BoundType union
 
-Every v0.5 bounds field MUST declare a `boundType`. Four kinds are defined:
+Every bounds field MUST declare a `boundType`. Four kinds are defined:
 
 ```
 BoundType =
@@ -479,6 +523,24 @@ Some profiles have an empty context schema (e.g., `records` — whose bounds are
 
 Allowed values for an `enum` or `subset` context field live in `constraint.values: string[]`. v0.4 permitted a top-level `field.enum: string[]` as an alternative location; v0.5 retires it for consistency with `boundType: { kind: 'enum', values: [...] }` on the bounds side. Profile authors MUST place allowed values in `constraint.values`. Implementations MUST read from `constraint.values` and MUST NOT fall back to `field.enum`.
 
+#### Scope kinds (`scopeKind`, new in v0.6)
+
+A context field's meaning is not uniform: some fields name the *other party* to a communication or transaction, others name *which container an item belongs to*. Profiles SHOULD mark each context field:
+
+```jsonc
+"allowed_recipients": { "format": "email", "scopeKind": "counterparty" },
+"allowed_calendars":  { "format": "string", "scopeKind": "resource" }
+```
+
+- **`counterparty`** — names the other party (email `allowed_recipients`, calendar `allowed_attendees`, purchase `allowed_vendors`). Matched against the item's participant list.
+- **`resource`** — names the container the item belongs to (`allowed_calendars`, publish `allowed_platforms`). A direct attribute match.
+
+Absent an explicit `scopeKind`, an implementation MAY infer `counterparty` from `format: email|domain` as a transitional measure; the explicit declaration is normative. `scopeKind` matters on the read path — a `resource` scope enforced on writes MUST also bind reads of the same resource (see *Read Authorization*).
+
+#### Required dimensions (`requiredFor`, new in v0.6)
+
+A context constraint is only as good as the Gatekeeper's ability to see the value it constrains. A connector argument that carries the whole action opaquely (e.g. a raw RFC 2822 message blob) bypasses every constraint on the dimensions inside it. A constraint MAY therefore declare `requiredFor: string[]` — a list of `actionType`s for which the constrained dimension MUST be present in the execution context. For a listed `actionType`, an execution that does not carry the constrained dimension MUST be refused: absence of the value is indistinguishable from absence of enforcement, so it fails closed rather than passing unchecked.
+
 **Normative rules:**
 
 1. Context content MUST NOT be sent to the AS. Only `context_hash` flows to the AS.
@@ -486,6 +548,7 @@ Allowed values for an `enum` or `subset` context field live in `constraint.value
 3. Context cannot be updated after attestation. Changing context invalidates `context_hash`, requiring re-attestation.
 4. Empty context is valid. The hash is still computed and included in the attestation payload.
 5. The Gatekeeper MUST locally enforce every profile-defined context constraint (enum, subset, pattern) against the execution values before requesting a receipt. Because the AS only holds `context_hash`, it cannot enforce these constraints — the Gatekeeper is the sole enforcer.
+6. For any constraint declaring `requiredFor`, the Gatekeeper MUST refuse an execution of a listed `actionType` whose execution context lacks the constrained dimension.
 
 ### Execution Context Schema (Cumulative Tracking)
 
@@ -554,12 +617,12 @@ Different constraint categories are enforced by different components. This table
 
 1. Bounds enforcement dispatches on `boundType.kind` (see "The BoundType union" above). Implementations MUST NOT derive enforcement semantics from field name patterns.
 2. Context constraints (`enum`, `subset`, `pattern`) MUST be enforced locally by the Gatekeeper. The AS cannot enforce them because it only holds `context_hash`.
-3. A profile version is immutable. Changing any bound's `boundType` or any context field's constraint requires a new profile version.
+3. A profile version is immutable. **Any** field change to a published profile version — including additive, OPTIONAL, or annotation-class fields — requires a new profile version. v0.5's enumeration ("any bound's `boundType` or any context field's constraint") was read as exhaustive; v0.6 removes the ambiguity: there is no annotation exemption.
 4. Constraints are publicly inspectable — any party can read the profile and know exactly what is enforced and where.
 
 ### Required Gates
 
-v0.5 profiles declare the universal set of required gates:
+Profiles declare the universal set of required gates:
 
 ```json
 {
@@ -567,7 +630,7 @@ v0.5 profiles declare the universal set of required gates:
 }
 ```
 
-All v0.5 profiles MUST require these four gates. The `intent` gate replaces the v0.3 trio of `problem`, `objective`, and `tradeoff`. Profiles MUST NOT define `gateQuestions` — the intent prompt is universal and lives in the gateway UI. Integration manifests MAY provide an optional `intentHint` for context-specific guidance.
+All v0.5+ profiles MUST require these four gates. The `intent` gate replaces the v0.3 trio of `problem`, `objective`, and `tradeoff`. Profiles MUST NOT define `gateQuestions` — the intent prompt is universal and lives in the gateway UI. Integration manifests MAY provide an optional `intentHint` for context-specific guidance.
 
 ### Profile-Defined TTL Policy
 
@@ -603,14 +666,14 @@ An attestation is a time-limited, cryptographically signed proof that:
 
 Attestations do not contain semantic content. `gate_content_hashes.intent` commits to the locally held intent statement. The hash supports tamper-evident auditability without exposing content.
 
-### Attestation Payload (v0.5)
+### Attestation Payload (v0.6)
 
 ```json
 {
   "header": { "typ": "HAP-attestation", "alg": "EdDSA" },
   "payload": {
     "attestation_id": "uuid",
-    "version": "0.5",
+    "version": "0.6",
     "profile_id": "charge@0.5",
     "bounds_hash": "sha256:...",
     "context_hash": "sha256:...",
@@ -632,7 +695,7 @@ Attestations do not contain semantic content. `gate_content_hashes.intent` commi
 | Field | Description |
 |-------|-------------|
 | `attestation_id` | UUID assigned by the AS at issuance |
-| `version` | Protocol version: `"0.5"` |
+| `version` | Protocol version: `"0.6"` (v0.5 and v0.4 attestations remain verifiable) |
 | `profile_id` | The profile this authorization is bound to |
 | `bounds_hash` | Hash of the canonical bounds string |
 | `context_hash` | Hash of the canonical context string (sha256 of empty string when context is empty) |
@@ -650,6 +713,8 @@ Attestations do not contain semantic content. `gate_content_hashes.intent` commi
 | `above_cap_caps` | `commitment_mode === "review_above_cap"` | Map of bounds field name → numeric cap. Receipt requests exceeding any cap return `APPROVAL_REQUIRED`. |
 | `above_cap_approvers` | `commitment_mode === "review_above_cap"` | List of DIDs that must approve a proposal raised by a cap exceedance. |
 | `intent_disclosure_hash` | The attestation carries an encrypted-intent disclosure object (companion spec `intent-disclosure@0.1`) | `sha256` binding the disclosure's `intent_ciphertext` and `approvers_frozen` into the signed payload, so the AS cannot alter the ciphertext or approver set undetected. Defined in `governance.md` → *Companion Specifications* → `intent-disclosure@0.1`. |
+| `subjects` | The Decision Owner disclosed identity (new in v0.6) | Signed identity-assurance block, one entry per owner. See *Identity Assurance* below. |
+| `owner_mandates` | The Decision Owner co-signed the mandate (new in v0.6) | The owner's own signature(s) over the mandate projection. See *Owner Mandate Signatures* below. |
 
 **Normative rules:**
 
@@ -698,7 +763,7 @@ Bounds follow strict canonicalization rules to ensure deterministic hashing.
 
 The bounds object contains exactly the keys defined in the profile's `boundsSchema.keyOrder`. The `profile` field is mandatory and identifies the profile version. There is no `path` field in v0.5.
 
-**v0.5 Bounds structure (abstract):**
+**Bounds structure (abstract, v0.5+):**
 
 ```
 profile=<profile-id>
@@ -718,7 +783,7 @@ HAP Core requires:
 
 **Key format:** Keys MUST match `[a-z0-9_]+`.
 
-**Value encoding (normative, v0.5):**
+**Value encoding (normative, v0.5+):**
 - Values MUST NOT contain raw newline (`\n`) or carriage-return (`\r`) characters. Implementations MUST reject input containing them; silent stripping or normalization is a violation because it produces a hash that does not faithfully represent the input.
 - If a value contains `=`, `\n`, `\r`, `%`, or any byte outside the printable ASCII range (0x20–0x7E), it MUST be percent-encoded (RFC 3986) before canonicalization. The `%` byte is included to keep encoding self-inverse.
 - Implementations MUST percent-encode at canonicalization time, not at value entry time, so the stored input remains the human's original bytes.
@@ -740,7 +805,7 @@ The empty hash is **always included** in the attestation payload to keep attesta
 
 ### No Condition Fields
 
-v0.5 does not include condition fields in bounds. Self-declared conditions are circular — the person who might want to skip oversight would decide whether oversight is required. Approver coverage is enforced by the AS based on group configuration, not by attestation-time conditions.
+The protocol does not include condition fields in bounds (removed in v0.5). Self-declared conditions are circular — the person who might want to skip oversight would decide whether oversight is required. Approver coverage is enforced by the AS based on group configuration, not by attestation-time conditions.
 
 ---
 
@@ -816,7 +881,7 @@ This is the right mode when:
 
 ## Execution Receipts
 
-> **No receipt, no execution.**
+> **No receipt, no execution. A mandate constrains execution; it does not transfer authority.**
 
 In v0.3, attestations proved authorization but nothing proved execution. The gateway's local execution log was unsigned and unverifiable. v0.4 closes this gap with **execution receipts** — AS-signed proof that a specific action occurred under a specific attestation, within declared bounds, at a specific time.
 
@@ -824,7 +889,7 @@ Every authorized action produces exactly one receipt. The receipt is the audit a
 
 ### The Authority Server as Notary
 
-In v0.5, the AS is a **runtime dependency for execution**. Before any tool call proceeds, the Gatekeeper requests a receipt from the AS. The AS:
+Since v0.5, the AS is a **runtime dependency for execution**. Before any tool call proceeds, the Gatekeeper requests a receipt from the AS. The AS:
 
 1. Validates the attestation is current (not expired, not revoked)
 2. Checks the requested action against per-transaction bounds
@@ -890,7 +955,7 @@ The Gatekeeper sends the following to the AS when requesting an execution receip
 2. `boundsHash` is the cryptographic content address of an authorization; changing any bound value produces a new `boundsHash` and therefore a new attestation. `attestation_id` is a stable opaque label that does not encode the attestation's contents.
 3. `actionType` MUST be used for cumulative state partitioning and bounds dispatch. `action` is audit metadata and does not affect which bucket a receipt belongs to.
 4. `actionType` MUST be a member of the profile's `boundsSchema.actionTypes` registry. The AS MUST reject other values with `INVALID_ACTION_TYPE`.
-5. The receipt request body MUST NOT include a `path` field. v0.5 ASes MUST reject requests carrying it. (v0.4 retired `path` from bounds; v0.5 finishes the removal across all wire formats.)
+5. The receipt request body MUST NOT include a `path` field. v0.5+ ASes MUST reject requests carrying it. (v0.4 retired `path` from bounds; v0.5 finishes the removal across all wire formats.)
 6. AS storage keys MAY combine `boundsHash` with the attester's identity (e.g., `${boundsHash}:${userId}`) to disambiguate two members of the same group attesting to identical bounds. This is an AS implementation detail and does not affect the wire contract: receipt requests still use `boundsHash` plus the AS's authenticated request context.
 
 ### Receipt Payload Schema
@@ -931,6 +996,11 @@ The Gatekeeper sends the following to the AS when requesting an execution receip
 | `cumulativeState` | Cumulative consumption state after this execution is applied |
 | `limits` | The effective limits at the time of this receipt (for audit context) |
 | `timestamp` | AS-authoritative timestamp |
+| `contentHash` | OPTIONAL (new in v0.6) — the content hash computed by the Gatekeeper and copied verbatim by the AS. See *Content Binding*. |
+| `contentBinding` | OPTIONAL (new in v0.6) — the profile's `content_binding` declaration echoed into the signed receipt, including the bound field list for a field binding, so a verifier knows exactly what the hash covers. |
+| `subjects` | OPTIONAL (new in v0.6) — the disclosed subset of the attestation's signed identity block, copied so the receipt self-verifies. See *Identity Assurance*. |
+| `proposalId` | OPTIONAL (new in v0.6) — on the review path, the proposal this receipt executed, bound into the signed payload. |
+| `approvalSignature` | OPTIONAL (new in v0.6) — on the review path, the owner's `HAP-approval` signature (or its `sha256`) for the executed proposal. MUST be present when the AS verified an approval signature before issuing. See *Owner Mandate Signatures* → *Approvals*. |
 | `signature` | Ed25519 signature of the canonical receipt payload, encoded as base64url without padding |
 
 **Signature:** The AS signs the receipt with the same Ed25519 key used for attestations. The signing input is produced by the **Signing Canonicalization** rules above (sorted keys, no whitespace, base64url-encoded signature). The receipt's own `signature` field MUST NOT be present in the bytes being signed.
@@ -956,14 +1026,18 @@ The AS's cumulative state is authoritative. Implementations MAY cache it for dis
 
 ### Receipt Verification
 
-Any party with the AS's public key can verify a receipt:
+Any party holding the **complete signed receipt** and the AS's public key can verify it:
 
 1. Resolve the AS's Ed25519 public key (via DID, DNS, API endpoint, or static config)
 2. Canonicalize the receipt payload (deterministic JSON serialization, excluding signature)
 3. Verify the signature against the canonical payload using the public key
-4. Optionally: verify that `boundsHash` references a valid attestation, and that the attestation's signed payload contains the same `bounds_hash` and `profile_id` (for full chain-of-trust audit)
+4. When the receipt carries `contentHash`: recompute the hash from the held content using the receipt's `contentBinding` and compare (see *Content Binding*)
+5. Optionally: verify that `boundsHash` references a valid attestation, and that the attestation's signed payload contains the same `bounds_hash` and `profile_id` (for full chain-of-trust audit)
+6. Where that attestation carries `owner_mandates`: continue up the chain and verify the owner's mandate signature (see *Owner Mandate Signatures* → *Verification procedure*). Because `owner_mandates` sits inside the signed attestation payload, any surface that serves the attestation already carries the owner's signature — no additional endpoint is involved. The completed chain reads: this AS issued this receipt → under this attestation → which this owner's own key signed.
 
 A valid receipt proves: this AS authorized this specific execution, under this attestation, at this time, with these cumulative totals.
+
+**The holder is the verifier.** A single Ed25519 signature covers the whole receipt, so verification requires every signed field. A **redacted public view** of a receipt (one that hides `userId`, `cumulativeState`, `limits`, or recipients) cannot be independently re-verified from the public view alone — a "signature valid" indicator on such a page is the AS re-verifying its own signature. For a private action the holder (the recipient of the mail, the pipeline receiving the dispatch, the issuer's own log) is the party that matters, so the guarantee holds where it is needed. Making a *public* projection independently verifiable (a second AS signature over a public-only subset) is a tracked direction in `review.md`, not a v0.6 guarantee — implementations MUST NOT present a redacted view as independently verified.
 
 ### Retention
 
@@ -988,6 +1062,80 @@ The gateway SHOULD retain receipts locally for operational use, but the AS copy 
 - **Pre-execution guarantee** — the receipt is issued before the tool call executes, not after
 
 The AS is a runtime dependency for execution. This is by design — execution without proof is execution without accountability.
+
+---
+
+## Content Binding
+
+> New in v0.6 as normative surface. Shipped and exercised end-to-end by the reference implementation since June 2026 (structured profiles) and July 2026 (text profiles); promoted per the revised rule in `changelog.md`.
+
+A receipt proves an execution was authorized. **Content binding** makes it prove *what* was executed: the receipt carries a hash of the action's content, so a party holding the delivered artifact — an email, a post, a record, a commit — can check that it is byte-for-byte what the human authorized.
+
+The privacy posture is unchanged: the Gatekeeper computes the hash locally and sends it in the receipt **request**; the AS copies it verbatim into the signed receipt **payload**. **The AS receives only the hash, never the content.**
+
+### Declaration
+
+A profile MAY declare a `content_binding` block:
+
+```json
+{ "content_binding": { "version": "1", "kind": "text", "pre_footer": true } }
+```
+
+| Field | Values | Meaning |
+|---|---|---|
+| `version` | `"1"` \| `"2"` | Canonicalization version. A verifier MUST pin it. |
+| `kind` | `"jcs"` \| `"text"` | What is hashed and how (below). |
+| `pre_footer` | boolean | For `text`: hash the content **before** any implementation-appended footer. |
+| `fields` | `string[]` (version 2 only) | The declared field subset to bind (below). |
+| `required_fields` | `string[]` (version 2 only) | Subset of `fields` that MUST be present. |
+| `appliesTo` | `string[]` (version 2 only) | Action types the binding covers, read strictly. |
+
+### Canonicalization (normative, versioned)
+
+- **`kind:"jcs"`** — RFC 8785 JCS of the record payload → `sha256`. For structured writes (records, CRM) with no single content field; the whole payload is the content.
+- **`kind:"text"`** — UTF-8 of the content field after: Unicode **NFC**, line endings normalized to LF, trailing per-line whitespace stripped, trailing blank lines removed; taken **pre-footer** when `pre_footer` is set. For communicative profiles (email, publish, calendar). Which argument is the content field is manifest data (`contentField`), with auto-detection from a prose vocabulary as fallback.
+
+### Version 2: declared fields
+
+Version 1 has two modes and neither is the general case: `text` binds a **single** field, `jcs` binds the **whole** payload. A profile that binds prose binds the body and nothing else — the receipt then proves *"this text was approved"*, not *"…to be sent to these recipients."* An Executor may take approved wording and deliver it elsewhere, and the receipt still verifies: a receipt that verifies while certifying something no one agreed to manufactures confidence.
+
+The repair is not to bind the whole call. A hash over the whole call is checkable only by a party that knows the whole call — and an email recipient holds the body, the subject, and their own address, but not `bcc`. **What is required is a declared subset, chosen so that the intended verifier can reproduce it.**
+
+At `version:"2"` a profile declares `fields`; the Gatekeeper constructs an object from exactly those keys and canonicalizes it by the declared `kind` (JCS sorts keys, so field ordering never affects the hash). The selection rule is stated, not implied: **bind everything the approving human is shown, and nothing the intended verifier cannot see** — for a message profile that means recipients, subject, and body, and deliberately *not* blind recipients.
+
+**Absence.** An absent **optional** field is omitted from the hashed object; an absent **required** field (`required_fields`) MUST refuse the call. A value that is null or empty after canonicalization counts as absent — the two MUST NOT be distinguished, or the same message hashes differently depending on whether a connector sent `""` or nothing. If **no** declared field carries a value, the call MUST be refused regardless of `required_fields`: that hash would commit to nothing while reading exactly like one that commits to everything. Omission is safe because the field list is published in the signed receipt (`contentBinding`): a verifier holding a message with a `Cc` header knows `cc` is in scope and includes it, so a recipient added after approval still breaks the hash.
+
+**Scope (`appliesTo`).** A profile gates more than its content-bearing calls — `email` also gates deletes, which carry an identifier and no content. A field binding therefore MAY declare `appliesTo`, using the profile's action-type vocabulary, and it MUST be read **strictly**: an undeclared action type is NOT covered. This is deliberately the opposite of how a bound reads the same key — an extra bound is a tighter limit; an extra content binding is a refused legitimate action. An implementation that finds a gated write with no declared action type under a content-binding profile SHOULD say so, because the receipt it issues will bind nothing.
+
+**Canonicalization inside the object.** Every string entering the bound object — at any depth, including inside arrays — MUST be canonicalized by the `text` rule before serialization. This is what makes the binding checkable at all: the verifier of an email holds the **delivered** copy, whose body has CRLF line endings and transport-added trailing whitespace, and JCS embeds strings verbatim. Array order MUST be preserved (reordering recipients is a change worth catching, and no transport reorders them). Values MUST NOT be otherwise normalized — in particular, addresses MUST NOT be lowercased; the local part is case-sensitive per RFC 5321 and this layer has no standing to make that semantic claim.
+
+### Conformance: an identifier MUST have one spelling
+
+A binding hashes an exact string, so two spellings of one value are two bindings. For prose this never bites; for an identifier it is the normal case — `https://x.app` and `https://x.app/` name the same build and produce different hashes. Where a profile binds an identifier rather than prose, its normal form MUST be declared (in the connector, next to the declaration naming the bound field), and the Gatekeeper MUST apply it **before the value is shown for approval** — not merely before hashing. Applied early, the value approved, the value bound, and the value a verifier can later reproduce are one string. The cost of leaving this undeclared is worse than a mismatch: a receipt that cannot be found reads as *no receipt exists*, so a trailing slash becomes indistinguishable from an action that was never authorized. Adding or changing a normalization rule moves every hash it produces and is a breaking change on the same footing as adding a bound field.
+
+### Conformance: a bound value MUST survive transport
+
+An implementation MUST NOT bind a field the transport will alter in delivery. This is not hypothetical: a live send bound a subject containing an em-dash; RFC 5322 headers are ASCII-only and the connector wrote raw UTF-8, so it arrived mangled and the recipient could not reproduce the hash — every layer behaved correctly and the check still failed. **A false mismatch is worse than no binding**: a verifier who sees a mismatch on honest mail learns that mismatches are noise, and the next real one is dismissed too. The repair belongs at the boundary: the value is hashed as approved and encoded for transport on the way out, in that order. Which argument needs which encoding is declared by the connector; the encodings belong to the engine. Implementations SHOULD assume this class of defect is present until a bound field has been verified against a genuinely delivered copy.
+
+### Conformance: what is displayed MUST be what is bound
+
+An implementation MUST NOT display, on an approval surface, a consequential parameter it does not bind; and MUST NOT bind a parameter it does not display. **Bound but not displayed** means the human committed to something never seen. **Displayed but not bound** means the Executor may alter it after approval — the reviewer's attention was spent on a value the receipt does not hold. Where another mechanism independently constrains a displayed parameter (a pipeline that checks the repository it runs in; review-mode proposal matching that pins the whole argument set), that MUST be stated in the profile or manifest rather than left to coincidence. This is a conformance requirement, not a presentation guideline — and it is the one place where the "UI hints MUST NOT influence enforcement" rule below does not apply, because here the display *is* part of the enforcement claim. The protocol concedes elsewhere that it verifies commitment, not comprehension; that concession is only defensible if what was shown and what was signed are the same thing.
+
+### Verification, and what a match does not prove
+
+Recompute the hash from the held content using the receipt's signed `contentBinding`, compare to the signed `contentHash`, and verify the receipt signature. A match under a valid signature proves the AS attested that **this exact content** was authorized under these bounds at this time. It does **not** prove real-world identity (see *Identity Assurance*), and it does not catch edits made outside the gated path — those surface only as a gap between the signed content and the live artifact, never prevented.
+
+### Receipt Lookup by Content
+
+An AS MAY offer a public lookup from a content hash to its receipt(s), so a verifier holding only an artifact can discover whether a receipt exists. Because such an endpoint is a **confirmation oracle** — it confirms that specific content was sent through the system — it MUST be opt-in per profile via a `receipt_lookup` declaration, MUST be rate-limited, and MUST return an indistinguishable not-found for content that exists but is not disclosable. Profiles whose content is public by nature (publish, public deploys) are the intended users; profiles carrying private content MUST NOT enable it.
+
+### Receipt Disclosure Is Declared
+
+A machine verifier of a deploy needs to see the environment a receipt authorized; an email receipt must never reveal who was written to. Both are receipts, and one projection cannot serve both — so what a receipt exposes publicly is **declared**, never assumed:
+
+> A profile — and, where finer control is wanted, a grant — DECLARES which execution-context fields a receipt may disclose publicly. The default is **none**. Absence of a declaration is never permission.
+
+This is the same fail-closed reading used throughout this specification: an unset read window denies; undeclared read governance denies; undeclared disclosure reveals nothing. Existing profiles are unaffected by construction — they declare nothing, so they disclose nothing. `email` keeps recipients private permanently; `publish` may disclose freely; `deploy` against a public repository may disclose repository, environment, and pipeline, while the same profile against a private repository discloses none of it — which is why the declaration belongs on the grant as well as the profile: the owner knows whether the target is public. Stated for the reader rather than the implementer: **you decide whether a receipt proves only that you approved something, or exactly what you approved.**
 
 ---
 
@@ -1026,9 +1174,15 @@ The protocol uses **Decentralized Identifiers (DIDs)** for platform-agnostic ide
 
 The verified DID is recorded in the attestation's `resolved_owners`. The AS MUST NOT issue attestations without verifying the attester's identity through a trusted authentication channel.
 
+**Identity DIDs vs signing DIDs (new in v0.6).** The forms above are all valid as *identity* — a stable label for who attested. They are not all valid as *signing identity*. A `did:key` is **self-certifying**: the public key *is* the identifier, so substituting the key produces a different DID that no longer matches the owner the attestation names — a verifier needs no key directory, no continuity history, no trusted server.
+
+> **Conformance rule.** A DID used as a Decision Owner's **signing** identity (see *Owner Mandate Signatures*) MUST be key-bearing, or otherwise independently resolvable without recourse to the Authority Server. A non-self-certifying identifier silently voids the co-signature's central guarantee: the AS becomes the key directory, and an AS-served key directory is no defence against the AS (see `governance.md` → *The Authority Server Cannot Check Itself*).
+
+`did:github` and `did:email` remain valid identity DIDs; they MUST NOT be used as signing DIDs, and there is no pairing mechanism between the two — a co-signing owner appears in `resolved_owners` by their key-bearing DID itself (see *Owner Mandate Signatures* for why a pairing is deliberately impossible). Self-certification removes *substitution*; it does not deliver the DID to a verifier — the verifier must still learn the owner's DID from an out-of-band source (the owner's own website, a business card, a prior signed artifact already trusted). A reader who believes self-certification alone solves cold verification has been misled; the out-of-band step is the honest cost.
+
 ### AS Group Configuration
 
-Required approvers move from profiles to AS group configuration in v0.5:
+Required approvers moved from profiles to AS group configuration in v0.5:
 
 ```json
 {
@@ -1095,6 +1249,68 @@ Before signing an attestation, the AS MUST:
 3. **Check membership** — In group mode: verify that the authenticated DID is a required approver in the group. In personal mode: skip.
 4. **Reject or sign** — Only sign the attestation if all checks pass.
 
+### Identity Assurance (new in v0.6)
+
+`resolved_owners` records a Decision Owner as a bare DID — pseudonymous by design. Identity Assurance adds an optional, **signed** overlay so an authorization (and the receipts and content footers it produces) can carry the owner's verified real-world identity, gated by *how* that identity was verified.
+
+#### Levels, methods, trust root
+
+| Field | Values | Meaning |
+|---|---|---|
+| `assurance` | `low` \| `high` | `low` → no name shown; `high` → the name MAY be shown |
+| `method` | `self_declared` \| `as_vouched` \| `eudi` | how identity was established |
+| `trust_root` | `self` \| `as` \| `external` | **who** vouches — the load-bearing field |
+
+- **`self_declared`** (`low`/`self`) — the owner typed a name. Never disclosed.
+- **`as_vouched`** (`high`/`as`) — the **AS operator** verified the owner. Valid only within the operator's own trust domain.
+- **`eudi`** (`high`/`external`) — an external eID (e.g. an EUDI wallet); AS-independent. Under v0.6 this method binds to an owner mandate signature with `binding: "eudi"` (see *Owner Mandate Signatures*) — identity assurance and mandate assurance are separate axes, and this is the point where they meet.
+
+#### Signed `subjects` block
+
+When identity is disclosed, the attestation carries a signed `subjects` array (one entry per owner); the receipt copies the disclosed subset so it self-verifies:
+
+```json
+"subjects": [{
+  "did": "did:key:…",
+  "assurance": "high",
+  "method": "as_vouched",
+  "trust_root": "as",
+  "verifier": "did:web:example-as.com",
+  "disclose": { "name": "Alice Example" },
+  "verified_at": 1735900000
+}]
+```
+
+Validation: `disclose.name` only when `assurance:"high"`; `as_vouched ⇒ trust_root:"as"` + `verifier`; `eudi ⇒ trust_root:"external"` and a corresponding `owner_mandates` entry with `binding:"eudi"`; `low ⇒` no `disclose`.
+
+> **Deprecated:** earlier drafts carried a `Subject.owner_signature` field (a signature over the identity claim). It signed the wrong object — attribution attaches to *what was committed to*, not to *who someone is* — and it was welded to one method. It is replaced by `owner_mandates`. Implementations MUST NOT emit it; verifiers MAY ignore it on artifacts that carry it.
+
+#### Two orthogonal knobs
+
+**Assurance** (how verified — a property of the credential) is separate from **disclosure** (whether the name is attached to a given authorization — opt-in, default off). `high` *permits* the name; the owner still *chooses* to attach it.
+
+#### Domain-scoping (conformance)
+
+> An AS MAY issue `method:"as_vouched"` (`high`) **only** for subjects within its own trust domain. For any subject outside that domain, `high` MUST come from an external root. An AS MUST NOT self-vouch `high` for an external subject.
+
+#### Credential binding
+
+Identity is **not re-verified per attestation.** Verification is a one-time event that attaches the assurance record to the authenticated credential; each attestation **stamps** the `subjects` block from that credential's *current* record at issuance. Revocation and expiry need no re-verification — the next attestation reflects the change — and a credential minted from a stronger auth session can carry a higher assurance than a weaker one for the same account. A bearer credential carrying `high` is sensitive — which is why the strongest root (`eudi`) binds to a per-event owner signature, not a bearer credential.
+
+#### Disclosure in footers
+
+Where an implementation appends provenance footers to delivered content, the owner's name appears **only at `high`**, derived from the signed `subjects` block:
+
+- `low` → "Sent by an AI agent via «operator»" — no name.
+- `high`/`as_vouched` → "Sent by an AI agent of «name», verified by «operator»".
+- `high`/`eudi` → "…of «name», identity verified (EUDI)".
+
+`«operator»` renders the actual `verifier`, never a hardcoded brand. A verification surface MUST show the method and trust root, so a relying party can weigh operator-asserted against externally-verified identity.
+
+#### Privacy carve-out
+
+A disclosed name is the one piece of personal semantic content the AS holds under this specification, and it enters only by the owner's explicit opt-in (`disclose`), never by protocol design. See the amended Privacy Invariant scope in `governance.md` → *Invariant 4*.
+
 ### Normative Rules
 
 1. The AS MUST verify attester identity before signing an attestation.
@@ -1102,6 +1318,157 @@ Before signing an attestation, the AS MUST:
 3. The authorization source MUST NOT be modifiable by the attester as part of the same action being attested.
 4. Changes to the authorization source MUST be made by an authorized party and MUST be auditable.
 5. The verified DID MUST be recorded in the attestation's `resolved_owners`.
+6. The AS MUST NOT sign a `subjects` entry whose DID it has not verified against the authenticated credential, and MUST NOT accept a caller-supplied owner DID that differs from the authenticated identity.
+
+---
+
+## Owner Mandate Signatures
+
+> New in v0.6. Optional and additive: an attestation with no `owner_mandates` behaves exactly as before.
+
+HAP has an **identity assurance** axis: how strongly is this DID known to belong to this person? It gains in v0.6 a second, independent axis — **mandate assurance**: *what key signed the mandate this person is said to have made?* Without it the answer is always the same one: the Authority Server's. The AS authenticates a human, resolves them to a DID, and the AS signs an attestation stating that this person committed to these bounds. The chain is complete and verifiable, but every link is an assertion by one party — and a compromised AS can fabricate authorization artifacts attributed to a Decision Owner.
+
+> **Principle.** A Decision Owner MAY sign the mandate, and each approval under it, with a key only they control. When they do, the authority and the decision are attributable to the person independently of the Authority Server.
+
+The missing property has a precise name: **non-repudiation by the human**. Not authentication — an eID or passkey login is fine as authentication. Attribution: a commitment is attributable only when the person's own key signed the specific content they committed to. The receipt stays AS-signed, and should — the human is not present at execution. The receipt's job is *system evidence that an execution fell inside an attributable mandate*; this section upgrades the mandate from **asserted** to **attributable** and touches the receipt not at all.
+
+### The signed object: `HAP-mandate`
+
+The human signs *before* the AS does, so they cannot sign the finished attestation — `attestation_id` and `issued_at` do not exist yet. They sign a **mandate projection**: a canonical object every field of which is known at approval time and reconstructible from the finished attestation.
+
+```json
+{
+  "typ": "HAP-mandate",
+  "version": "0.6",
+  "profile_id": "email@0.5",
+  "owner_did": "did:key:z6Mk…",
+  "bounds_hash": "sha256:…",
+  "context_hash": "sha256:…",
+  "execution_context_hash": "sha256:…",
+  "gate_content_hashes": { "intent": "sha256:…" },
+  "intent_disclosure_hash": "sha256:…",
+  "commitment_mode": "review",
+  "expires_at": 1767225600,
+  "nonce": "…"
+}
+```
+
+Canonicalization is RFC 8785 JCS → SHA-256, versioned via `version`; a verifier MUST pin the version. Field absence is defined, not incidental: `intent_disclosure_hash` is included when the attestation carries one and omitted otherwise.
+
+Every field except `owner_did` and `nonce` exists verbatim in the attestation payload, so a verifier **reconstructs the projection from the attestation it holds** and checks the signature over it — no side channel, no second fetch. `owner_did` is the signing owner's own DID and MUST be a member of the attestation's `resolved_owners`; a verifier MUST reject an `owner_mandates` entry whose `owner_did` is not.
+
+This has a consequence stated plainly rather than discovered later: **a co-signing owner is recorded in `resolved_owners` by their key-bearing signing DID itself.** An identity-only DID (`did:github`, `did:email`) remains valid for an owner who does not co-sign. There is deliberately **no pairing field** linking an identity DID to a separate signing key — such a pairing would be recorded and served by the AS, and an AS-recorded pairing is an AS-side check: a compromised AS pairs an attacker's key with the victim's identity DID, and the substitution the key-bearing rule exists to make impossible returns through the side door. An organization using identity-only DIDs therefore migrates a co-signing owner to a key-bearing DID; confirming *whose* key it is remains the out-of-band step, never a directory.
+
+- **Intent is covered without special handling** — `gate_content_hashes` is included wholesale and intent is a gate content hash. `intent_disclosure_hash` is included for a different reason: it binds the ciphertext **and the frozen approver set**, and a compromised AS swapping the approver set is exactly the class of forgery this mechanism exists to stop.
+- **`expires_at` is the replay defence.** The human signs how long the authority lives, not only what it permits; replaying the projection produces an attestation identical in authority — it grants nothing new.
+- **`nonce` is defence-in-depth against third parties only.** It prevents duplicate issuance by an honest AS. Nonce enforcement is AS-side, and an AS-side check is not a defence against the AS — the spec deliberately does not credit it with one.
+
+### Attestation field: `owner_mandates`
+
+```json
+"owner_mandates": [{
+  "did": "did:key:z6Mk…",
+  "alg": "EdDSA",
+  "signature": "base64url…",
+  "signed_at": 1767139200,
+  "nonce": "…",
+  "binding": "webauthn",
+  "signing_surface": "gatekeeper_local"
+}]
+```
+
+Carried **inside the AS-signed payload**, so the AS attests to having received it and cannot strip it afterwards without invalidating its own signature.
+
+**There is deliberately no `public_key` field, and it MUST NOT be added.** With a key-bearing DID there is nothing to carry — the key *is* the identifier. Carrying one would be a key directory in miniature, and it would fail *silently*: an implementation using a non-key-bearing DID would still validate, because the signature would check against the carried key while the guarantee had quietly evaporated. With the field absent, a non-key-bearing DID fails **structurally** — there is no key to verify against, so non-conformance surfaces as broken verification rather than as verification that works and means nothing. This note exists because a future implementer will otherwise read the absence as an oversight and helpfully re-add it.
+
+`alg` is partly redundant — a `did:key` multicodec prefix already determines the key type. It is kept because an explicit algorithm identifier guards against curve confusion and costs nothing. **If the two disagree, the DID is authoritative** — the field a party writes loses to the field a party cannot forge.
+
+`binding` is the mandate-assurance axis:
+
+| `binding` | Key lives in | Defeats | Signature weight |
+|---|---|---|---|
+| `raw` | software | little — for tests and CI | none |
+| `webauthn` | platform authenticator / security key | forged mandates, fabricated approvals, flipped commitment mode, extended expiry | advanced electronic signature at best |
+| `eudi` | national wallet with its own display | all of the above, plus a compromised AS *frontend*, plus key rotation | qualified, where the scheme is qualified |
+
+`Subject.method` keeps its meaning — identity assurance. `binding` is independent: the useful intermediate state — *the operator vouches for who Alice is, and Alice's own key signs what she committed to* — is expressible only because the axes are separate.
+
+**Unknown `binding` values pass through.** An AS MUST NOT reject an `owner_mandates` entry solely because it does not recognize its `binding` value — it stores and signs what it received. Requiring a minimum binding is verifier policy (and optionally a profile floor), never an AS gate; this also keeps future binding values (other jurisdictions' qualified-signature schemes) additive rather than version-breaking.
+
+**`signing_surface` is a declaration, not a proof.** Custody answers *who can use the key*; surface answers *who controlled what the key was shown*. A passkey signed in a locally installed UI and the same passkey signed in AS-served JavaScript have identical custody and sharply different exposure — AS-served script can sign something other than what the screen shows. The field records which surface was used (`gatekeeper_local` | `as_web` | `wallet_display`) so the artifact can express whether that attack was defended against — but a claim the attester records about its own environment is not verifiable by anyone. It is self-serving only in the honest direction (there is no use in claiming *more* protection to a party who will weigh it), so it carries real information; it carries none a verifier can check. The only surface a verifier can trust rather than take on faith is one with an independent display — `wallet_display`, which is why `binding: "eudi"` collapses the two axes and ranks above the rest.
+
+### Approvals: `HAP-approval`
+
+In `review` mode the mandate is a container; the per-action approval is where the human's judgment actually lands, and a compromised AS fabricating an approval is the more damaging attack. The approval gets its own signed object:
+
+```json
+{
+  "typ": "HAP-approval",
+  "version": "0.6",
+  "proposal_id": "…",
+  "attestation_id": "…",
+  "decision": "commit",
+  "content_hash": "sha256:…",
+  "decided_at": 1767139200,
+  "nonce": "…"
+}
+```
+
+The AS MUST verify the approval signature before issuing the receipt for the proposal, and the receipt MUST carry the approval signature (or its hash) in the signed payload (field `approvalSignature` — see *Receipt Payload Schema*) — so the receipt proves the human approved **this content**, rather than that the AS says a proposal reached its approved state. Approval transport and storage remain AS-defined, as before.
+
+**What `content_hash` covers.** Where the profile declares a content binding, the approval's `content_hash` MUST equal the receipt's `contentHash` — the human approved these bytes. Where the profile binds no content, `content_hash` is `sha256` over the RFC 8785 JCS of the proposal's argument set — the same object review-mode proposal matching already pins. Stated honestly: without a content binding, checking that link requires holding the proposal record, so it serves the owner and the Gatekeeper rather than a cold third party.
+
+Signing `decision: "reject"` matters as much as signing `commit`: a rejection the AS can discard is a rejection that never happened.
+
+### Where the requirement lives — three tiers, only two of them enforcement
+
+An optional field a compromised AS may simply omit is not a defence: a requirement recorded *by the AS* cannot constrain the AS — it omits the signature and the requirement in one move.
+
+| Tier | Checkable without trusting the AS? | Role |
+|---|---|---|
+| **Verifier policy** — the relying party demands a minimum `binding` | yes, entirely | **primary enforcement** |
+| **Profile** — `ownerMandate: { "required": true, "minBinding": "…" }` | yes: `profile_id` is in the signed payload; profile bytes are content-addressed and retention-bound | optional floor |
+| **Grant** — the owner asks that their authorities be co-signed | no | owner-facing **assurance**, not enforcement |
+
+Verifier policy is the natural home — it is where the protocol's trust unit already points (*Public Key + Profile + Local Policy*), it needs no profile fork, and it puts the requirement with the party bearing the risk. The profile floor is reserved for domains that cannot mean anything without a signature; used more freely it forks `charge` from `charge-with-cosign`, exactly the proliferation universal profiles exist to prevent. The grant tier is kept and explicitly labelled assurance — a control that looks like enforcement but is not is worse than no control.
+
+A verifier or AS that finds an applicable requirement unmet MUST fail (`MANDATE_SIGNATURE_REQUIRED`), not warn — the same fail-closed reading used everywhere else in this specification.
+
+### Multi-owner: every required owner signs
+
+No quorum. Required-owner coverage already requires the union of attesting owners to cover the required set, and the multi-owner coverage rule requires all required owners to attest to the same hashes. Where mandate signatures are required, each required owner's attestation carries that owner's `owner_mandates` entry. Quorum would be a new authority semantic, not a signing detail; it belongs in group configuration as *who is required* — and once required, each signs.
+
+### Verification procedure
+
+1. Verify the AS signature over the attestation. *(unchanged)*
+2. Apply verifier policy: what minimum `binding` does this relying party require?
+3. Read `profile_id`; fetch the profile; read any `ownerMandate` floor.
+4. For each required owner: find its `owner_mandates` entry, reconstruct the mandate projection from the attestation's own fields, verify the signature using the key **carried in the owner's DID**.
+5. Confirm the DID matches the owner you expected, from an out-of-band source (see *Identity DIDs vs signing DIDs*).
+6. In `review` mode: verify the approval signature; where the profile binds content, confirm the approval's `content_hash` equals the receipt's `contentHash`. (Without a content binding, that link is checkable only against the held proposal record — see *Approvals* above.)
+
+Steps 2–6 require no trust in the AS. Step 5 is the one that requires something of the verifier, and it is the honest cost of cold verification.
+
+### Key lifecycle
+
+**Key loss — enroll forward, never re-attribute.** This is an attack vector, not an operational footnote: if AS-mediated recovery can re-attribute existing mandates, a compromised AS attacks recovery instead of signatures and the threat model routes around the whole mechanism.
+
+- Recovery MUST NOT retroactively re-sign or re-attribute existing mandate signatures.
+- It MAY enroll a new key **going forward only**.
+- It MUST emit an auditable event of the same class as `revocation.superseded` — a transition, never an erasure.
+- Live authorities under the lost key expire or are revoked normally. They are never transferred.
+
+The asymmetry is deliberate and accepted: revoking authorities under a lost key is itself AS-mediated, and that is fine — a malicious AS revoking is denial of service, not forgery.
+
+**Key rotation — the remaining hole.** With a key-bearing DID, rotating the key changes the identity: a verifier holding the owner's old DID from a business card sees a stranger. Under enroll-forward-only that is *correct behaviour* — what is lost is continuity of reputation, not security. Acceptable for passkeys; not acceptable for a legal person across years. A rotation chain (new key signed by old) covers planned hygiene only — it needs the old key, which is precisely what is missing in the loss and compromise cases. What actually re-binds a new key to the same legal person without the AS *and* without the old key is an **external identity root** — which is why the `eudi` binding is not the polite completion of the design but the only thing that closes a hole the design otherwise cannot close. The deferred alternative is an external or multi-witness transparency log; an AS-run log is no defence against the AS.
+
+### What this does and does not prove
+
+**Does:** the mandate is attributable to a key only the owner controls; each approval is attributable to the person who made it; a compromised AS cannot forge authority, fabricate or discard an approval, flip `review` → `automatic`, or extend a mandate's life; a verifier with the owner's DID from an out-of-band source needs no trust in the operator.
+
+**Does not:** prove the human *read* what they signed (only that their device signed it); make receipts human-signed (they are execution evidence and stay AS-signed); confer qualified-signature status (a passkey is not a QES); defend against a compromised AS **frontend** serving a signing UI that signs something other than what the screen shows (the answers are a locally installed signing surface, or a wallet with its own display); deliver the owner's DID to a cold verifier.
+
+**The irreducible residue.** Content binding already lets a holder check that an artifact matches the signed hash without the AS, so the decision → execution link is not wholly AS-asserted. What no signature scheme fixes is **cumulative state and pre-flight ordering** — whether this was the 3rd charge or the 30th, and whether the receipt genuinely preceded execution. Those are claims about a *sequence*, not about a document, and only the AS witnesses the sequence. This is the honest floor of the trust model, and it is where an append-only witnessed log would eventually earn its cost.
 
 ---
 
@@ -1188,7 +1555,7 @@ ASes do not trust executors. They enable users to enforce boundaries.
 
 ### Responsibilities
 
-A v0.5 AS has five primary responsibilities:
+A v0.6 AS has five primary responsibilities:
 
 1. **Attestation issuance** — sign authorizations after verifying profile compliance, identity, and (in group mode) required-approver coverage
 2. **Receipt issuance** — sign execution receipts after checking per-transaction bounds and cumulative limits
@@ -1259,7 +1626,7 @@ The AS derives `userId` from the authenticated request context. It is not suppli
 **AS Validation for Receipt Issuance.** The AS MUST reject the receipt request if:
 
 - `boundsHash` is unknown (return `ATTESTATION_NOT_FOUND`)
-- The request body includes a retired v0.3/v0.4-era identifier — `attestationHash`, `frame_hash`, or `path` (return `MALFORMED_RECEIPT_REQUEST`). v0.5 receipt requests use the bare `boundsHash` only; the per-user storage key is reconstructed server-side from `boundsHash` + the authenticated user.
+- The request body includes a retired v0.3/v0.4-era identifier — `attestationHash`, `frame_hash`, or `path` (return `MALFORMED_RECEIPT_REQUEST`). v0.5+ receipt requests use the bare `boundsHash` only; the per-user storage key is reconstructed server-side from `boundsHash` + the authenticated user.
 - The request body's `actionType` is not in the profile's `boundsSchema.actionTypes` registry (return `INVALID_ACTION_TYPE`)
 - The request is on the synchronous path (`automatic` mode, no `proposalId`) but omits `idempotencyKey` (return `IDEMPOTENCY_KEY_REQUIRED`)
 - The `idempotencyKey` was already used for a **different** execution — `profileId`, `action`, or `executionContext` differ from the receipt it is bound to (return `IDEMPOTENCY_MISMATCH`)
@@ -1403,7 +1770,7 @@ The receipt is a permanent record of what happened under a specific authorizatio
 | Ethics enforcer | ASes validate structure and bounds — not morality or legality |
 | Global authority | No AS can block others. No hierarchy exists |
 | Content inspector | ASes never see semantic content (intent, context content, problem narratives) |
-| Stateless oracle | v0.5 ASes maintain cumulative state and a revocation list. They are stateful by design. |
+| Stateless oracle | v0.5+ ASes maintain cumulative state and a revocation list. They are stateful by design. |
 
 ### Security Guarantees
 
@@ -1422,6 +1789,7 @@ The receipt is a permanent record of what happened under a specific authorizatio
 - Owner DIDs
 - Owner declarations
 - `commitment_mode`
+- `owner_mandates` signatures and, **by explicit owner opt-in only**, a disclosed `subjects` identity block (new in v0.6 — see *Identity Assurance*)
 - Optional `title` (AS metadata, not signed)
 
 ASes never receive:
@@ -1429,10 +1797,11 @@ ASes never receive:
 - Context content (operational details — only the hash)
 - Intent text (only the hash)
 - Any narrative reasoning, problem statements, or rendered previews
+- A real name the owner did not explicitly choose to disclose
 
 **Profile Isolation.** A compromised personal AS cannot issue attestations for profiles it doesn't support. Each Profile defines its own validation rules.
 
-**No Executor Trust.** Executors are not required to "do the right thing." If an executor ignores the receipt requirement, it acts outside HAP — and is liable.
+**No Executor Trust.** HAP does not require executors to behave well; it requires that badly behaved execution cannot occur unmediated. Where an executor can be reached only through the Gatekeeper, its good behaviour is unnecessary. Where it can be reached directly, the executor MUST itself verify a receipt before acting, to the standard in `governance.md` → *Deployment Security Profile*. An executor that produces a consequential effect with neither property in place is operating outside HAP — the action carries no proof, the deployment does not satisfy Invariant 1 for that capability, and the operator is liable for the difference.
 
 ## Gatekeeper & Executor Behavior
 
@@ -1463,13 +1832,19 @@ When the obligation is split across layers, the layer running Phase 2 is the con
 
 A system that has attestations but skips verification or receipt issuance is in violation — the attestation alone is not proof of compliance; verified attestation + valid receipt is.
 
+**When the trigger cannot be the control point** (new in v0.6). Some effectors expose a trigger that cannot be fully restricted — a CI/CD dispatch, a webhook, an internal API reachable from the same network as the agent. Restricting *access* to the trigger is then the wrong control, because it cannot be made to hold: a credential left on a developer machine, a new egress rule, or a debugging container silently removes it, and nothing reports that it is gone. The control is whether pulling the trigger achieves anything.
+
+Such an effector MUST verify a receipt itself before producing the consequential effect. Doing so makes it a **second Gatekeeper at the true execution boundary**, and makes the receipt a **bearer proof presented to a third party** — the only configuration in which a receipt leaves the requesting Gatekeeper's custody. It also inverts the problem usefully: instead of preventing the agent from reaching the effector, which is often impossible, it makes reaching the effector accomplish nothing.
+
+A receipt-demanding effector carries obligations a signature check alone does not satisfy — action class, scope binding, freshness, and replay protection scaled to the action. They are specified in `governance.md` → *Deployment Security Profile*, and they are why the machine-verification requirements exist.
+
 ### Validation Steps
 
 The Gatekeeper performs validation in two phases: **local verification** and **AS receipt issuance**.
 
 **Phase 1: Local Verification.**
 
-1. **Reconstruct canonical bounds** from the submitted bounds object (apply v0.5 escape rules: reject newlines, percent-encode `=`/`%`/non-printable ASCII)
+1. **Reconstruct canonical bounds** from the submitted bounds object (apply the v0.5+ escape rules: reject newlines, percent-encode `=`/`%`/non-printable ASCII)
 2. **Compute `bounds_hash`** and verify it matches the attestation
 3. **Reconstruct canonical context** from the submitted context object (always compute the hash; use the well-known empty hash if context is empty)
 4. **Compute `context_hash`** and verify it matches the attestation
@@ -1492,7 +1867,7 @@ If any local check fails → reject with a structured error before contacting th
 
 For every authorized write execution, the Gatekeeper sends a receipt request to the AS. For the canonical receipt request schema, see [Execution Receipts](#execution-receipts).
 
-The request body MUST NOT include `path`, `attestationHash`, `frame_hash`, or any other v0.3/v0.4-era identifier. v0.5 ASs MUST reject these. `actionType` MUST be in the profile's `boundsSchema.actionTypes` registry; the Gatekeeper SHOULD validate locally before round-tripping.
+The request body MUST NOT include `path`, `attestationHash`, `frame_hash`, or any other v0.3/v0.4-era identifier. v0.5+ ASes MUST reject these. `actionType` MUST be in the profile's `boundsSchema.actionTypes` registry; the Gatekeeper SHOULD validate locally before round-tripping.
 
 **Idempotency (exactly-once).** On the synchronous path (`automatic` mode), the Gatekeeper MUST generate one `idempotencyKey` per tool invocation and reuse it **unchanged** on every retry of that invocation's receipt request. The key MUST be unique per logical execution and MUST NOT be derived from the action's content — two intentionally identical actions are distinct executions and each must be counted. Retrying a receipt request is only safe (and only permitted) when the key is present: a transient failure that hides the AS response *after* it committed is recovered by the retry, which the AS dedups to the original receipt instead of double-counting. The Gatekeeper MUST NOT retry past a **definitive** AS rejection — `BOUND_EXCEEDED`, `CUMULATIVE_LIMIT_EXCEEDED`, `APPROVAL_REQUIRED`, `INVALID_ACTION_TYPE`, `ATTESTATION_REVOKED`, `ATTESTATION_EXPIRED`, `IDEMPOTENCY_MISMATCH` — which fail closed on the first response. Review-mode commits carry a `proposalId` instead and omit the key (the proposal CAS is their replay protection).
 
@@ -1544,7 +1919,7 @@ In `review` mode, the receipt request returns `PROPOSAL_REQUIRED` with a `propos
     {
       "code": "PROPOSAL_REQUIRED",
       "message": "This authorization is in review mode. Submit a proposal and obtain human approval before requesting a receipt.",
-      "proposalId": "uuid-assigned-by-sp"
+      "proposalId": "uuid-assigned-by-as"
     }
   ]
 }
@@ -1570,7 +1945,7 @@ The Gatekeeper enforces bounds against an `executionContext` dictionary (e.g., `
 
 A **tool-gating manifest** is a JSON document that pairs an MCP tool with the bounds-and-context it should be checked against. Manifests live with the integration code (not with the profile), so adding a new tool that maps to an existing profile does not require a new profile version.
 
-A Gatekeeper that fronts MCP tool calls (the primary v0.5 use case) consumes a tool-gating manifest per integration. The manifest answers two questions:
+A Gatekeeper that fronts MCP tool calls (the primary use case) consumes a tool-gating manifest per integration. The manifest answers two questions:
 
 1. **Which profile authorizes this tool?** — the manifest's `profile` field.
 2. **How does a tool call's arguments produce an `executionContext`?** — the manifest's `tools.<name>.executionMapping` and `staticExecution`.
@@ -1581,6 +1956,7 @@ The Gatekeeper MUST refuse any tool that is not described in a loaded manifest. 
 
 ```json
 {
+  "manifestVersion": "1",
   "id": "stripe",
   "profile": "github.com/humanagencyprotocol/hap-profiles/charge@0.5",
   "tools": {
@@ -1603,6 +1979,7 @@ The Gatekeeper MUST refuse any tool that is not described in a loaded manifest. 
 
 | Field | Required | Description |
 |---|---|---|
+| `manifestVersion` | yes (v0.6) | Version of the manifest schema and its transform vocabulary. This document defines version `"1"`. A manifest without the field MUST be read as version `"1"` (v0.5 manifests predate it). |
 | `id` | yes | Stable string identifier for the integration. Forms the namespace prefix in the proxied MCP tool name (`{id}__{tool}`). |
 | `profile` | yes | The profile ID this integration's tools attest under. |
 | `tools` | yes | Map of original MCP tool name → entry. |
@@ -1629,7 +2006,7 @@ The Gatekeeper MUST refuse any tool that is not described in a loaded manifest. 
 4. Manifests are integration-side artifacts; multiple manifests MAY reference the same profile.
 5. Implementations MUST treat `_imagePreview` and other reserved-prefix-`_` keys as advisory metadata that does not flow into the executionContext.
 
-The reference Gatekeeper's manifest shape (used in production by `hap-gateway`) is the v0.5 canonical form.
+This schema — not any vendor's implementation of it — is the canonical, portable binding format at `manifestVersion: "1"`. It originated in the reference Gatekeeper, but the normative shape is the one in this document: two conformant Gatekeepers loading the same manifest against the same profile MUST gate the same tool identically. The transform vocabulary is **closed and versioned**: the expressions in the table above are the complete set for version `"1"`; adding, removing, or changing a transform's semantics requires a new `manifestVersion`. An open or string-evaluated transform set would reintroduce exactly the "infer enforcement from names" hazard the `boundType` rule forbids.
 
 **Resolving `actionType`.** `actionType` MUST come from the manifest's `staticExecution.action_type`. The Gatekeeper:
 
@@ -1644,10 +2021,10 @@ A Gatekeeper that derives `actionType` from the tool name (e.g., by splitting on
 
 | Manifest `category` | Gatekeeper behavior |
 |---|---|
-| `read` | Verify a matching authorization exists for the manifest's profile. Skip executionContext construction and bounds verification. Do not request a receipt. (Read calls do not consume cumulative state.) |
+| `read` | Verify a matching authorization exists for the manifest's profile, then enforce **read governance** — the read-age window, resource scope, and identifier matching defined in *Read Authorization* below. Do not build a bounds `executionContext` for write-bound enforcement and do not request a receipt. (Read calls consume no cumulative state.) |
 | `write` | Run the full Phase 1 + Phase 2 flow. Build `executionContext` from `staticExecution` + `executionMapping`. Verify per-transaction bounds locally, request a receipt, block on negative results. |
 
-Read-only tools still require authorization. The protocol forbids ungated read access — the read/write distinction is about *what* is enforced, not *whether* enforcement happens.
+Read-only tools still require authorization *and* read governance. The protocol forbids ungated read access — the read/write distinction is about *what* is enforced, not *whether* enforcement happens. v0.5's blanket "skip bounds verification" for reads is superseded: a read whose resource argument falls outside a granted resource scope MUST be rejected (see *Resource scope MUST bind reads* below).
 
 **Argument Coercion.** When applying `executionMapping` transforms:
 
@@ -1656,9 +2033,77 @@ Read-only tools still require authorization. The protocol forbids ungated read a
 - Reserved keys whose names start with `_` (e.g., `_imagePreview`) MUST NOT flow into `executionContext`. They are advisory metadata for proposal previews.
 - When an argument is an object with an `email` property (e.g., a calendar attendee `{ email, displayName }`), implementations SHOULD coerce to the `email` value before applying string transforms.
 
+## Read Authorization
+
+> New in v0.6 as normative surface. Specifies how read authority binds. Reads remain **receiptless** — no consequential action, no receipt — so everything here is enforced by the local Gatekeeper.
+
+Consequential actions are checked twice: the Gatekeeper verifies locally, then the Authority Server enforces cumulative bounds and issues the signed receipt — a Gatekeeper that ignored its own checks still cannot produce a receipt. Reads have no second check. They are receiptless by design, so read enforcement is performed **only** by the local Gatekeeper, and no other party observes it. Stated plainly: **read bounds are a property of a trusted Gatekeeper build, not of the protocol.** A modified, misconfigured, or outdated Gatekeeper reads whatever the connector will return. This is an accepted trade — reads are not the consequential act, and the acts that disclose what was read (send, publish) *are* receipted on the way out, so the boundary that matters is enforced where the data leaves.
+
+The design implication follows the trust-domain rule (*Bounds, Context, and Disclosure*): **read policy is local, live configuration — not a signed bound.** It belongs on the **integration**, editable in one place with immediate effect, rather than frozen into each signed authorization. Authority to *act* is signed and per-grant; reach to *read* is local and live-editable. (The exception is the one the rule names: a read limit one party enforces *against* another — a team admin capping a member's reach — re-enters the signed surface.)
+
+### Read policy binds to the integration, not the grant
+
+A conformant Gatekeeper SHOULD evaluate read authority as **one policy per integration**, derived from the authorizations that enable its read tools, with two knobs:
+
+- **Default age window** — the floor applying to *every* item. It may be set to a number of days, to explicit *unlimited*, or to `0` (read nothing by default). **No configured window at all — neither a local policy nor a legacy signed read bound — is a denial**, not unlimited: an unset window MUST deny rather than permit everything.
+- **Per-correspondent overrides** — a list of `identifier → window`, each **≥ the default**. Overrides may only *raise* a window, never lower it.
+
+```
+applicableWindow(item) =
+    max( defaultWindow,
+         { override.window | override.identifier matches some participant of item } )
+
+read permitted  ⇔  age(item) ≤ applicableWindow(item)
+```
+
+Normative consequences:
+
+- Because overrides only raise, the default is a **guaranteed floor**, and a multi-party item never yields a conflict — the most permissive applicable window applies.
+- An override is a **positive membership test** ("is this identifier among the participants?"). It requires no notion of *self*, hence no identity store, no discovery recipe, no self-subtraction.
+- The denial reasons on the read path are **age** and **resource scope** (below) only. There is no coverage denial: a read is never refused because no grant "reaches" a correspondent.
+- Restrictive intent ("only read mail involving X") is expressed as `default = 0` plus higher overrides — the same mechanism at a lower floor, not a separate feature.
+- Where several authorizations enable the same integration's reads, the effective default is the **most permissive** among them, and an implementation SHOULD surface it as a single effective number.
+
+**Stated limit.** Matching is ANY-of-participants, not all-parties: an item on which an overridden identifier appears alongside others becomes readable at that identifier's window. This is an **age-tuning** model, not a confidentiality wall; it MUST NOT be presented as "the agent can never see X's correspondence."
+
+### Resource scope MUST bind reads
+
+A `resource` scope (see *Scope kinds*) names a container the authority may act within. Where an implementation enforces such a scope on writes, it **MUST** enforce the same scope on reads of the same resource — enforcing it on one side only produces the incoherent posture that an excluded container is *unwritable yet fully readable*. This is the cheapest read mechanism: a subset membership test on an argument the call already carries, reusing the mapping the write path already declares. A conformant Gatekeeper MUST reject a read whose resource argument falls outside the granted subset, and MUST fail closed where the target resource cannot be determined.
+
+Containers are not only calendars — a mailbox's folders and labels, a drive's shared drives, a workspace's projects are all resource scopes, and a **container allowlist is the preferred way to exclude a class of untrusted content** (notably a mail provider's spam container): an allowlist is default-deny by construction, where a denylist must be written, remembered, and kept in step with each provider's naming.
+
+Where a provider exposes an argument that *widens* the container set (an `includeSpamTrash`-style flag, a caller-supplied label list), that argument is the **Gatekeeper's to set, not the agent's**. A conformant Gatekeeper MUST NOT pass an agent-supplied resource-widening argument through unvalidated, and MUST NOT rely on a provider's permissive-by-omission default — a provider default holds only until the agent supplies the argument, and typically does not apply to fetch-by-id at all.
+
+### Identifier matching
+
+Override and scope identifiers are compared against values the connector supplies. Semantics MUST be fixed and identical across providers, or the same policy yields different results on different backends:
+
+- Comparison is **case-insensitive**; identifiers and extracted values are normalized (NFKC) before matching.
+- Where a value carries a display name, matching is on the **address**, never the display-name text — display names are unauthenticated, attacker-controlled data.
+- Domain identifiers match **that domain exactly**; a subdomain is NOT matched by its parent — silent widening is worse than an explicit second entry.
+- Which fields carry participants is **manifest data** (e.g. `From`/`To`), not protocol. Implementations MUST NOT match on message bodies or item content.
+
+### Conformance: undeclared read governance is a denial
+
+Read enforcement is driven by per-connector descriptors — a static gate, a read adapter, a resource mapping. A conformant Gatekeeper MUST NOT treat *absent* descriptors as *permitted*: a tool classified as a read that declares no applicable governance MUST be denied, or carry an explicit, recorded exemption. Absence of configuration is otherwise indistinguishable from absence of enforcement, and a connector silently bypasses the read model by omitting a declaration.
+
+### Conformance: enforcement by construction must not be escapable
+
+Where a Gatekeeper enforces read limits by injecting constraints into a provider **query** supplied by the agent (an optimization over post-fetch filtering), the injected constraints MUST be combined so the agent's own fragment cannot capture or cancel them. In a boolean query language a naive concatenation is insufficient — a fragment ending in a disjunction operator turns the intended conjunction into a union, and the limit stops binding. Implementations MUST bracket the agent-supplied fragment and MUST fail closed on a fragment that cannot be safely combined, rather than silently rewriting it. Query injection is an optimization; **post-fetch enforcement remains the normative baseline** and MUST NOT be omitted on the assumption that the query was constrained.
+
+### Where it lives (portable)
+
+- **Profile**: `scopeKind` per context field; any bound governing a read window (linked via `boundType.of`, not field name). Provider-agnostic.
+- **Manifest**: read adapters only — where participants and dates live, the resource argument mapping, any query-injection template. Provider data. No identity recipe.
+- **Gatekeeper**: generic evaluation — window resolution, positive override matching, resource subset test, query composition. No tool or profile literal.
+
+A new provider reuses the profile and engine unchanged, supplying only its manifest adapters. A connector that cannot expose participants simply cannot offer overrides and falls back to the default window.
+
+**Verifiability, deliberately deferred.** If read enforcement ever needs to be verifiable rather than merely performed, the options are, in increasing cost: a signed read policy; denial reporting to the AS; read receipts for a narrow high-sensitivity class. The last MUST NOT be adopted broadly — a complete read record is a metadata trail of everything the owner corresponds with, a privacy cost the current design deliberately avoids paying. All three remain future directions (`review.md`).
+
 ## Human-readable affordances (UI layer, non-normative)
 
-> Optional in v0.5. Non-normative for enforcement; normative for the field name and shape so multi-gateway ecosystems render the same way.
+> Optional since v0.5. Non-normative for enforcement; normative for the field name and shape so multi-gateway ecosystems render the same way.
 
 A profile MAY include presentation hints on field definitions. These hints flow only to the local app (gateway UI) and are never sent to the AS or to executors. They are advisory: a Gatekeeper that ignores them is fully conformant.
 
@@ -1712,6 +2157,8 @@ Error codes are canonical across the protocol. Implementations MUST emit exactly
 | `BOUNDS_INVALID_VALUE` | A bounds value violates the profile's pattern, encoding, or range constraint |
 | `CONTEXT_INVALID_VALUE` | A context value violates the profile's pattern, encoding, or enum/subset constraint |
 | `ABOVE_CAP_CONFIG_INVALID` | `above_cap_caps` references a field not declared in the profile's `boundsSchema` |
+| `MANDATE_SIGNATURE_REQUIRED` | An applicable profile floor or policy requires an owner mandate signature (at a minimum `binding`) and none that satisfies it is present (new in v0.6) |
+| `MANDATE_SIGNATURE_INVALID` | An `owner_mandates` entry fails verification — signature invalid, `owner_did` not in `resolved_owners`, non-key-bearing signing DID, or `alg`/DID key-type disagreement (new in v0.6) |
 
 ### Receipt Errors
 
@@ -1733,13 +2180,15 @@ Error codes are canonical across the protocol. Implementations MUST emit exactly
 | `PROPOSAL_MISMATCH` | The receipt request does not match the stored proposal (tool, args, or context differ) |
 | `PROPOSAL_ATTESTATION_MISMATCH` | The named proposal references a different attestation than the receipt request |
 | `PROPOSAL_ALREADY_EXECUTED` | A receipt has already been issued for this proposal |
-| `MALFORMED_RECEIPT_REQUEST` | The request carries a retired v0.3/v0.4 identifier (`attestationHash`, `frame_hash`, or `path`); v0.5 uses bare `boundsHash` |
+| `MALFORMED_RECEIPT_REQUEST` | The request carries a retired v0.3/v0.4 identifier (`attestationHash`, `frame_hash`, or `path`); v0.5+ uses bare `boundsHash` |
 | `IDEMPOTENCY_KEY_REQUIRED` | A synchronous (`automatic`-mode, no `proposalId`) receipt request omitted the required `idempotencyKey` |
 | `IDEMPOTENCY_MISMATCH` | An `idempotencyKey` was reused for a different execution (`profileId`, `action`, or `executionContext` differ) |
+| `APPROVAL_SIGNATURE_REQUIRED` | An applicable requirement (profile floor or configured policy) demands an owner-signed approval for this proposal and none was provided (new in v0.6) |
+| `APPROVAL_SIGNATURE_INVALID` | The provided `HAP-approval` signature fails verification, or its `content_hash` does not match what it must cover (new in v0.6) |
 
 ## Future Directions
 
-Optional extensions and forward-looking directions — Output Provenance, Content Provenance, Decision Streams, and resilience to a compromised Authority Server — live in a dedicated, non-normative companion document: see `review.md`. They are not part of the v0.5 binding surface.
+Optional extensions and forward-looking directions — Output Provenance, dual-signed public receipt projections, selective disclosure, transparency logs, wallet-integration guidance and the key-rotation story for the `eudi` mandate binding, and the remaining hardening against a compromised Authority Server — live in a dedicated, non-normative companion document: see `review.md`. They are not part of the v0.6 binding surface. (The `binding: "eudi"` value and its validation semantics *are* normative in *Owner Mandate Signatures*; supporting it is optional, like any binding an implementation does not offer — what is deferred is the wallet integration itself. Decision Streams, carried as a direction since v0.3, is retired in v0.6 — see `changelog.md` for the record.)
 
 ## Versioning & Migration
 
@@ -1748,6 +2197,24 @@ Optional extensions and forward-looking directions — Output Provenance, Conten
 - Once a profile version is published, it is immutable. Changes require a new profile version.
 - Breaking changes MUST bump major protocol or profile versions.
 - Gatekeepers and Authority Servers MUST reject unknown or untrusted versions.
+
+### Migration from v0.5
+
+v0.6 is additive on the wire and stricter in governance. Existing v0.5 attestations and receipts remain verifiable unchanged.
+
+**Additive signed-payload fields (v0.5 verifiers ignore them):**
+
+1. Attestations MAY carry `subjects` (Identity Assurance) and `owner_mandates` (Owner Mandate Signatures). Attestations issued under v0.6 carry `version: "0.6"`.
+2. Receipts MAY carry `contentHash`, `contentBinding`, `subjects`, `proposalId`, and — on the review path where an approval was owner-signed — `approvalSignature` in the signed payload.
+
+**Deprecations and tightenings:**
+
+3. `Subject.owner_signature` is deprecated: implementations MUST NOT emit it; the `eudi` validation rule now requires an `owner_mandates` entry with `binding: "eudi"` instead.
+4. Profile immutability is strict: **any** field change to a published profile version requires a new version — the annotation exemption some implementations read into v0.5's rule is removed. The four v0.5-era in-place mutations (`records@0.4`, `customers@0.4`, `email@0.4`, `publish@0.4`) are grandfathered and documented in `review.md`; implementations MUST treat them as the last of their kind.
+5. A DID used as a signing identity MUST be key-bearing. Existing non-key-bearing identifiers remain valid for audit and as identity DIDs; they MUST NOT sign mandates. Reference implementations minting decorative `did:key` strings (an identifier shaped like `did:key` carrying no key) MUST mint real key-bearing DIDs for any signing use — the deviation is recorded in `review.md`.
+6. Tool-gating manifests gain `manifestVersion`; a manifest without it is read as version `"1"`. The transform vocabulary is closed at version `"1"`.
+7. Read enforcement is normative: resource scopes that bind writes MUST bind reads; undeclared read governance MUST deny; an unset read window MUST deny. Gatekeepers that shipped v0.5's read model must add these checks.
+8. Read-window precedence: a local per-integration read policy takes precedence over a legacy signed read bound (e.g. `read_max_age_days`), which remains only as a fallback for older grants. New profiles SHOULD NOT declare signed read-window bounds.
 
 ### Migration from v0.4
 
@@ -1778,4 +2245,4 @@ v0.5 is a minor version bump. The wire format and the signed-payload shape are u
 
 ## Summary
 
-HAP v0.5 ensures automation serves human direction — not the reverse. Every authorized action carries cryptographic proof that a named human authorized a specific scope, with stated intent, within enforceable bounds. The signed attestation proves the commitment. The signed receipt proves the action.
+HAP v0.6 ensures automation serves human direction — not the reverse. Authority remains with the human; the automated system executes under a bounded mandate. Every authorized action carries cryptographic proof that a named human authorized a specific scope, with stated intent, within enforceable bounds — and, where the owner co-signs, proof that is attributable to the person independently of any operator. The signed attestation records the mandate. The signed receipt proves the action. No receipt, no execution; a mandate constrains execution — it does not transfer authority.

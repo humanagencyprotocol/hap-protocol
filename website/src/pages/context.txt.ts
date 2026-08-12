@@ -8,25 +8,33 @@ export async function GET() {
 
   // Read the raw markdown files from the current version
   const contentPath = path.join(process.cwd(), `../content/${version}`);
-  // v0.5 folds the former service.md / gatekeeper.md into protocol.md;
-  // review.md holds the non-normative future directions.
+  // v0.5 folds the former service.md / gatekeeper.md into protocol.md.
+  // v0.6 splits the old single ledger in two: changelog.md records what was
+  // promoted into this version and why; review.md is the forward ledger of open
+  // directions. Both are non-normative. Add new spec files here — this surface
+  // reads by name and will silently omit anything not listed.
   const protocolContent = fs.readFileSync(path.join(contentPath, 'protocol.md'), 'utf-8');
   const governanceContent = fs.readFileSync(path.join(contentPath, 'governance.md'), 'utf-8');
+  const changelogContent = fs.readFileSync(path.join(contentPath, 'changelog.md'), 'utf-8');
   const reviewContent = fs.readFileSync(path.join(contentPath, 'review.md'), 'utf-8');
+
+  // The publication date travels with the spec. Hardcoding it here meant the
+  // header kept a prior version's month after a bump.
+  const specDate = protocolContent.match(/^date:\s*"?([^"\n]+)"?\s*$/m)?.[1]?.trim() ?? '';
 
   // Combine all content
   const combinedContent = `
 # Human Agency Protocol - Complete Context
 
-**Version ${version} — June 2026**
+**Version ${version}${specDate ? ` — ${specDate}` : ''}**
 
 ---
 
 ## Homepage
 
-### Human authorization for consequential AI actions.
+### Give AI autonomy without giving it authority.
 
-AI agents carry no authority or credentials of their own. Before an agent moves money, changes records, sends communication, grants access, or touches infrastructure, the action must receive a signed pre-execution receipt linked to human authorization.
+A human sets what the automation may do — scope, limits, duration. Every consequential action is checked against that mandate before it runs, and produces a signed receipt proving the authorization existed first. Not a log written afterwards. A precondition.
 
 ---
 
@@ -44,16 +52,35 @@ Open infrastructure: Any compliant Authority Server can issue receipts — Suver
 
 ---
 
+### One receipt. Three jobs.
+
+Most systems make you choose: a gate that blocks, or a log that explains. The same signed artifact does both, and a third thing neither can.
+
+- **Now — it runs, or it doesn't.** Every consequential action is checked against the mandate before it happens. Not caught in a log afterwards. Prevented.
+- **Outward — a stranger can check it.** Hand someone the receipt and they verify the signature and the content themselves — no account, no relationship with you. Cryptography, not testimony.
+- **Back — you can answer for it.** Evidence created before the act, not reconstructed after: which mandate, which bounds, which content. What an auditor, an insurer, or a court asks for.
+
+What holds today, and what comes next: today the Authority Server signs that the human authorized it — the chain holds as far as you trust one operator's key. Next, the human's own key co-signs the mandate (specified in v0.6, not yet implemented). Then it holds without trusting any operator, including us.
+
+The same receipt does all three. That is what a signed artifact can do and a permission cannot.
+
+---
+
 ### HAP composes. It doesn't compete.
 
-HAP isn't another login, API gateway, or agent framework. It's the layer that decides whether an already-reachable capability may be used for a consequential action — with proof.
+HAP isn't another login, API gateway, agent framework, sandbox, or policy engine. It's the layer that decides whether an already-reachable capability may be used for a consequential action — with proof.
 
 - **OAuth / OpenID Connect** — Grants API access.
-- **MCP** — Exposes tools to agents.
 - **Identity (EUDI, passkeys, WebAuthn)** — Proves who you are.
-- **HAP** — Authorizes the consequential action — before it runs, with a signed receipt.
+- **MCP** — Exposes tools to agents.
+- **Agent identity and lifecycle** (e.g. Entra Agent ID) — Governs which agents exist and what they may reach.
+- **Agent platforms and policy engines** (e.g. Bedrock AgentCore) — Run agents and evaluate configured rules per call.
+- **HAP** — Authorizes the consequential execution — against a mandate a named human committed to, before it runs, with a signed receipt.
+
+Every other layer here answers *can this system reach that?* — an access question, and each answers it well. None of them holds a bounded mandate a named human committed to, and none produces an artifact a third party can verify for themselves. HAP adds that layer and replaces none of them: keep your identity provider, your agent platform, your policy engine, your sandbox and secrets manager. Point them at the agent path, and put the mandate above.
 
 OAuth grants reachable capability. HAP governs authorized use of that capability.
+Agent platforms decide what an agent may reach. HAP records what a human actually mandated — and proves this act was inside it.
 
 ---
 
@@ -87,8 +114,17 @@ Agent-identity approach vs HAP approach:
 - Hand agents standing credentials → Keep credentials behind the execution boundary
 - Audit after execution → Verify the receipt before execution
 - Agent acts under standing authority → Agent acts only inside receipt-approved bounds
+- Post-incident, the answer is "the agent was permitted" → Post-incident, the answer is "this named person mandated this scope — here is the proof"
 
-EU AI Act — Article 14: Article 14 requires effective human oversight of high-risk AI. HAP turns that oversight into an enforceable control at the action layer: consequential actions cannot run unless a human-linked authorization receipt exists before execution. HAP is Article-14-enabling infrastructure — not compliance on its own. Compliance still requires governance, training, documentation, and human competence.
+EU AI Act — Article 14: Article 14 requires effective human oversight of high-risk AI. HAP turns that oversight into an enforceable control at the action layer: consequential actions cannot run unless a human-linked authorization receipt exists before execution. Wherever an organization must show a human stood behind an automated act — regulation, audit, insurance, or litigation — the receipt is the artifact. HAP is Article-14-enabling infrastructure — not compliance on its own. Compliance still requires governance, training, documentation, and human competence.
+
+---
+
+### Three readers, one artifact.
+
+- **Engineering** — Deploy agents on the infrastructure you already have. One enforcement point, no new stack, whichever model you run.
+- **Compliance and audit** — The same gate produces the evidence: who mandated it, what it covered, proven before it ran.
+- **Legal and counterparties** — Proof that survives leaving your organization — verifiable without trusting the operator.
 
 ---
 
@@ -120,6 +156,12 @@ ${protocolContent}
 # Governance
 
 ${governanceContent}
+
+---
+
+# Changelog — What Changed in This Version (non-normative)
+
+${changelogContent}
 
 ---
 
@@ -173,27 +215,28 @@ The Authority Server is the authorization backend. It tracks who has authority t
 
 ---
 
-## HAP Authority Profiles (v0.4)
+## HAP Authority Profiles
 
-**Status: 7 profiles published and in use. Immutable and versioned.**
+**Status: 8 profiles published and in use. Immutable and versioned.**
 
-Profiles are authorization templates — each defines what an AI agent can do within a specific domain. A profile specifies the bounds schema (what a human commits to), the context schema (local parameters), execution paths with TTLs, and the gates a human must answer before authorizing.
+Profiles are authorization templates — each defines what an AI agent can do within a specific domain. A profile specifies the bounds schema (what a human commits to), the context schema (local parameters), the execution-context schema used for cumulative tracking, TTL and retention policy, and the gates a human must resolve before authorizing.
 
-Profiles are referenced by ID (e.g., \`charge@0.4\`) and are immutable once published.
+Profiles are referenced by ID (e.g., \`charge@0.4\`) and are immutable once published. **Profiles version independently of the protocol**, so the current version differs per profile — the catalog below lists the newest of each.
 
-**v0.4 catalog:**
+**Current catalog:**
 
 | Profile | Domain | Example bounds |
 |---------|--------|----------------|
-| \`charge@0.4\` | Charging customers (payments, refunds, subscriptions) | amount_max, amount_daily_max, transaction_count_daily_max |
-| \`purchase@0.4\` | Spending company money (subscriptions, supplies, ads) | spend_max, spend_daily_max, allowed_vendors |
-| \`email@0.4\` | Sending, drafting, and reading email | recipient_max, send_daily_max, allowed_domains |
-| \`customers@0.4\` | CRM operations (contacts, deals, tasks) | write_daily_max, contact_type |
-| \`schedule@0.4\` | Calendar access (read, draft, book) | booking_daily_max, booking_duration_max, allowed_calendars |
-| \`publish@0.4\` | Public content (social, blog, etc.) | post_daily_max, allowed_platforms, audience |
-| \`records@0.4\` | Personal structured data (queries, exports) | row_limit_max, query_count_daily_max, access_level |
+| \`charge@0.4\` | Charging customers (payments, refunds, subscriptions) | amount_max, amount_daily_max, amount_monthly_max, transaction_count_daily_max |
+| \`purchase@0.4\` | Spending company money (subscriptions, supplies, ads) | spend_max, spend_daily_max, spend_monthly_max |
+| \`email@0.5\` | Sending, drafting, and reading email | recipient_max, send_daily_max, read_max_age_days |
+| \`customers@0.6\` | CRM operations (contacts, deals, tasks) | read_access, export_access, write_daily_max, delete_daily_max |
+| \`calendar@0.4\` | Calendar access (read, draft, book) | booking_daily_max, booking_duration_max, lookahead_days_max |
+| \`publish@0.4\` | Public content (social, blog, etc.) | post_daily_max, post_monthly_max |
+| \`records@0.4\` | Personal structured data (queries, exports) | read_access, write_daily_max, delete_access, archive_access |
+| \`deploy@0.8\` | Releasing software to an environment | release_daily_max, rollback_allowed |
 
-All profiles require the same six gates: bounds, problem, objective, tradeoff, commitment, and decision owner.
+All profiles require the same four gates: bounds, intent, commitment, and decision owner. (The single \`intent\` gate replaced the v0.3 trio of problem, objective, and tradeoff; execution paths were removed in v0.4 and are forbidden from v0.5 on.)
 
 **Community profiles:** Anyone can publish profiles through the Authority Server. Published profiles are immutable and versioned. There is no central approval process — trust is local to each operator.
 
@@ -207,7 +250,7 @@ HAP is not a paper spec. Every component described above is implemented and runn
 
 - **Specification** — v${version}, published in \`content/${version}/\` (open source)
 - **Agent Gateway** — open source, Docker image at \`ghcr.io/humanagencyprotocol/hap-gateway\`
-- **Authority Profiles** — open source, 7 v0.4 profiles at github.com/humanagencyprotocol/hap-profiles
+- **Authority Profiles** — open source, 8 profiles (versioned independently) at github.com/humanagencyprotocol/hap-profiles
 - **Authority Server** — hosted service at suveren.ai (not open source; runs the signing backend and public verification endpoints)
 - **MCP integrations** — CRM, records, LinkedIn, Gmail, Mollie reference implementations
 
