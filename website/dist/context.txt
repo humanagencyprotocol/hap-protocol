@@ -3058,9 +3058,9 @@ Two registers, deliberately kept apart. They are not the same kind of gap.
 **Register 2 — normative MUSTs not yet met: the reference implementation is currently non-conformant with v0.6 on these points.** Stated in those words because it is the uncomfortable, accurate status; these gaps are the compliance work list, not optional polish:
 
 - **Per-correspondent overrides** — specified, not built (helpers reserved, unused).
-- **Resource scope on the read path** — calendar containers bind writes only today; v0.6 requires the same scope to bind reads.
-- **Default-deny for undeclared read governance** — implemented for the flagship connector, not as the universal rule v0.6 states.
 - **Displayed-must-be-bound** — no enforcement exists, and there is a live, known case: an approval surface displays `bcc` while the binding deliberately omits it. Defensible only because review-mode proposal matching independently pins the whole argument set — which is exactly the "second mechanism MUST be stated" clause; that statement still needs to move from this ledger into the relevant profile/manifest metadata.
+
+**Corrected 2026-08-15:** two entries originally recorded in this register — *resource scope on the read path* and *default-deny for undeclared read governance* — were listed in error. Both have been conformant since the reference gateway's 0.4.x line (2026-07-27): resource scopes bind reads (calendar containers enforced pre-fetch), and undeclared read governance denies for every connector, enforced by a build-time manifest lint alongside the runtime check. The ledger was written from an outdated picture of the implementation; the entries are removed rather than kept as history because a register of *current* non-conformance must state the current truth.
 
 **Also declaration-class, recorded so its status is not forgotten:** `signing_surface` is normative in the spec and is explicitly a **declaration, not a proof** — it carries information no verifier can check, honest only because there is no incentive to overclaim protection to the party weighing it. If a checkable variant ever exists (e.g. an attested-surface mechanism), it would be a new field, not a reinterpretation of this one.
 
