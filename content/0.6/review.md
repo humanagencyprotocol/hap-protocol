@@ -61,13 +61,56 @@ Two registers, deliberately kept apart. They are not the same kind of gap.
 
 **Corrected 2026-08-15:** two entries originally recorded in this register — *resource scope on the read path* and *default-deny for undeclared read governance* — were listed in error. Both have been conformant since the reference gateway's 0.4.x line (2026-07-27): resource scopes bind reads (calendar containers enforced pre-fetch), and undeclared read governance denies for every connector, enforced by a build-time manifest lint alongside the runtime check. The ledger was written from an outdated picture of the implementation; the entries are removed rather than kept as history because a register of *current* non-conformance must state the current truth.
 
-**Conformant but divergent, recorded so the spec text is not read as a description of the implementation:** *Revocation Supersession* (`protocol.md`, introduced in v0.5) describes re-attesting the same `bounds_hash` and permits the AS to treat a prior revocation as superseded, with attendant MUSTs about audit events and revocation-list output. The reference AS implements none of it, and no conformance claim is broken — the permission is a MAY, and its MUSTs bind only an AS that exercises it. But it is not merely unimplemented: per-ceremony authorization identity replaced it with a **stricter** rule in the opposite direction — a revocation is permanent for its id and a revoked id can never be attested, renewed, or un-revoked; "I want it back" is a new ceremony with a new id, which supersession-by-re-attest would have undermined. The spec section therefore describes a mechanism the implementation deliberately does not offer. Whether v0.7 retires the section, or keeps it as an explicitly optional path, is an open editorial decision (added 2026-08-27).
+**Conformant but divergent, recorded so the spec text is not read as a description of the implementation:** *Revocation Supersession* (`protocol.md`, introduced in v0.5) describes re-attesting the same `bounds_hash` and permits the AS to treat a prior revocation as superseded, with attendant MUSTs about audit events and revocation-list output. The reference AS implements none of it, and no conformance claim is broken — the permission is a MAY, and its MUSTs bind only an AS that exercises it. But it is not merely unimplemented: per-ceremony authorization identity replaced it with a **stricter** rule in the opposite direction — a revocation is permanent for its id and a revoked id can never be attested, renewed, or un-revoked; "I want it back" is a new ceremony with a new id, which supersession-by-re-attest would have undermined. **Proposed for v0.7: retire the section**, recorded under `changelog.md`'s retirements as Decision Streams was in v0.6. Keeping a described-but-unimplemented mechanism invites a later implementer to build it believing it endorsed, and it would weaken the audit story the stricter rule exists to protect. Marking it explicitly optional is the lesser alternative if the mechanism is wanted for other operators (added 2026-08-27).
 
 **Also declaration-class, recorded so its status is not forgotten:** `signing_surface` is normative in the spec and is explicitly a **declaration, not a proof** — it carries information no verifier can check, honest only because there is no incentive to overclaim protection to the party weighing it. If a checkable variant ever exists (e.g. an attested-surface mechanism), it would be a new field, not a reinterpretation of this one.
 
 ---
 
 ## Open directions
+
+### Bound↔action pairing: specify `appliesTo`, then retire the name fallback — targets v0.7
+
+The mechanism that decides which `cumulative_count` bound governs which action type is
+undocumented. Both reference enforcement points read a profile-declared `appliesTo`, and
+`protocol.md` does not define the field. It entered on 2026-07-27 as a bug fix — the local
+cumulative gate was not firing because nothing could say which bound governed which action —
+and v0.6, written two weeks later "from 0.5 plus the review ledger", had nothing recorded to
+pick up. Five weeks passed before the audit found it. The lesson is procedural and belongs
+here: a fix that changes what a *profile* may declare is a protocol change wearing a bug
+fix's clothes.
+
+As of 2026-08-27 all eight published profiles declare it, so the fallback is no longer
+load-bearing. Two steps remain, strictly in order:
+
+1. **Specify `appliesTo`** in the bounds-schema surface — an optional `string[]` on a bound,
+   naming the action types it governs, with absence meaning "governs every action type of
+   this profile". Its members MUST be drawn from the profile's `actionTypes` registry: a
+   bound governing an action nobody can request enforces nothing.
+2. **Then** delete the field-name fallback the specification already forbids ("never by
+   field-name correlation"). Not before: a grant on a profile version that predates the
+   declaration would fall through to "every count bound applies", and a small
+   `delete_daily_max` would begin refusing writes. The condition to check is that no live,
+   unexpired grant references a pre-declaration version — attestation TTLs bound the wait.
+
+Until step 2 lands, the fallback stays reachable and the deviation stands.
+
+### Read classification for remote, vendor-controlled connectors — undated
+
+`charge@0.5` names an action type called `unclassified`, and the reason generalises past
+Mollie. A connector reached through a remote MCP server the operator does not control
+(`mcp-remote` against a vendor endpoint) has a tool list that cannot be enumerated when its
+manifest is written and can change without notice. The manifest therefore gates anything it
+does not explicitly classify as a **write** — fail-closed, and correct.
+
+The cost is precision: genuine reads on such a server are counted as consequential, consume a
+write budget, and produce receipts. That is over-restrictive rather than unsafe, and it is
+the right direction to err, but it means a receipt exists for something no one executed.
+Classifying those tools needs the live tool list, which needs credentials, so it is
+operational work rather than a specification change. What the specification could add is a
+name for the situation: a declared *unclassified* action class, so a receipt carrying it is
+readable as "this connector could not tell what this was, and treated it as consequential"
+rather than as a positive claim about the action.
 
 ### Dual-signed public receipt projection — targets v0.7
 
