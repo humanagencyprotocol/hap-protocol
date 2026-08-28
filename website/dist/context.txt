@@ -3116,6 +3116,53 @@ name for the situation: a declared *unclassified* action class, so a receipt car
 readable as "this connector could not tell what this was, and treated it as consequential"
 rather than as a positive claim about the action.
 
+### Conformance vectors — making "open protocol" checkable — targets v0.7
+
+There is a gap between *"MIT-licensed open protocol"* and *"you can prove your
+implementation conforms"*. Today the answer to "am I conformant?" is: read the
+specification, implement it, and check yourself against the three signing
+vectors `hap-core` publishes. Everything else — the refusals, the canonical
+encodings, the error vocabulary — is prose that each implementer interprets
+alone.
+
+The existing conformance suite does not close this, and porting it would not
+either. It drives *this* implementation's processes and URLs, and the
+specification deliberately defines **no endpoints at all**: it fixes payloads,
+error codes, canonicalization and signatures, then leaves transport to the
+implementer so HAP can compose with what an operator already runs. A
+conformant Authority Server may therefore share no URL with ours, and a suite
+that speaks HTTP to fixed paths cannot be pointed at it.
+
+What is portable is data. Three sets, all checkable offline with no server:
+
+1. **Canonical bounds → hash.** A bounds object, the exact canonical string it
+   must produce, and its `sha256`. A one-character disagreement here means
+   nothing either party signs will ever verify against the other, and it is
+   invisible until two implementations meet.
+2. **Payload → signature.** An attestation and a receipt payload, a published
+   test key, and the exact base64url signature. Pins field ordering, escaping,
+   number formatting and encoding together.
+3. **Request → required refusal.** A table of (situation, request, error code):
+   no `actionType` → `INVALID_ACTION_TYPE`; over a cumulative bound →
+   `CUMULATIVE_LIMIT_EXCEEDED`; review mode without an approved proposal →
+   `PROPOSAL_REQUIRED`. This is the set that matters most, because refusal is
+   where the safety lives, and it can be stated without reference to any URL,
+   store or identity system.
+
+**What this cannot do**, stated so it is not oversold: vectors prove agreement
+on bytes and on refusals. They cannot prove *sequence* — that the receipt was
+obtained **before** execution, or that cumulative state is counted correctly
+across many calls. Those are claims about a running system and still need a
+live suite. Vectors move the checkable surface from "read 2,000 lines and hope"
+to "here are the answers" for the parts where silent disagreement is fatal;
+they do not make the protocol self-certifying.
+
+Most of the material exists: `hap-core` publishes the signing vectors, and the
+reference suite already enumerates the refusals worth pinning. The work is
+collecting them into an implementation-neutral, published artifact — and doing
+it **before** a second implementation exists, because afterwards it is much
+harder to say whose bytes are correct.
+
 ### Dual-signed public receipt projection — targets v0.7
 
 > **Security dependency, not only a transparency improvement.** Invariant 10 permits a
