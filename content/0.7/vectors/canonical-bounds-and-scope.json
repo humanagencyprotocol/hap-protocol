@@ -1,0 +1,202 @@
+{
+  "spec_version": "0.7",
+  "status": "draft — not published",
+  "generated": "2026-09-03",
+  "set": "canonical-bounds-and-scope",
+  "what_this_proves": "That two implementations turn the same authorization into the same bytes, and therefore the same hash. A one-character disagreement here means nothing either party signs will ever verify against the other, and it is invisible until two implementations meet.",
+  "rules": [
+    "UTF-8. One \"key=value\" record per line, joined with LF (0x0A). No trailing newline.",
+    "Keys appear in the order given by the profile's boundsSchema.keyOrder / scopeSchema.keyOrder — NOT alphabetical order.",
+    "An optional key with no value is omitted entirely (no record). A key present with an empty string renders as \"key=\". Never a placeholder.",
+    "Every required key is included explicitly.",
+    "Numbers use the shortest round-trippable form: 20.0 serializes as \"20\".",
+    "A value MUST NOT contain a raw LF or CR. Such input is refused (BOUNDS_INVALID_VALUE / SCOPE_INVALID_VALUE) — never silently stripped or encoded.",
+    "Any other byte that is \"=\" (0x3D), \"%\" (0x25), or outside printable ASCII 0x20-0x7E is percent-encoded (RFC 3986, uppercase hex) over its UTF-8 bytes. \"%\" is included so the encoding is self-inverse.",
+    "Percent-encoding happens at canonicalization time. The stored value stays the human's original bytes.",
+    "The hash is \"sha256:\" followed by 64 lowercase hex characters."
+  ],
+  "cases": [
+    {
+      "id": "bounds-charge-plain",
+      "note": "Ordinary numeric bounds. Keys follow the profile keyOrder, not alphabetical order.",
+      "key_order": [
+        "profile",
+        "amount_max",
+        "amount_daily_max",
+        "amount_monthly_max",
+        "transaction_count_daily_max"
+      ],
+      "values": {
+        "profile": "charge@0.5",
+        "amount_max": 100,
+        "amount_daily_max": 500,
+        "amount_monthly_max": 2000,
+        "transaction_count_daily_max": 20
+      },
+      "canonical": "profile=charge@0.5\namount_max=100\namount_daily_max=500\namount_monthly_max=2000\ntransaction_count_daily_max=20",
+      "hash": "sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc",
+      "kind": "bounds"
+    },
+    {
+      "id": "bounds-integral-float",
+      "note": "A value of 20.0 must serialize as \"20\", not \"20.0\" — the shortest round-trippable form. An implementation whose number formatter prints a trailing \".0\" produces a different hash for the same authorized limit.",
+      "key_order": [
+        "profile",
+        "write_daily_max"
+      ],
+      "values": {
+        "profile": "records@0.5",
+        "write_daily_max": 20
+      },
+      "canonical": "profile=records@0.5\nwrite_daily_max=20",
+      "hash": "sha256:ed023e2dc6a678a076c5bf882a078d545f682154f6302bd02fa2b76aeb01f520",
+      "kind": "bounds"
+    },
+    {
+      "id": "bounds-decimal",
+      "note": "A non-integral value keeps its shortest form.",
+      "key_order": [
+        "profile",
+        "amount_max"
+      ],
+      "values": {
+        "profile": "charge@0.5",
+        "amount_max": 12.5
+      },
+      "canonical": "profile=charge@0.5\namount_max=12.5",
+      "hash": "sha256:1b9b69490e0cebac50ef3896abf11521782e7ed3c1cbae42989c70ead0f5df4f",
+      "kind": "bounds"
+    },
+    {
+      "id": "bounds-enum-flags",
+      "note": "Capability-flag bounds are strings.",
+      "key_order": [
+        "profile",
+        "read_access",
+        "delete_access",
+        "write_daily_max"
+      ],
+      "values": {
+        "profile": "records@0.5",
+        "read_access": "unlimited",
+        "delete_access": "none",
+        "write_daily_max": 10
+      },
+      "canonical": "profile=records@0.5\nread_access=unlimited\ndelete_access=none\nwrite_daily_max=10",
+      "hash": "sha256:cb36a455d344de11cce5fec8e024417f0b30d16750ddfebaba0d19502e791b75",
+      "kind": "bounds"
+    },
+    {
+      "id": "scope-charge",
+      "note": "Two enum scope fields.",
+      "key_order": [
+        "currency",
+        "action_type"
+      ],
+      "values": {
+        "currency": "EUR",
+        "action_type": "charge"
+      },
+      "canonical": "currency=EUR\naction_type=charge",
+      "hash": "sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4",
+      "kind": "scope"
+    },
+    {
+      "id": "scope-empty",
+      "note": "A profile with an empty scope schema. The canonical string is \"\" and its hash is the well-known sha256 of the empty string. It MUST still be present in the mandate payload — a missing scope_hash is a malformed mandate, not \"no scope\".",
+      "key_order": [],
+      "values": {},
+      "canonical": "",
+      "hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "scope"
+    },
+    {
+      "id": "scope-percent-encoding",
+      "note": "The escape rules, all in one value: \"=\" (0x3D) and \"%\" (0x25) are percent-encoded so the encoding is self-inverse, and every byte outside printable ASCII 0x20-0x7E is encoded as its UTF-8 bytes. Here the em-dash U+2014 becomes %E2%80%94. Percent-encoding happens at canonicalization time; the stored value remains the human's original bytes.",
+      "key_order": [
+        "note"
+      ],
+      "values": {
+        "note": "a=b 100% — done"
+      },
+      "canonical": "note=a%3Db 100%25 %E2%80%94 done",
+      "hash": "sha256:7700d4a52463ad5237bc40d0b9f2504a6183eebedb44d32591827709ec6ee3dc",
+      "kind": "scope"
+    },
+    {
+      "id": "scope-recipients-subset",
+      "note": "A subset scope field carries the canonical joined form the Gatekeeper compares against.",
+      "key_order": [
+        "allowed_domains"
+      ],
+      "values": {
+        "allowed_domains": "acme.example,widgets.example"
+      },
+      "canonical": "allowed_domains=acme.example,widgets.example",
+      "hash": "sha256:b4c6c1f0f5b7baa405996b0a03a9328297093e84686402e93950fb366e41c7d7",
+      "kind": "scope"
+    },
+    {
+      "id": "bounds-optional-key-absent",
+      "note": "Optional keys the human did not set are OMITTED — no record is emitted. read_max_age_days and read_daily_max are in keyOrder and absent from values. An implementation that renders a placeholder (the literal text \"undefined\", or \"key=\") commits the hash to a value the human never entered.",
+      "key_order": [
+        "profile",
+        "recipient_max",
+        "send_daily_max",
+        "read_max_age_days",
+        "read_daily_max"
+      ],
+      "values": {
+        "profile": "email@0.6",
+        "recipient_max": 5,
+        "send_daily_max": 20
+      },
+      "canonical": "profile=email@0.6\nrecipient_max=5\nsend_daily_max=20",
+      "hash": "sha256:ebcb36c5f4a268a6ab8af05f163add1ff4dd28bb681d4c1302d40e3d514d4ed9",
+      "kind": "bounds"
+    },
+    {
+      "id": "scope-empty-string-value",
+      "note": "A key PRESENT with an empty string renders as \"key=\" — a different commitment from absence. Here allowed_recipients was set to \"\" and allowed_domains to one domain.",
+      "key_order": [
+        "allowed_recipients",
+        "allowed_domains"
+      ],
+      "values": {
+        "allowed_recipients": "",
+        "allowed_domains": "acme.example"
+      },
+      "canonical": "allowed_recipients=\nallowed_domains=acme.example",
+      "hash": "sha256:97f7477b25dde9ce5fcd87a434426775f955a28c0cdc49c32ca525834221e2c5",
+      "kind": "scope"
+    }
+  ],
+  "must_refuse": [
+    {
+      "id": "value-with-raw-newline",
+      "kind": "bounds",
+      "note": "The value carries a raw LF. This is a refusal, not an encoding case: a hash computed over silently-stripped input does not represent what the human authorized.",
+      "key_order": [
+        "profile",
+        "note"
+      ],
+      "values": {
+        "profile": "records@0.5",
+        "note": "line one\nline two"
+      },
+      "expected_error": "BOUNDS_INVALID_VALUE"
+    },
+    {
+      "id": "value-with-carriage-return",
+      "kind": "scope",
+      "note": "Same rule for CR.",
+      "key_order": [
+        "note"
+      ],
+      "values": {
+        "note": "a\rb"
+      },
+      "expected_error": "SCOPE_INVALID_VALUE"
+    }
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "spec_version": "0.7",
+  "status": "draft — not published",
+  "generated": "2026-09-03",
+  "set": "required-refusals",
+  "what_this_proves": "That an implementation refuses the same things, with the same error code. This is the set that matters most: refusal is where the safety lives, and it can be stated without reference to any URL, store, or identity system. An implementation that authorizes where this table refuses is not conformant, whatever its signatures look like.",
+  "reading_this_table": "Each row is a situation, the request made in it, and the code that MUST come back. \"MUST NOT be substituted\" means exactly that: returning a different code for these situations — including a more generic one — is non-conformance, because the Gatekeeper's behaviour branches on the code (see protocol.md, Pre-flight Ticket Request).",
+  "ticket_request_refusals": [
+    {
+      "id": "no-action-type",
+      "situation": "The ticket request omits actionType, or names one the profile's actionTypes registry does not contain.",
+      "expected_error": "INVALID_ACTION_TYPE",
+      "note": "Checked before any bound is read."
+    },
+    {
+      "id": "unknown-bounds-hash",
+      "situation": "boundsHash names no mandate the AS holds.",
+      "expected_error": "MANDATE_NOT_FOUND"
+    },
+    {
+      "id": "expired-mandate",
+      "situation": "The mandate's expires_at has passed.",
+      "expected_error": "MANDATE_EXPIRED"
+    },
+    {
+      "id": "revoked-mandate",
+      "situation": "The mandate was revoked. Revocation is permanent — a revoked mandate is never renewed or un-revoked.",
+      "expected_error": "MANDATE_REVOKED"
+    },
+    {
+      "id": "over-per-transaction-bound",
+      "situation": "A value in executionContext exceeds a per_transaction bound.",
+      "expected_error": "BOUND_EXCEEDED",
+      "note": "MUST NOT be reported as a cumulative failure, and MUST NOT be reported under a retired generic code."
+    },
+    {
+      "id": "over-cumulative-bound",
+      "situation": "A cumulative_sum or cumulative_count bound whose appliesTo covers this actionType would be exceeded once this execution is applied.",
+      "expected_error": "CUMULATIVE_LIMIT_EXCEEDED"
+    },
+    {
+      "id": "review-without-proposal",
+      "situation": "The mandate is in review mode and no approved proposalId accompanies the request.",
+      "expected_error": "PROPOSAL_REQUIRED"
+    },
+    {
+      "id": "above-cap",
+      "situation": "The mandate is in review_above_cap mode and a value exceeds a configured cap.",
+      "expected_error": "APPROVAL_REQUIRED",
+      "note": "MUST NOT be downgraded to BOUND_EXCEEDED: the action is not forbidden, it needs a named approver, and the response carries the approver list."
+    },
+    {
+      "id": "missing-idempotency-key",
+      "situation": "A synchronous (automatic-mode, no proposalId) request omits idempotencyKey.",
+      "expected_error": "IDEMPOTENCY_KEY_REQUIRED"
+    },
+    {
+      "id": "reused-idempotency-key",
+      "situation": "An idempotencyKey is reused for a different execution (profileId, action or executionContext differ).",
+      "expected_error": "IDEMPOTENCY_MISMATCH",
+      "note": "Reuse with an IDENTICAL payload is not an error: it MUST return the original ticket unchanged, without consuming bounds again."
+    },
+    {
+      "id": "retired-identifier",
+      "situation": "The request body carries a retired identifier: attestationHash, frame_hash or path.",
+      "expected_error": "MALFORMED_TICKET_REQUEST"
+    },
+    {
+      "id": "unknown-profile",
+      "situation": "The profile the mandate references cannot be resolved.",
+      "expected_error": "PROFILE_NOT_FOUND"
+    },
+    {
+      "id": "coverage-insufficient",
+      "situation": "Group mode: the union of live, non-revoked mandates matching this bounds_hash, scope_hash, profile_id, intent hash and commitment_mode does not cover the required approver set.",
+      "expected_error": "COVERAGE_INSUFFICIENT"
+    }
+  ],
+  "mandate_request_refusals": [
+    {
+      "id": "profile-hash-mismatch",
+      "situation": "The request's profile_hash does not match the hash of the AS's own provisioned bytes for that profile_id.",
+      "expected_error": "PROFILE_HASH_MISMATCH",
+      "note": "Two parties that disagree about the profile must not sign anything under it."
+    },
+    {
+      "id": "applies-to-unregistered",
+      "situation": "The profile declares an appliesTo member that is not in its own actionTypes registry.",
+      "expected_error": "PROFILE_INVALID",
+      "note": "A bound governing an action nobody can request enforces nothing."
+    },
+    {
+      "id": "count-bound-without-applies-to",
+      "situation": "A v0.7-or-later profile has a cumulative_count bound with no appliesTo.",
+      "expected_error": "PROFILE_INVALID",
+      "note": "Absence would mean \"governs every action type\", so a forgotten declaration silently throttles all writes."
+    },
+    {
+      "id": "bound-without-bound-type",
+      "situation": "A bounds field omits boundType.",
+      "expected_error": "PROFILE_INVALID"
+    },
+    {
+      "id": "bounds-hash-mismatch",
+      "situation": "The recomputed bounds hash does not equal the submitted bounds_hash.",
+      "expected_error": "BOUNDS_HASH_MISMATCH"
+    },
+    {
+      "id": "missing-scope-hash",
+      "situation": "scope_hash is absent. An empty scope still carries the hash of the empty string — absence is malformed, not \"no scope\".",
+      "expected_error": "MALFORMED_MANDATE"
+    },
+    {
+      "id": "disclose-not-a-subset",
+      "situation": "The mandate's disclose list is not a subset of the profile's.",
+      "expected_error": "MALFORMED_MANDATE",
+      "note": "A mandate may narrow disclosure, never widen it."
+    },
+    {
+      "id": "raw-newline-in-value",
+      "situation": "A bounds value contains a raw LF or CR.",
+      "expected_error": "BOUNDS_INVALID_VALUE"
+    },
+    {
+      "id": "owner-not-approver",
+      "situation": "Group mode: the authenticated identity is not a required approver for this profile.",
+      "expected_error": "OWNER_NOT_APPROVER"
+    },
+    {
+      "id": "owner-signature-required",
+      "situation": "An applicable profile floor or verifier policy requires an owner signature at a minimum binding and none satisfying it is present.",
+      "expected_error": "OWNER_SIGNATURE_REQUIRED",
+      "note": "MUST fail, not warn."
+    },
+    {
+      "id": "owner-signature-invalid",
+      "situation": "A mandate_owners entry's signature fails verification, its projection names a different owner_did, its signature fields are incomplete, or its signing DID carries no key.",
+      "expected_error": "OWNER_SIGNATURE_INVALID"
+    },
+    {
+      "id": "no-common-version",
+      "situation": "No protocol version is supported by both the requesting Gatekeeper and the AS.",
+      "expected_error": "VERSION_UNSUPPORTED"
+    },
+    {
+      "id": "bounds-hash-only",
+      "situation": "The mandate request carries bounds_hash but no plaintext bounds. The AS cannot enforce what it does not hold.",
+      "expected_error": "MALFORMED_MANDATE"
+    },
+    {
+      "id": "cosigned-without-expires-at",
+      "situation": "The request carries an owner signature (a mandate_owners entry with signature fields) but no expires_at. The owner signs the expiry; the AS may not invent it.",
+      "expected_error": "MALFORMED_MANDATE"
+    },
+    {
+      "id": "expires-at-without-signature",
+      "situation": "The request carries expires_at but no owner signature. Only a co-signing owner chooses the expiry; otherwise ttl is the request field.",
+      "expected_error": "MALFORMED_MANDATE"
+    },
+    {
+      "id": "expires-at-beyond-profile-max",
+      "situation": "A co-signed request carries an expires_at later than now + the profile's maximum TTL.",
+      "expected_error": "MALFORMED_MANDATE"
+    },
+    {
+      "id": "nonce-reused",
+      "situation": "The projection carries an (owner_did, nonce) pair the AS has already signed.",
+      "expected_error": "MALFORMED_MANDATE",
+      "note": "Defence-in-depth against third parties only — an AS-side check is not a defence against the AS."
+    },
+    {
+      "id": "applies-to-on-per-transaction",
+      "situation": "The profile declares appliesTo on a per_transaction or enum bound.",
+      "expected_error": "PROFILE_INVALID"
+    }
+  ],
+  "fail_closed_situations": [
+    {
+      "id": "as-unreachable",
+      "situation": "The Authority Server is unreachable or does not answer when a ticket is requested.",
+      "required_behaviour": "The Gatekeeper MUST block execution. It MUST NOT reuse a cached ticket, and MUST NOT offer a \"warn and proceed\" or degraded mode."
+    },
+    {
+      "id": "unarchivable-ticket",
+      "situation": "The Gatekeeper cannot write the ticket to its custody archive.",
+      "required_behaviour": "The execution MUST NOT proceed (protocol.md, Gatekeeper custody)."
+    },
+    {
+      "id": "unset-read-window",
+      "situation": "A read is attempted with neither a local read policy nor a legacy signed read bound.",
+      "required_behaviour": "Deny. An unset window is a denial, not \"unlimited\"."
+    },
+    {
+      "id": "undeclared-read-governance",
+      "situation": "A tool classified as a read declares no applicable read governance.",
+      "required_behaviour": "Deny, or carry an explicit recorded exemption."
+    },
+    {
+      "id": "undeterminable-resource-scope",
+      "situation": "The target container of a read cannot be determined.",
+      "required_behaviour": "Deny."
+    },
+    {
+      "id": "unmanifested-tool",
+      "situation": "A tool call arrives for a tool no loaded manifest describes.",
+      "required_behaviour": "Refuse. There is no permissive default, and read-only tools are not exempt."
+    },
+    {
+      "id": "commitment-mode-disagreement",
+      "situation": "The signed commitment_mode requires review but the AS supplies no pending approvers.",
+      "required_behaviour": "Fail closed — refuse to auto-execute. This is a possible mode downgrade."
+    }
+  ]
+}

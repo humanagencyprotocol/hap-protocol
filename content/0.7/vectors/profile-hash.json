@@ -1,0 +1,21 @@
+{
+  "spec_version": "0.7",
+  "status": "draft — not published",
+  "generated": "2026-09-03",
+  "set": "profile-hash",
+  "what_this_proves": "That two parties who provisioned the same profile through different channels compute the same profile_hash. The hash is over the RFC 8785 (JCS) serialization of the PARSED profile document, never over file bytes — formatting, key order, and trailing newlines do not change it.",
+  "rules": [
+    "Parse the profile JSON, serialize with RFC 8785 JCS (UTF-8, sorted keys, no whitespace, shortest numbers), sha256 the bytes, write as \"sha256:\" + 64 lowercase hex.",
+    "The profile_id in the mandate request names which profile; profile_hash names which bytes. Both parties MUST agree on both or refuse (PROFILE_HASH_MISMATCH)."
+  ],
+  "cases": [
+    {
+      "id": "charge-0.5",
+      "profile_id": "github.com/humanagencyprotocol/hap-profiles/charge@0.5",
+      "source": "hap-profiles/charge/0.5.profile.json as published (commit 0646a98)",
+      "note": "The published charge@0.5 profile. Re-indent the file, reorder its keys, or strip its trailing newline and the hash MUST NOT change.",
+      "jcs_sha256_of_canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"charge\",\"subscribe\",\"unclassified\"],\"fields\":{\"…",
+      "profile_hash": "sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd"
+    }
+  ]
+}
