@@ -12,7 +12,7 @@ export const siteConfig = {
    * this string, because it wraps "authority" in an accent span — so that one
    * copy is marked up by hand in `index.astro` and must be kept in step.
    *
-   * Plain-english form of the v0.6 invariant: a mandate constrains execution;
+   * Plain-english form of the invariant: a mandate constrains execution;
    * it does not transfer authority.
    */
   tagline: 'Give AI autonomy without giving it authority',
@@ -23,10 +23,10 @@ export const siteConfig = {
    * frontmatter (`content/<version>/*.md`) and the `description` prop on
    * BaseLayout. This string is the last resort, so it has to stand on its own.
    *
-   * Wording follows docs/essence.md: the receipt is a precondition, not a log.
+   * Wording follows docs/essence.md: the ticket is a precondition, not a log.
    */
   description:
-    'The open protocol for bounded AI-agent authority: humans authorize, agents execute, and every consequential action requires a signed receipt before it runs.',
+    'The open protocol for bounded AI-agent authority: humans authorize, agents execute, and every consequential action requires a signed mandate ticket before it runs.',
   /** Canonical origin. Must match `site` in astro.config.mjs. */
   url: 'https://humanagencyprotocol.org',
   /** Social share card. 1200x630. */

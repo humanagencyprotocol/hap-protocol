@@ -5,7 +5,7 @@ import { siteConfig } from '../config';
 
 <BaseLayout
   title="HAP - Human authorization for consequential AI actions"
-  description="HAP is the open, MIT-licensed protocol for bounded AI-agent authority. Humans authorize; an agent executes only once a signed receipt has been issued for the action."
+  description="HAP is the open, MIT-licensed protocol for bounded AI-agent authority. Humans authorize; an agent executes only once a signed mandate ticket has been issued for the action."
 >
 
   <!-- ──────────────────────────────────────────────────────────────────────
@@ -21,8 +21,8 @@ import { siteConfig } from '../config';
         <h1>Give AI autonomy <br class="desktop-break">without giving it <span class="hl">authority</span>.</h1>
         <p class="lead">
           A human sets what the automation may do — scope, limits, duration. Every consequential
-          action is checked against that mandate before it runs, and produces a signed receipt
-          proving the authorization existed first. Not a log written afterwards. A precondition.
+          action is checked against that mandate before it runs, and obtains a signed mandate ticket
+          proving the mandate existed first. Not a log written afterwards. A precondition.
         </p>
         <div class="cta-group">
           <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
@@ -40,22 +40,23 @@ import { siteConfig } from '../config';
   </section>
 
   <!-- ──────────────────────────────────────────────────────────────────────
-       3. NO RECEIPT. NO EXECUTION.
+       3. NO MANDATE, NO TICKET. NO TICKET, NO EXECUTION.
   ────────────────────────────────────────────────────────────────────────── -->
   <section class="sec" id="invariant">
     <div class="wrap">
       <p class="label">The core invariant</p>
-      <h2>No receipt. No execution.</h2>
+      <h2>No mandate, no ticket. No ticket, no execution.</h2>
       <p class="body-lead">
-        The receipt is not a post-execution log. It is the precondition for execution —
-        and, afterwards, the verifiable proof that authorization existed before it ran.
+        The ticket is not a post-execution log. It is the precondition for execution —
+        and, afterwards, the verifiable proof that a mandate existed before it ran, with an
+        identifiable person behind it.
         Agents request execution; they do not hold the keys.
       </p>
 
       <div class="invariant-cols">
-        <div class="receipt" role="figure" aria-label="Execution receipt example">
+        <div class="receipt" role="figure" aria-label="Mandate ticket example">
           <div class="receipt-head">
-            Execution receipt
+            Mandate ticket
             <span class="receipt-tag">signed · pre-execution</span>
           </div>
           <dl class="receipt-fields">
@@ -80,15 +81,15 @@ import { siteConfig } from '../config';
 
         <ol class="chain">
           <li>A human authorizes <strong>bounded execution</strong> — scope, limits, time, and commitment mode.</li>
-          <li>The <span class="role">Gatekeeper</span> verifies the attestation, checks per-action bounds, and enforces local context constraints.</li>
-          <li>The <span class="role">Authority Server</span> checks cumulative limits, expiry, and revocation, then <strong>signs the receipt</strong>.</li>
-          <li>The <span class="role">Executor</span> runs the action — only <strong>after</strong> the receipt exists.</li>
+          <li>The <span class="role">Gatekeeper</span> verifies the mandate, checks per-action bounds, and enforces scope locally.</li>
+          <li>The <span class="role">Authority Server</span> checks cumulative limits, expiry, and revocation, then <strong>signs the ticket</strong>.</li>
+          <li>The <span class="role">Executor</span> runs the action — only <strong>after</strong> the ticket exists — and keeps its own signed copy.</li>
         </ol>
       </div>
 
       <p class="neutrality">
         <strong>Open infrastructure.</strong> Any compliant Authority Server can
-        issue receipts — Suveren is one implementation. The protocol is open;
+        issue tickets — Suveren is one implementation. The protocol is open;
         no single vendor owns the trust layer.
       </p>
     </div>
@@ -105,7 +106,7 @@ import { siteConfig } from '../config';
   <section class="sec sec-alt">
     <div class="wrap">
       <p class="label">One signed act</p>
-      <h2>One receipt. Three jobs.</h2>
+      <h2>One ticket. Three jobs.</h2>
       <p class="body-lead">
         Most systems make you choose: a gate that blocks, or a log that explains.
         The same signed artifact does both, and a third thing neither can.
@@ -119,7 +120,7 @@ import { siteConfig } from '../config';
         </div>
         <div>
           <div class="job-name"><span class="dir">Outward</span>A stranger can check it.</div>
-          <p>Hand someone the receipt and they verify the signature and the content
+          <p>Hand someone the ticket and they verify the signature and the content
             themselves — no account, no relationship with you. Cryptography, not testimony.</p>
         </div>
         <div>
@@ -139,7 +140,7 @@ import { siteConfig } from '../config';
       </div>
 
       <p class="soul">
-        The same receipt does all three. That is what a signed artifact can do
+        The same ticket does all three. That is what a signed artifact can do
         and a permission cannot.
       </p>
     </div>
@@ -172,7 +173,7 @@ import { siteConfig } from '../config';
           <tr><td class="old">MCP</td><td class="old">Exposes tools to agents</td></tr>
           <tr><td class="old">Agent identity and lifecycle <span class="eg">(e.g. Entra Agent ID)</span></td><td class="old">Governs which agents exist and what they may reach</td></tr>
           <tr><td class="old">Agent platforms and policy engines <span class="eg">(e.g. Bedrock AgentCore)</span></td><td class="old">Run agents and evaluate configured rules per call</td></tr>
-          <tr><td class="hap">HAP</td><td class="hap">Authorizes the consequential execution — against a mandate a named human committed to, before it runs, with a signed receipt</td></tr>
+          <tr><td class="hap">HAP</td><td class="hap">Authorizes the consequential execution — against a mandate an identifiable person committed to, before it runs, with a signed ticket</td></tr>
         </tbody>
       </table>
 
@@ -206,18 +207,18 @@ import { siteConfig } from '../config';
         <div>
           <div class="mode-name">Automatic<span class="who">Agent runs within bounds</span></div>
           <p>The agent acts within the bounds you set. No per-action approval — the
-            Authority Server enforces the limits and issues a signed receipt for each
+            Authority Server enforces the limits and issues a signed ticket for each
             action before execution.</p>
         </div>
         <div>
           <div class="mode-name">Review<span class="who">You approve each action</span></div>
           <p>The agent proposes; you approve each action before it runs.
-            No approval, no receipt — no execution.</p>
+            No approval, no ticket — no execution.</p>
         </div>
         <div>
           <div class="mode-name">Review above a cap<span class="who">Approvers sign above a limit</span></div>
           <p>The agent runs on its own under a limit you set. Above it, the action
-            routes to a named set of approvers before any receipt is issued.</p>
+            routes to a named set of approvers before any ticket is issued.</p>
         </div>
       </div>
     </div>
@@ -236,7 +237,7 @@ import { siteConfig } from '../config';
       </p>
       <p>
         An agent never carries authority or raw credentials of its own. A human authorizes a bounded
-        action; the <strong>receipt</strong> is cryptographic proof that this specific
+        action; the <strong>ticket</strong> is cryptographic proof that this specific
         action was authorized — and issued before it ran. An agent may have technical
         identifiers for logging and routing, but it holds no <strong>independent authority</strong>.
       </p>
@@ -273,7 +274,7 @@ import { siteConfig } from '../config';
           </tr>
           <tr>
             <td class="old">Manage standing agent permissions</td>
-            <td class="hap">Issue bounded action receipts</td>
+            <td class="hap">Give a bounded mandate</td>
           </tr>
           <tr>
             <td class="old">Hand agents standing credentials</td>
@@ -281,15 +282,15 @@ import { siteConfig } from '../config';
           </tr>
           <tr>
             <td class="old">Audit after execution</td>
-            <td class="hap">Verify the receipt before execution</td>
+            <td class="hap">Obtain a ticket before execution</td>
           </tr>
           <tr>
-            <td class="old">Agent acts under standing authority</td>
-            <td class="hap">Agent acts only inside receipt-approved bounds</td>
+            <td class="old">Agent acts without a mandate</td>
+            <td class="hap">Agent acts only inside the mandate</td>
           </tr>
           <tr>
             <td class="old">Post-incident, the answer is “the agent was permitted”</td>
-            <td class="hap">Post-incident, the answer is “this named person mandated this scope — here is the proof”</td>
+            <td class="hap">Post-incident, the answer is “this person mandated this scope — here is the proof”</td>
           </tr>
         </tbody>
       </table>
@@ -299,12 +300,12 @@ import { siteConfig } from '../config';
         <p>
           Article 14 requires effective human oversight of high-risk AI. HAP turns
           that oversight into an <strong>enforceable control at the action layer</strong>:
-          consequential actions cannot run unless a human-linked authorization receipt
+          consequential actions cannot run unless a ticket under a person's mandate
           exists before execution.
         </p>
         <p class="general">
           Wherever an organization must show a human stood behind an automated act —
-          regulation, audit, insurance, or litigation — the receipt is the artifact.
+          regulation, audit, insurance, or litigation — the ticket is the artifact.
         </p>
         <p class="caveat">
           HAP is Article-14-enabling infrastructure — not compliance on its own.
@@ -355,7 +356,7 @@ import { siteConfig } from '../config';
         <div>CRM<span>record changes &amp; deletes</span></div>
         <div>Infrastructure<span>deploys &amp; config</span></div>
         <div>Multi-owner approvals<span>two people must sign</span></div>
-        <div>Compliance audit<span>verifiable receipts</span></div>
+        <div>Compliance audit<span>verifiable tickets</span></div>
       </div>
     </div>
   </section>
@@ -369,7 +370,8 @@ import { siteConfig } from '../config';
       <h2>No single vendor owns the trust layer.</h2>
       <p class="body-lead">
         HAP is an open standard — MIT-licensed, developed in the open, and maintained
-        by stewards, not owners. Any compliant Authority Server can issue receipts.
+        by stewards, not owners. Any compliant Authority Server can issue tickets, and every
+        value an implementation must reproduce is <a href="/vectors">published</a>.
       </p>
       <div class="cta-group">
         <a href="/protocol" class="btn btn-primary">Read the Protocol</a>

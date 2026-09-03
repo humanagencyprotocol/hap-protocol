@@ -4,36 +4,46 @@
 > hold authority. Agents borrow it, bounded, and every consequential act carries
 > proof the loan was honoured before it happened.
 
-The central invariant is **no receipt, no execution**. The receipt is the
-*precondition* for a consequential action, not a record of one. It is obtained
-before the action runs; if it cannot be issued — out of scope, over a limit,
-approval missing, revoked, expired — the action does not happen.
+The central invariant is **no mandate, no ticket; no ticket, no execution**. A
+person gives an agent a **mandate** — bounds, scope, duration, commitment mode.
+Each consequential action obtains a signed **mandate ticket** *before* it runs;
+if the ticket cannot be issued — outside the mandate, over a limit, approval
+missing, revoked, expired, Authority Server unreachable — the action does not
+happen. The ticket is a precondition, not a record; afterwards the same ticket
+is the evidence, and it puts an identifiable person behind that one act.
 
 HAP defines three roles:
 
-- **Authority Server** — holds the signing key. Enforces cumulative limits,
-  approval and revocation. **Issues and signs** the receipt (Ed25519). Can refuse.
-- **Gatekeeper** — holds the bounds locally. Verifies the attempted action
-  against granted authority, then **requests** a receipt pre-flight, fail-closed.
-  The Gatekeeper never issues a receipt; it asks.
+- **Authority Server** — holds the signing key. Signs the mandate. Enforces
+  cumulative limits, approval and revocation. **Issues and signs** the ticket
+  (Ed25519). Can refuse.
+- **Gatekeeper** — holds the bounds and scope locally. Verifies the mandate,
+  checks the attempted action, then **requests** a ticket pre-flight,
+  fail-closed. Keeps the complete signed ticket as the person's own evidence.
+  The Gatekeeper never issues a ticket; it asks.
 - **Executor** — holds the credentials. Runs the downstream tool, only after a
-  valid receipt exists.
+  valid ticket exists.
 
-Core concepts: profiles (declare what a kind of authority means), bounds
-(limits the Authority Server enforces), context (local constraints), gates
-(human checkpoints), attestations (signed grants), receipts (signed
-per-action preconditions).
+Vocabulary (one word per thing on the wire, in the specification, and in
+public): mandate (never "attestation" or "grant"), mandate ticket / ticket
+(never "receipt"), bounds (the enforced limits), scope (the local signed
+dimension; never "context"), Mandate Owner (the identifiable person; never
+"Decision Owner"), without a mandate (the condition the protocol exists to end).
+Access is not a mandate.
 
-HAP is not a permission system, not a guarantee of compliance (it is enabling
+HAP is not a permission system, not a control model (control governs the agent;
+a mandate governs the delegation), not a guarantee of compliance (it is enabling
 infrastructure for regimes such as EU AI Act Art. 14 and ISO 42001), and not
 agent sandboxing.
 
 ## Specification
 
-- [Core Specification](https://humanagencyprotocol.org/protocol): the normative protocol — profiles, bounds, gates, attestations, receipts, and the behaviour required of each role.
+- [Core Specification](https://humanagencyprotocol.org/protocol): the normative protocol — profiles, bounds, scope, gates, mandates, mandate tickets, content binding, read authorization, owner signatures, and the behaviour required of each role.
 - [Governance](https://humanagencyprotocol.org/governance): how HAP is governed — invariant constraints instead of institutions. No central authority, no registry, no approval process.
+- [Conformance Vectors](https://humanagencyprotocol.org/vectors): the published answer key — canonical strings and hashes, payload signatures under published test keys, the profile hash, and the refusals an implementation must produce. Raw files at /vectors/*.json.
 - [Changelog](https://humanagencyprotocol.org/changelog): non-normative record of what each version promoted into the binding surface, under which rule, and what was retired.
-- [Review and Future Directions](https://humanagencyprotocol.org/review): non-normative forward ledger — open directions with their targets, deviation notes, and where the specification currently leads its reference implementation.
+- [Review and Future Directions](https://humanagencyprotocol.org/review): non-normative forward ledger — open directions with their targets and the deviation rules that bind every implementation. Implementation status is not part of the specification.
+- [Provenance](https://humanagencyprotocol.org/provenance): the dated record of every published version and the first public appearance of each concept.
 
 ## Full text
 
@@ -41,6 +51,6 @@ agent sandboxing.
 
 ## Implementations
 
-- [Suveren](https://www.suveren.ai): a commercial HAP-compliant implementation. The Suveren Gateway (open source) implements the Gatekeeper and Executor roles; the Suveren Authority Server implements the Authority Server role, hosted or self-hosted.
-- [hap-core on npm](https://www.npmjs.com/package/@humanagencyp/hap-core): the open-source protocol library — verification, canonicalisation and hashing, attestation decode/verify, content binding, identity.
-- [GitHub](https://github.com/humanagencyprotocol/hap-protocol): specification source, authorization profiles, and reference MCP connectors.
+- [Suveren](https://www.suveren.ai): a commercial HAP-compliant implementation. The Suveren Gateway (open source) implements the Gatekeeper and Executor roles; the Suveren Authority Server implements the Authority Server role, hosted or self-hosted. Its implementation report against the specification: https://github.com/humanagencyprotocol/hap-e2e/blob/main/CONFORMANCE.md
+- [hap-core on npm](https://www.npmjs.com/package/@humanagencyp/hap-core): the open-source protocol library — verification, canonicalisation and hashing, mandate decode/verify, content binding, identity.
+- [GitHub](https://github.com/humanagencyprotocol/hap-protocol): specification source, conformance vectors, and provenance record.
