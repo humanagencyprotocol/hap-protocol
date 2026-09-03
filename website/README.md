@@ -8,16 +8,17 @@ The official website for humanagencyprotocol.org
 website/
 ├── src/
 │   ├── content/
-│   │   └── docs/          # Markdown content from ../content/0.1/
+│   │   └── docs/          # Synced from ../content/<version>/ on every build
 │   ├── layouts/
 │   │   ├── BaseLayout.astro
 │   │   └── ContentLayout.astro
 │   ├── pages/
 │   │   ├── index.astro    # Homepage
 │   │   ├── protocol.astro
-│   │   ├── service.astro
 │   │   ├── governance.astro
-│   │   └── about.astro
+│   │   ├── changelog.astro
+│   │   ├── review.astro
+│   │   └── context.txt.ts
 │   └── styles/
 │       └── global.css
 └── public/
@@ -36,11 +37,7 @@ All commands are run from the root of the website directory:
 
 ## Content Management
 
-The website uses content from `../content/0.1/` as the source of truth. To update content:
-
-1. Edit the markdown files in `../content/0.1/`
-2. Copy updated files to `src/content/docs/`
-3. Rebuild the site
+The source of truth is `../content/<version>/`, where `<version>` is the `version` field in this directory's `package.json`. `npm run sync` (run automatically by `dev` and `build`) copies that whole directory into `src/content/docs/`. To publish a new spec version: bump `version` in `package.json`, add pages and nav entries for any new files, rebuild.
 
 ## Deployment
 

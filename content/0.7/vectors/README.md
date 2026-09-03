@@ -2,7 +2,7 @@
 title: "Human Agency Protocol — Conformance Vectors (v0.7)"
 version: "Version 0.7"
 date: "September 2026"
-status: "Normative data — draft"
+status: "Normative data"
 description: "The published answer key for a HAP implementation: canonical bounds and scope hashes, payload signatures under a published test key, and the refusals an implementation MUST produce. Checkable offline, with no server, no store, and no identity system."
 ---
 
@@ -50,4 +50,4 @@ Those are claims about a running system, and they still need a live suite. The v
 
 ## Provenance
 
-Published with v0.7, before a second implementation exists — because afterwards it is much harder to say whose bytes are correct. Every value in the 2026-09-03 morning files was computed, then re-derived by an independently written implementation (a different language, no shared code, Ed25519 from the RFC 8032 reference algorithm and checked against RFC 8032's own published vector) before publication; a third, separately written implementation then reproduced all of them during the second external review. The same day's revision (ticket `mandateId` and `limits`, the `review_above_cap` projection, the profile-hash set, the refusal rows) was computed by that third implementation and cross-checked against the unchanged cases; it has not yet had its own second-language re-derivation, and the record says so until it has.
+Published with v0.7, before a second implementation exists — because afterwards it is much harder to say whose bytes are correct. Every value in the 2026-09-03 morning files was computed, then re-derived by an independently written implementation (a different language, no shared code, Ed25519 from the RFC 8032 reference algorithm and checked against RFC 8032's own published vector) before publication; a third, separately written implementation then reproduced all of them during the second external review. The same day's revision (ticket `mandateId` and `limits`, the `review_above_cap` projection, the profile-hash set, the absent-optional-key cases, the refusal rows) was computed by that third implementation and then re-derived in a fourth, in a different language with no shared code (Ed25519 from the RFC 8032 reference algorithm, checked against RFC 8032's own vector), before publication: every value in every set matched.

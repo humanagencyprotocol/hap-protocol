@@ -1,6 +1,6 @@
 {
   "spec_version": "0.7",
-  "status": "draft — not published",
+  "status": "published with v0.7, 2026-09-03",
   "generated": "2026-09-03",
   "set": "payload-signatures",
   "what_this_proves": "That an implementation signs the same bytes for the same payload. Pins key ordering, string escaping, number formatting, null handling and signature encoding together. Ed25519 is deterministic, so any correct implementation reproduces these exact signatures.",

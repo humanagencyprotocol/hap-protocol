@@ -1,8 +1,8 @@
 ---
 title: "Human Agency Protocol — v0.7 Changelog"
 version: "Version 0.7"
-date: "August 2026"
-status: "Non-normative — record of change (draft)"
+date: "September 2026"
+status: "Non-normative — record of change"
 description: "What changed from v0.6 to v0.7: the single-vocabulary release (mandate, ticket, scope, Mandate Owner), the promotions and retirements, the proposals considered and rejected, and the review record behind each. Forward-looking material lives in review.md."
 ---
 

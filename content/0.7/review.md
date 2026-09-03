@@ -2,7 +2,7 @@
 title: "Human Agency Protocol — Review and Future Directions"
 version: "Version 0.7"
 date: "September 2026"
-status: "Non-normative — future directions (draft)"
+status: "Non-normative — future directions"
 description: "The forward ledger for v0.7: open directions with their targets, and the deviation rules that bind every implementation. The record of what changed in v0.7 is changelog.md. Implementation status is not part of the specification."
 ---
 

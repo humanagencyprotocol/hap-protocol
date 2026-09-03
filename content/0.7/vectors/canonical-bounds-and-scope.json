@@ -1,6 +1,6 @@
 {
   "spec_version": "0.7",
-  "status": "draft — not published",
+  "status": "published with v0.7, 2026-09-03",
   "generated": "2026-09-03",
   "set": "canonical-bounds-and-scope",
   "what_this_proves": "That two implementations turn the same authorization into the same bytes, and therefore the same hash. A one-character disagreement here means nothing either party signs will ever verify against the other, and it is invisible until two implementations meet.",
