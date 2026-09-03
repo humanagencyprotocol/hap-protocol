@@ -246,7 +246,7 @@ To support interoperability without institutional control, the HAP ecosystem mai
 - Content-binding canonicalization vectors (`text` rule, JCS field-binding objects, pinned hashes)
 - Mandate-projection vectors — (mandate payload, reconstructed `HAP-mandate-projection` canonical bytes, signature) triples (new in v0.6)
 
-> **Deliverable (since v0.5; widened in v0.7).** The vectors are the specification's, not any implementation's. Since v0.7 they live **with the specification** — `content/<version>/vectors/*.json`, one test case per top-level entry — so any third-party AS or Gatekeeper can self-verify parity; an implementation-neutral artifact meant to settle whose bytes are correct cannot live inside one implementation. The reference core library MUST consume these files in its own test suite rather than carry copies (status: `review.md`).
+> **Deliverable (since v0.5; widened in v0.7).** The vectors are the specification's, not any implementation's. Since v0.7 they live **with the specification** — `content/<version>/vectors/*.json`, one test case per top-level entry — so any third-party AS or Gatekeeper can self-verify parity; an implementation-neutral artifact meant to settle whose bytes are correct cannot live inside one implementation. An implementation SHOULD consume these files in its own test suite rather than carry copies, and its report says whether it does.
 >
 > v0.7 defines the **conformance vector set** — implementation-neutral, checkable offline, with no server, no store, no identity system, and no URL (the specification defines no endpoints, so a suite that speaks HTTP to fixed paths cannot be pointed at a conformant implementation that shares none of them). Three sets:
 >
@@ -258,6 +258,10 @@ To support interoperability without institutional control, the HAP ecosystem mai
 > An implementation that reproduces every vector is conformant on those points. What vectors cannot prove — *sequence*: that the ticket preceded execution, that cumulative state is counted correctly across many calls — remains a claim about a running system and needs a live suite. This is a **normative deliverable of the specification**, not a promoted direction (a MUST-ship artifact is neither additive nor optional, so rule 3 does not apply). The v0.7 files exist (`content/0.7/vectors/`, 2026-09-03); what `review.md` tracks is their consumption by the reference library.
 
 Running these tests is voluntary. Publishing results is optional.
+
+### Implementation reports
+
+Implementation status is **not part of this specification**. The specification says what MUST hold; whether a given implementation holds it is a claim that implementation makes, in its own report, where a reader can weigh it against what that implementation exposes. A report SHOULD state: the protocol version(s) claimed on the wire; which optional surfaces (companion specifications, owner-signature bindings, `disclose_fields`) it implements; which vectors it reproduces; and every normative requirement it does not yet meet, in the specification's own terms. It SHOULD NOT describe internals the reader cannot inspect. The reference implementation's report is published with the conformance suite (`hap-e2e/CONFORMANCE.md`); its Gatekeeper and core library are open, its Authority Server is not, and the report says which claims a reader can check.
 
 No entity grants approval. No entity issues certification.
 
@@ -488,7 +492,7 @@ Some capabilities sit outside HAP Core but interoperate through it. v0.5 introdu
 
 Binds mandates to observable outputs (URLs, artifacts, configuration state) via an optional `output_ref` field in the profile's scope schema. See `review.md` § "Output Provenance" for the design. **Profile-bound by design:** when a deployment-style profile adopts it, `output_ref` is promoted into that profile's normative surface — not into HAP Core. The companion-spec registration exists so the design has a stable name; it does not make Output Provenance a Core surface.
 
-*(`decision-streams@0.1` was registered here in v0.5. The direction retired in v0.6 — no reference implementation since v0.3 and no integrator asked. The registration is withdrawn; the design record remains in the v0.5 archive.)*
+*(`decision-streams@0.1` was registered here in v0.5. The direction retired in v0.6 — nothing had implemented it since v0.3 and no integrator asked. The registration is withdrawn; the design record remains in the v0.5 archive.)*
 
 ### `intent-disclosure@0.1`
 
@@ -550,7 +554,7 @@ This is the integrity anchor: `intent_ciphertext`, `encrypted_keys`, and `approv
 - **C2.** The signed mandate payload MUST include `intent_disclosure_hash` as defined above. Without it, a malicious or compromised AS could swap ciphertexts, replace wrapped keys, or widen/shrink the approver set without invalidating the AS signature over the mandate; against an AS that is itself compromised, only an owner-signed projection carrying the hash makes the substitution detectable.
 - **C3.** When the approver set changes (e.g., an approver leaves the group), a **new** mandate with a new disclosure object MUST be issued for any subsequent action: the CEK is regenerated and re-wrapped for the new `approvers_frozen` set. Superseded wrapped keys MUST be retained for audit but MUST NOT be referenced by any future ticket. A ticket MUST only be issued against a mandate whose `approvers_frozen` matches the current required-approver set.
 
-As a companion spec, only `review` / `review_above_cap` deployments opt in; `automatic`-only deployments carry none of this. The Suveren reference AS and gateway implement this companion spec; see `protocol.md` *Intent canonicalization* for the shared hashing rule the chain depends on.
+As a companion spec, only `review` / `review_above_cap` deployments opt in; `automatic`-only deployments carry none of this. See `protocol.md` *Intent canonicalization* for the shared hashing rule the chain depends on; which implementations claim this companion spec is stated in their own conformance reports (*Reference Conformance* → *Implementation reports*).
 
 **Known limitation (read against *The Authority Server Cannot Check Itself*).** The approver public keys used to wrap the CEK are served by the AS and are not bound into any signed payload — `intent_disclosure_hash` freezes the approver *set*, not their *keys*. Intent confidentiality therefore holds against a passive AS and any interceptor, but an actively malicious AS could substitute an attacker key at issuance. Binding the approver→key map into the signed payload would make *later* substitution detectable but cannot stop an AS already malicious at issuance; what would actually hold is a key the verifier never receives from the AS. That fix does not transfer for free from the owner-signing answer, because these are **encryption** (X25519) keys where `did:key` as used in this specification carries an Ed25519 **signing** key. Changing the hash definition is a breaking change, so it is deferred to `intent-disclosure@0.2`; the open design question is tracked in `review.md`.
 

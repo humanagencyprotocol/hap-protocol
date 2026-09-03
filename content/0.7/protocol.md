@@ -499,7 +499,7 @@ BoundType =
 4. The human sets specific values in the authorization at issuance time. The profile defines what *can* be constrained, not the values.
 5. Profile authors MUST NOT include operational details (target_env, customer_segment, branch, currency, action_type) in the bounds schema. Operational scoping fields belong in the scope schema.
 6. Bounds fields MUST NOT declare `path`, `paths`, or any other action-routing array. v0.4 retired execution paths; v0.5 forbids any reintroduction. Routing tool calls to specific bounds is the job of `actionType` and the tool-gating manifest.
-7. **`appliesTo` (new in v0.7).** A `cumulative_sum` or `cumulative_count` bound MAY declare `appliesTo: string[]`, naming the action types it governs; on a `cumulative_count` bound in a profile published under v0.7 or later it is **REQUIRED** — a forgotten declaration on a count bound would silently throttle every action type. Absence on a `cumulative_sum` bound, or on any bound in an older profile, means the bound governs **every** action type in the profile's `actionTypes` registry. Every member MUST be drawn from that registry — a bound governing an action nobody can request enforces nothing — and an AS MUST refuse a profile whose `appliesTo` names an unregistered action type (`PROFILE_INVALID`). `appliesTo` MUST NOT be declared on a `per_transaction` bound (it applies wherever its `of` field is present in the execution context) or on an `enum` bound (a capability flag). Enforcement points MUST select cumulative bounds by `appliesTo` (or by its absence), never by field-name correlation (rule 3). The same key on a content binding reads with the opposite default (absent = none, *Content Binding*); the difference is deliberate — an extra bound is a tighter limit, an extra binding is a refused action — and both are held by the profile-compliance checks (`governance.md` → *Reference Conformance*). The field entered the reference implementation on 2026-07-27 as a bug fix and was specified only in v0.7; `review.md` records the procedural lesson.
+7. **`appliesTo` (new in v0.7).** A `cumulative_sum` or `cumulative_count` bound MAY declare `appliesTo: string[]`, naming the action types it governs; on a `cumulative_count` bound in a profile published under v0.7 or later it is **REQUIRED** — a forgotten declaration on a count bound would silently throttle every action type. Absence on a `cumulative_sum` bound, or on any bound in an older profile, means the bound governs **every** action type in the profile's `actionTypes` registry. Every member MUST be drawn from that registry — a bound governing an action nobody can request enforces nothing — and an AS MUST refuse a profile whose `appliesTo` names an unregistered action type (`PROFILE_INVALID`). `appliesTo` MUST NOT be declared on a `per_transaction` bound (it applies wherever its `of` field is present in the execution context) or on an `enum` bound (a capability flag). Enforcement points MUST select cumulative bounds by `appliesTo` (or by its absence), never by field-name correlation (rule 3). The same key on a content binding reads with the opposite default (absent = none, *Content Binding*); the difference is deliberate — an extra bound is a tighter limit, an extra binding is a refused action — and both are held by the profile-compliance checks (`governance.md` → *Reference Conformance*). The field was in use before it was specified; `changelog.md` records the procedural lesson.
 
 ### Scope Schema
 
@@ -865,7 +865,7 @@ HAP Core requires:
 - newline-delimited `key=value` records
 - keys sorted according to the profile's `boundsSchema.keyOrder`
 - explicit inclusion of all required keys
-- **an optional key with no value is omitted** — no record is emitted for it. A key that is present with an empty string renders as `key=` and is a different commitment ("the human set an empty value") from absence ("the human set no limit"). Rendering absence as any placeholder text is a violation: it commits the hash to a value the human never entered (v0.7 states this explicitly; the reference implementation had rendered the literal text `undefined`, see `review.md`)
+- **an optional key with no value is omitted** — no record is emitted for it. A key that is present with an empty string renders as `key=` and is a different commitment ("the human set an empty value") from absence ("the human set no limit"). Rendering absence as any placeholder text is a violation: it commits the hash to a value the human never entered (v0.7 states this explicitly because an implementation had rendered a placeholder; `changelog.md` → *Found in the second advisor review*)
 - no whitespace normalization
 
 **Key format:** Keys MUST match `[a-z0-9_]+`.
@@ -936,7 +936,7 @@ commitment_mode: "review_above_cap"
 
 The agent acts automatically while every per-transaction value stays within the **group cap** for the relevant bound; the moment any value would exceed a group cap, the AS refuses to issue a ticket and instead returns an `APPROVAL_REQUIRED` error carrying the list of approvers the group has configured. The Gatekeeper then converts the call into a proposal addressed to those approvers and waits.
 
-The cap set is profile-and-group-specific. A group admin configures, per profile, a `caps` map (e.g., `{ amount_max: 1000 }`) and a list of approver DIDs. v0.5 lifts this from an AS-internal convention (existing in the v0.4 reference implementation as `aboveCap`) into a signed protocol mode so a third-party Gatekeeper can know in advance whether a tool call may produce a synchronous ticket or a proposal.
+The cap set is profile-and-group-specific. A group admin configures, per profile, a `caps` map (e.g., `{ amount_max: 1000 }`) and a list of approver DIDs. v0.5 lifts this from an AS-internal convention into a signed protocol mode so a third-party Gatekeeper can know in advance whether a tool call may produce a synchronous ticket or a proposal.
 
 This is the right mode when:
 
@@ -1167,7 +1167,7 @@ The AS is a runtime dependency for execution. This is by design — execution wi
 
 ## Content Binding
 
-> New in v0.6 as normative surface. Shipped and exercised end-to-end by the reference implementation since June 2026 (structured profiles) and July 2026 (text profiles); promoted per the revised rule in the v0.6 `changelog.md`.
+> New in v0.6 as normative surface, promoted under the v0.6 promotion rule after end-to-end use (the v0.6 `changelog.md` records the review).
 
 A ticket proves an execution was authorized. **Content binding** makes it prove *what* was executed: the ticket carries a hash of the action's content, so a party holding the delivered artifact — an email, a post, a record, a commit — can check that it is byte-for-byte what the human authorized.
 
@@ -1597,13 +1597,13 @@ The mandate itself remains cryptographically valid for audit purposes — its si
 1. The AS MUST persist the revocation list in durable storage.
 2. The AS MUST check revocation status before issuing any ticket.
 3. Revoked mandates remain verifiable for audit purposes — the signature is still valid.
-4. Listing surfaces MUST report revocation status (the protocol defines no endpoints; the reference AS's listing route is one such surface).
+4. Listing surfaces MUST report revocation status (the protocol defines no endpoints; any surface that lists mandates to their owner or group is one).
 
 ### Revocation is permanent (v0.7)
 
 A revocation is final for the mandate it names. A revoked mandate MUST NOT be renewed, re-signed, un-revoked, or exercised again; "I want it back" is a **new mandate** with a new `mandate_id`, a fresh ceremony, and — where the owner co-signs — a fresh signature. The AS MUST NOT delete or hide the revocation record: it is a transition in an append-only history, never an erasure.
 
-v0.5 permitted the opposite — *Revocation Supersession*, under which an AS MAY treat a prior revocation as superseded when the owner re-issued the same `bounds_hash`. That section is retired in v0.7 (`changelog.md` → *Retired*). The reference implementation never built it and adopted the stricter rule above with per-ceremony mandate identity instead; a described-but-unbuilt, weaker mechanism invites a later implementer to build it believing it endorsed, and it would weaken the audit story the stricter rule exists to protect.
+v0.5 permitted the opposite — *Revocation Supersession*, under which an AS MAY treat a prior revocation as superseded when the owner re-issued the same `bounds_hash`. That section is retired in v0.7 (`changelog.md` → *Retired in v0.7*). No implementation built it, and the stricter rule above with per-ceremony mandate identity is what was built instead; a described-but-unbuilt, weaker mechanism invites a later implementer to build it believing it endorsed, and it would weaken the audit story the stricter rule exists to protect.
 
 ---
 
@@ -1779,7 +1779,7 @@ cumGroupId = groupId || "personal:" + userId
 In group mode, `cumGroupId` is the group ID. In personal mode, `cumGroupId` is either:
 
 - the string `personal:{userId}` — when the AS models personal accounts as group-less, OR
-- a synthesized group ID for a single-member personal group — when the AS models personal accounts as a group of one (the v0.5 reference implementation does this).
+- a synthesized group ID for a single-member personal group — when the AS models personal accounts as a group of one.
 
 Both strategies are conformant. The wire-side property the spec requires is that personal and group accounting cannot collide, which both strategies guarantee.
 
@@ -1857,7 +1857,7 @@ The AS MUST retain mandates and tickets for at least the profile-defined `retent
 - Queryable by `boundsHash`, ticket ID, and time range
 - Exportable in a standard format
 
-Storage mechanism is implementation-specific (the reference implementation uses Redis with optional persistent backups).
+Storage mechanism is implementation-specific; the obligations above bind whatever store is used.
 
 **Profile Bytes Retention.** The AS MUST retain the exact profile bytes for every `profile_id` it has issued mandates or tickets under, for at least as long as the longest live retention obligation against that profile. Concretely: the AS retains the profile bytes until every mandate and every ticket issued under that `profile_id` has passed its `retention_minimum` window.
 
@@ -1936,7 +1936,7 @@ The Gatekeeper obligation may be satisfied by:
 - **An embedded library** — `verify()` + `requestTicket()` calls in application code before execution
 - **A sidecar process** — a co-located service that gates requests to the executor
 - **A standalone service** — a dedicated verification endpoint
-- **Two cooperating layers** — one library performs local verification (Phase 1) and a second layer requests the ticket and blocks execution on the result (Phase 2). The reference implementation factors the obligation this way: `hap-core`'s `verify()` covers Phase 1 and the gateway's tool proxy covers Phase 2.
+- **Two cooperating layers** — one library performs local verification (Phase 1) and a second layer requests the ticket and blocks execution on the result (Phase 2). A common factoring is a verification library for Phase 1 and a tool proxy for Phase 2.
 
 All four are equally valid. The protocol makes no architectural preference between monolithic and two-phase factoring. What matters is that the verification steps execute completely, a valid ticket is obtained, and execution is blocked on a negative result from either phase.
 
@@ -2326,7 +2326,7 @@ Optional extensions and forward-looking directions — Output Provenance, dual-s
 3. A v0.7 AS MUST continue to verify v0.6 mandates and **MUST continue to issue tickets against live v0.6 mandates until they expire** — "TTLs bound the transition" means exactly this. It MUST NOT issue a new v0.6 mandate to a request whose `supported_versions` includes `"0.7"`.
 4. A Gatekeeper that supports both versions MUST verify each artifact under the rules and field names of its own `version`; a v0.6 mandate is not re-interpreted under v0.7 names.
 
-The reference implementation's version-advertising surface predates this rule and is not protocol; this section is.
+Vendor-specific version headers or compatibility endpoints are not protocol; this section is.
 
 ### Migration from v0.6
 
@@ -2390,7 +2390,7 @@ v0.6 is additive on the wire and stricter in governance. Existing v0.5 mandates 
 
 3. `Subject.owner_signature` is deprecated: implementations MUST NOT emit it; the `eudi` validation rule now requires a `mandate_owners` entry with `binding: "eudi"` instead.
 4. Profile immutability is strict: **any** field change to a published profile version requires a new version — the annotation exemption some implementations read into v0.5's rule is removed. The four v0.5-era in-place mutations (`records@0.4`, `customers@0.4`, `email@0.4`, `publish@0.4`) are grandfathered and documented in `review.md`; implementations MUST treat them as the last of their kind.
-5. A DID used as a signing identity MUST be key-bearing. Existing non-key-bearing identifiers remain valid for audit and as identity DIDs; they MUST NOT sign mandates. Reference implementations minting decorative `did:key` strings (an identifier shaped like `did:key` carrying no key) MUST mint real key-bearing DIDs for any signing use — the deviation is recorded in `review.md`.
+5. A DID used as a signing identity MUST be key-bearing. Existing non-key-bearing identifiers remain valid for audit and as identity DIDs; they MUST NOT sign mandates. An implementation minting decorative `did:key` strings (an identifier shaped like `did:key` carrying no key) MUST mint real key-bearing DIDs for any signing use; such an identifier fails structurally, since there is no key to verify against.
 6. Tool-gating manifests gain `manifestVersion`; a manifest without it is read as version `"1"`. The transform vocabulary is closed at version `"1"`.
 7. Read enforcement is normative: resource scopes that bind writes MUST bind reads; undeclared read governance MUST deny; an unset read window MUST deny. Gatekeepers that shipped v0.5's read model must add these checks.
 8. Read-window precedence: a local per-integration read policy takes precedence over a legacy signed read bound (e.g. `read_max_age_days`), which remains only as a fallback for older mandates. New profiles SHOULD NOT declare signed read-window bounds.
