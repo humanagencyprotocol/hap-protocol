@@ -3308,12 +3308,44 @@ The normative design is in `protocol.md` → *Owner Signatures*; it was promoted
 | | | Size |
 |---|---|---|
 | **P1** | Types: the `mandate_owners` entry, the `HAP-mandate-projection` and `HAP-approval` objects, the `approvalSignature` ticket field, the error codes, deprecation of `Subject.owner_signature`; a `did:key` encoder/decoder | small |
-| **P2** | Key-bearing signing DIDs enrolled through a platform authenticator; signing in a locally installed surface (`signing_surface: gatekeeper_local`); projection verification; owner signatures in any public ticket projection | large — the real work |
+| **P2** | Key-bearing signing DIDs enrolled through a platform authenticator; signing in a locally installed surface (`signing_surface: gatekeeper_local`); projection verification; owner signatures in any public ticket projection. **Decide the curve first** — see below | large — the real work |
 | **P3** | Approval signatures end-to-end; `approvalSignature` enforced at ticket issuance | medium |
 | **P4** | Verifier policy surface: minimum `binding`, DID pinning, out-of-band acquisition | small–medium |
 | **P5** | `binding: "eudi"` — and with it, key rotation | configuration, not redesign |
 
 P5 being configuration rather than redesign is the point of the ordering: build the slot against key material that exists today (passkeys), and a national scheme plugs into it.
+
+**The curve is an open decision, and P2 cannot start without it.** `did:key` is
+defined for several key types; this specification's vectors and its `alg:
+"EdDSA"` examples use Ed25519, and the reference `did:key` encoder accepts only
+the Ed25519 multicodec. Platform authenticators on the major desktop and mobile
+systems commonly sign with **ES256 (P-256)** rather than Ed25519, so "enrol a
+passkey as the signing DID" is not automatically implementable. Two ways
+forward, and the choice belongs to whoever starts P2:
+
+- **Accept P-256 signing DIDs.** Widest reach, since it is what platform
+  authenticators already produce. Costs a second multicodec in every encoder,
+  decoder and verifier, and a conformance vector per curve — the whole point of
+  `alg` being carried alongside the DID is to keep curve confusion out, so both
+  paths must be pinned by vectors rather than inferred.
+- **Require Ed25519 key material.** Keeps one curve everywhere and the existing
+  vectors unchanged, but narrows enrolment to authenticators and wallets that
+  offer it, which excludes some platform passkeys.
+
+Neither is wrong; leaving it undecided is. `binding: "eudi"` (P5) raises the
+same question again, because a national scheme brings its own algorithms — so
+whichever way P2 goes, the verifier must already be able to say which curve it
+accepts and refuse the rest.
+
+**The enrolment ceremony is not specified.** *Identity & Authorization* rule 6
+fixes what must be true — the owner DID in a mandate matches the authenticated
+identity — and *Owner Signatures* fixes what a signing DID must be: key-bearing.
+What sits between them is unwritten: how an account comes to have a signing DID
+in the first place, what proves possession of the private key at enrolment
+(a challenge signed with it is the obvious answer), what happens when an account
+enrols a second key, and how the event is recorded. *Key lifecycle* covers only
+the forward path after loss. This is a small specification gap with a large
+implementation surface, and it is the first thing P2 runs into.
 
 ---
 
@@ -3344,6 +3376,49 @@ The specification defines artifacts, behaviours, and refusals, and deliberately 
 The protocol's building blocks — groups, required approvers per profile, `review_above_cap` with named approvers, multi-owner mandates — already support **hierarchies of accountability** in place of hierarchies of supervision. What flows down is authority, not instructions; what flows up is exceptions and tickets, not reports. Span widens (a mandate holder can hold dozens of sub-mandates if most activity runs automatically), depth collapses (a layer exists only where a distinct scope of accountability exists), and failure handling becomes surgical (revoke one branch). The organizing rule: **each mandate may only grant less than it holds.**
 
 What is not yet a protocol object: a sub-mandate cannot cryptographically prove that it nests inside its parent — that its bounds are a subset, its scope narrower, its expiry no later, its commitment mode no looser. Today that relation is organizational configuration on the AS, an honest-operator control. Making it compromise-resistant evidence means a signed reference from child to parent plus a verifiable subset relation over bounds and scope — the second of which needs the per-field commitments below to be checkable without disclosing the parent. Between independent operators the same mechanism forms a **mesh** — temporary trees per undertaking on a permanent network of sovereign nodes, with a locally operated Authority Server as civic infrastructure. Cross-server federation remains deferred (`governance.md` → *Multi-AS Ecosystem*); a discovery layer over ticket histories is out of scope and carries the privacy cost the specification already names under *Read Authorization*.
+
+### Scope values must not travel in the execution context — targets the next version
+
+Found 2026-09-04 while auditing a live Authority Server's stored data. A ticket
+request carries `executionContext`, the per-call values, **in plaintext** — it
+has to, because the AS enforces per-transaction and cumulative bounds against
+those values. Scope, by contrast, reaches the AS only as `scope_hash`, and the
+Gatekeeper is its sole enforcer (*Enforcement Authority*).
+
+Nothing currently keeps the two apart on the way out. A tool-gating manifest
+maps one connector argument into several execution-context keys, and where a
+scope dimension is among them — a message's recipients mapped into the same
+`allowed_recipients` key the scope schema declares — those values are sent to
+the AS and stored in the signed ticket, in the clear. The AS cannot act on them:
+no `boundType` names them, and it holds no plaintext allowlist to compare
+against. So the disclosure buys nothing and costs the privacy the bounds/scope
+split exists to protect.
+
+**The rule to add:** a Gatekeeper MUST send only the execution-context fields
+some `boundType.of` names, plus `actionType` and any field a declared content
+binding requires. Values that exist to satisfy a *scope* constraint are checked
+locally and MUST NOT be transmitted. Equivalently: a field's presence on the
+wire should follow from a bound that reads it, never from a manifest mapping
+that happens to produce it.
+
+**Why hashing them instead is not the answer.** Recipients, domains and
+environment names are short and enumerable; an unsalted hash of an email address
+falls to a dictionary. Salting defeats comparison, which was the only reason to
+send anything. This is the same argument *Selective disclosure / per-field
+commitments* already makes, and it applies with more force here, because the
+values are the counterparties.
+
+**If the AS should verify scope, that is a different mechanism, deliberately not
+proposed here.** It would need commitments the AS can compare without learning
+values — a keyed construction whose key the Gatekeeper holds and the AS does
+not, with the allowed set committed in the mandate and the per-call value
+committed in the request. The residual cost is **linkability**: a stable
+commitment lets the operator count how often the same unknown counterparty
+recurs. That may be an acceptable trade for a deployment that wants a second
+enforcement point; it is not the current design, and adopting it would move
+scope enforcement from *compromise-resistant* to *shared with an
+honest-operator control*. Recorded so the trade is chosen rather than drifted
+into.
 
 ### Read classification for remote, vendor-controlled connectors — undated
 
