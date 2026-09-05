@@ -23,9 +23,13 @@ on:
       commit:
         description: Source commit this build was produced from — what the receipt binds
         required: true
+      artifact_commit:
+        description: The commit whose committed website/dist IS the build (the artifact commit). verify hashes its files; release checks the host deployed exactly it.
+        required: true
 
 permissions:
   contents: read
+  attestations: read   # gh attestation verify
 
 env:
   AS_BASE: https://www.suveren.ai
@@ -132,6 +136,53 @@ jobs:
           print(f'Receipt verified. Released by {who} at {when}.')
           PY
 
+      # ── The bytes ────────────────────────────────────────────────────────
+      # The receipt binds a source commit; nothing above has touched the bytes
+      # that will be served. This does, with git as the only dependency: check
+      # out the artifact commit, hash its files with the same procedure the
+      # build used (doc/deploy-digest-binding-proposal.md §3.1), and verify the
+      # build's signed attestation over that digest — whose --source-digest
+      # check also pins the attested source commit to the one the receipt
+      # binds. Three facts, independently established: a human approved
+      # commit C; the official build produced digest D from C; these files
+      # hash to D. A private staged page is irrelevant to all three.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.artifact_commit }}
+          fetch-depth: 1
+          path: artifact
+
+      - name: Hash the artifact and verify the build attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT: ${{ inputs.commit }}
+          ARTIFACT_COMMIT: ${{ inputs.artifact_commit }}
+        run: |
+          set -euo pipefail
+          if [ ! -d artifact/website/dist ]; then
+            echo "::error::${ARTIFACT_COMMIT:0:7} has no website/dist — not an artifact commit. Nothing released."
+            exit 1
+          fi
+          ( cd artifact/website/dist && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sed 's|  \./|  |' ) > artifact.manifest
+          digest="sha256:$(sha256sum artifact.manifest | cut -d' ' -f1)"
+          echo "Artifact digest (recomputed from files): $digest"
+          # The trailer is a pointer, not evidence — but if it disagrees with
+          # the files, something rewrote one of them, and that is worth a stop.
+          trailer=$(git -C artifact log -1 --format=%B | sed -n 's/^Artifact-Digest: *//p' | head -1)
+          if [ -n "$trailer" ] && [ "$trailer" != "$digest" ]; then
+            echo "::error::Artifact-Digest trailer ($trailer) does not match the files ($digest)."
+            exit 1
+          fi
+          # Signed by THIS repository's build workflow, from THE commit the
+          # receipt binds. An unattested build (any artifact committed before
+          # attestations shipped, or by hand) fails here — by design.
+          gh attestation verify artifact.manifest \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/build-website.yml" \
+            --source-digest "$COMMIT"
+          echo "ARTIFACT_DIGEST=$digest" >> "$GITHUB_ENV"
+          echo "Attestation verified: build-website.yml produced $digest from ${COMMIT:0:7}."
+
   # ───────────────────────────────────────────────────────────────────────────
   # Runs only if verify passed. The Vercel token lives in the `production`
   # environment, so a workflow that skipped verify could not reach it.
@@ -157,6 +208,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           DEPLOYMENT_URL: ${{ inputs.deployment_url }}
           COMMIT: ${{ inputs.commit }}
+          ARTIFACT_COMMIT: ${{ inputs.artifact_commit }}
         run: |
           set -euo pipefail
           host="${DEPLOYMENT_URL#https://}"; host="${host#http://}"; host="${host%%/*}"
@@ -181,32 +233,27 @@ jobs:
               print(f"::error::build is {d.get('readyState')}, not READY")
               raise SystemExit(1)
 
-          # THE PROVENANCE CHECK. The receipt binds a source COMMIT, not these
-          # bytes — that is the price of a value a released page can carry. The
-          # gap it leaves is that a different artifact could name the same
-          # source, and this is where it closes: the build being promoted must
-          # have been produced by the artifact commit that records the approved
-          # commit as its source.
+          # THE LINK TO THE VERIFIED BYTES. `verify` hashed the files of
+          # `artifact_commit` and checked the build's signed attestation over
+          # them. The one thing the host is trusted for is which commit this
+          # deployment serves — and it must be exactly that commit. (The old
+          # check matched the approved sha against the artifact commit's
+          # message, a string anyone with write access could write.)
           #
           # Runs here rather than in `verify` because only this job holds the
           # host credentials, by design — verify must stay reachable without
           # them.
-          approved = os.environ['COMMIT'].strip().lower()
+          expected = os.environ['ARTIFACT_COMMIT'].strip().lower()
           meta = d.get('meta') or {}
           artifact_sha = (meta.get('githubCommitSha') or '').strip().lower()
-          artifact_msg = meta.get('githubCommitMessage') or ''
           if not artifact_sha:
               print('::error::the host did not report which commit produced this build')
               raise SystemExit(1)
-          # The artifact commit either IS the approved commit, or records it as
-          # the source it was built from (the build workflow writes exactly
-          # "build: website artifact from <sha>").
-          if artifact_sha != approved and approved[:7] not in artifact_msg.lower():
-              print(f'::error::this build came from {artifact_sha[:7]} '
-                    f'({artifact_msg.splitlines()[0] if artifact_msg else "no message"}), '
-                    f'which does not record {approved[:7]} as its source')
+          if artifact_sha != expected:
+              print(f'::error::this deployment serves commit {artifact_sha[:7]}, but verify hashed '
+                    f'{expected[:7]}. The receipt does not cover these bytes.')
               raise SystemExit(1)
-          print(f'Provenance OK: build {artifact_sha[:7]} came from approved commit {approved[:7]}.')
+          print(f'Deployment serves {artifact_sha[:7]} — the commit whose files were hashed and attested.')
 
           # This endpoint returns the identifier as `id`. An earlier version
           # read `uid`, which is absent here — it survived review because the

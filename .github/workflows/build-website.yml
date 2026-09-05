@@ -2,8 +2,19 @@ name: Build the website artifact
 
 # The built site is committed, and Vercel serves it without building — see
 # website/vercel.json. That is what makes a release verifiable: the bytes a
-# human opens are the bytes in the repo, and git's commit sha is already a
-# digest over them. No separate hashing step, no manifest format to specify.
+# human opens are the bytes in the repo.
+#
+# Two things this workflow records about the artifact, so a release can bind
+# the BYTES rather than a commit message about them
+# (doc/deploy-digest-binding-proposal.md):
+#   - Artifact-Digest trailer: sha256 over a manifest of the artifact's files
+#     (sorted paths, `sha256  path` lines). Reproducible by anyone holding the
+#     files, with sha256sum alone — no git needed. The release workflow does
+#     not trust this trailer; it recomputes the digest from the files.
+#   - A build-provenance attestation over that manifest, signed with this
+#     workflow's identity (SLSA provenance via Sigstore). It is what ties
+#     "these bytes" to "built by this workflow from that source commit"
+#     cryptographically; the commit message only used to assert it.
 #
 # ONLY this workflow writes website/dist. A hand-committed artifact would let
 # the repo hold source and output that disagree, which is precisely the drift
@@ -29,6 +40,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write       # Sigstore signing identity for the attestation
+  attestations: write
 
 # Two builds racing would fight over the same file. Queue instead of cancel:
 # a cancelled run could leave the artifact behind its source.
@@ -79,6 +92,19 @@ jobs:
           VERCEL_GIT_COMMIT_SHA: ${{ env.SOURCE_SHA }}
         run: npm run build
 
+      # The digest a release binds. Definition (doc/deploy-digest-binding-proposal.md §3.1):
+      # every regular file under the artifact root, sorted by path bytewise,
+      # one `sha256  path` line each; the digest is sha256 over those lines.
+      # The manifest file's own sha256 IS the digest, which is what lets the
+      # attestation below take the manifest as its subject.
+      - name: Digest the artifact
+        run: |
+          set -euo pipefail
+          ( cd website/dist && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sed 's|  \./|  |' ) > artifact.manifest
+          digest=$(sha256sum artifact.manifest | cut -d' ' -f1)
+          echo "ARTIFACT_DIGEST=sha256:${digest}" >> "$GITHUB_ENV"
+          echo "Artifact digest: sha256:${digest} ($(wc -l < artifact.manifest | tr -d ' ') files)"
+
       - name: Commit the artifact, if it changed
         run: |
           set -euo pipefail
@@ -88,19 +114,43 @@ jobs:
           git add website/dist
           if git diff --cached --quiet; then
             echo 'Artifact unchanged — nothing to commit.'
+            echo "ARTIFACT_CHANGED=0" >> "$GITHUB_ENV"
             exit 0
           fi
+          echo "ARTIFACT_CHANGED=1" >> "$GITHUB_ENV"
 
+          # Trailers are a pointer the deploy tool reads in one API call. Not
+          # evidence — the release workflow recomputes the digest from files.
           git commit -m "build: website artifact from ${SOURCE_SHA:0:7}
 
           Built by CI from the source in this commit. Vercel serves these bytes
-          directly, so this is the artifact a release makes live."
+          directly, so this is the artifact a release makes live.
+
+          Artifact-Digest: ${ARTIFACT_DIGEST}
+          Artifact-Root: website/dist
+          Source-Commit: ${SOURCE_SHA}"
           git push
+
+      # Signed statement: this workflow produced the artifact with this digest,
+      # from the commit that triggered the run (the SOURCE commit — dist is
+      # excluded from the triggers, so the run's sha is never an artifact
+      # commit). Verified at release time with `gh attestation verify`, whose
+      # --source-digest lets the release pin that source commit. Idempotent:
+      # an unchanged artifact re-attests the same digest.
+      - name: Attest the artifact
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: artifact.manifest
+
+      - name: Summary
+        if: env.ARTIFACT_CHANGED == '1'
+        run: |
 
           {
             echo "### Artifact rebuilt"
             echo ""
             echo "- source: \`${SOURCE_SHA:0:7}\`"
+            echo "- digest: \`${ARTIFACT_DIGEST}\`"
             echo "- files: $(find website/dist -type f | wc -l | tr -d ' ')"
             echo ""
             echo "Vercel will publish this as a **Staged** deployment. It goes"
