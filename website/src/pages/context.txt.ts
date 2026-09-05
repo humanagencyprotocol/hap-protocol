@@ -125,24 +125,13 @@ EU AI Act — Article 14: Article 14 requires effective human oversight of high-
 
 ---
 
-### Three readers, one artifact.
+### Anything that reaches outside the machine.
 
-- **Engineering** — Deploy agents on the infrastructure you already have. One enforcement point, no new stack, whichever model you run.
-- **Compliance and audit** — The same gate produces the evidence: who mandated it, what it covered, proven before it ran.
-- **Legal and counterparties** — Proof that survives leaving your organization — verifiable without trusting the operator.
+The protocol defines a consequential action as any operation that affects external state, human wellbeing, financial position, legal standing, or reputation. That is the test — not a category on a list. If an action passes it, it needs a mandate and a ticket.
 
----
+Authority profiles published today: payments (refunds, charges, payouts), email (high-stakes sends), CRM (record changes and deletes), infrastructure (deploys and config), calendar (booking on someone's time), publishing (anything said in your name).
 
-### Where consequential actions need proof.
-
-HAP applies wherever AI agents take consequential action:
-
-- **Payments** — Refunds, charges, payouts.
-- **Email** — High-stakes sends.
-- **CRM** — Record changes and deletes.
-- **Infrastructure** — Deploys and config.
-- **Multi-owner approvals** — Two people must sign.
-- **Compliance audit** — Verifiable tickets.
+Those are the profiles that exist, not the boundary of what HAP governs. A profile is data — it declares which limits exist for one kind of authority — and anyone can publish one: no approval, no registry, no central list to be added to. Whatever your agents do that you would want a name against, that is what a profile describes.
 
 ---
 

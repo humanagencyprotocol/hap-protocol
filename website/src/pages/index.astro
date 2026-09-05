@@ -316,48 +316,35 @@ import { siteConfig } from '../config';
     </div>
   </section>
 
-  <!-- ──────────────────────────────────────────────────────────────────────
-       7b. FOR WHOM
-  ────────────────────────────────────────────────────────────────────────── -->
-  <section class="sec">
-    <div class="wrap">
-      <p class="label">For whom</p>
-      <h2>Three readers, one artifact.</h2>
-      <div class="audience-grid">
-        <div>
-          <div class="who">Engineering</div>
-          <p>Deploy agents on the infrastructure you already have. One enforcement point,
-            no new stack, whichever model you run.</p>
-        </div>
-        <div>
-          <div class="who">Compliance and audit</div>
-          <p>The same gate produces the evidence: who mandated it, what it covered,
-            proven before it ran.</p>
-        </div>
-        <div>
-          <div class="who">Legal and counterparties</div>
-          <p>Proof that survives leaving your organization — verifiable without trusting
-            the operator.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- ──────────────────────────────────────────────────────────────────────
        8. USE CASES
   ────────────────────────────────────────────────────────────────────────── -->
   <section class="sec sec-alt">
     <div class="wrap">
-      <p class="label">Use cases</p>
-      <h2>Where consequential actions need proof.</h2>
+      <p class="label">What needs a mandate</p>
+      <h2>Anything that reaches outside the machine.</h2>
+      <p class="body-lead">
+        The protocol defines a consequential action as any operation that affects
+        <strong>external state, human wellbeing, financial position, legal standing,
+        or reputation</strong>. That is the test — not a category on a list. If an
+        action passes it, it needs a mandate and a ticket.
+      </p>
       <div class="usecases">
         <div>Payments<span>refunds, charges, payouts</span></div>
         <div>Email<span>high-stakes sends</span></div>
         <div>CRM<span>record changes &amp; deletes</span></div>
         <div>Infrastructure<span>deploys &amp; config</span></div>
-        <div>Multi-owner approvals<span>two people must sign</span></div>
-        <div>Compliance audit<span>verifiable tickets</span></div>
+        <div>Calendar<span>booking on someone's time</span></div>
+        <div>Publishing<span>anything said in your name</span></div>
       </div>
+      <p class="compose-note">
+        Those are the authority profiles published today, not the boundary of what
+        HAP governs. A profile is data — it declares which limits exist for one kind
+        of authority — and <a href="/governance">anyone can publish one</a>: no
+        approval, no registry, no central list to be added to. Whatever your agents
+        do that you would want a name against, that is what a profile describes.
+      </p>
     </div>
   </section>
 
@@ -747,26 +734,6 @@ import { siteConfig } from '../config';
   .today p { color: var(--text-primary); font-size: 1rem; margin: 0; max-width: none; }
 
   /* ─── audience grid ───────────────────────────────────────────────────── */
-  .audience-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-top: 2.2rem;
-    max-width: 980px;
-  }
-  @media (max-width: 760px) { .audience-grid { grid-template-columns: 1fr; } }
-  .audience-grid > div {
-    padding: 1.2rem 1.3rem;
-    border: 1px solid var(--border);
-    border-radius: 0.7rem;
-  }
-  .audience-grid .who {
-    font-weight: 700;
-    color: var(--text-primary);
-    font-size: 0.95rem;
-    margin-bottom: 0.4rem;
-  }
-  .audience-grid p { font-size: 0.9rem; line-height: 1.55; margin: 0; }
 
   /* ─── contrast table ──────────────────────────────────────────────────── */
   table.contrast {
