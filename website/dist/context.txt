@@ -96,24 +96,13 @@ EU AI Act — Article 14: Article 14 requires effective human oversight of high-
 
 ---
 
-### Three readers, one artifact.
+### Anything that reaches outside the machine.
 
-- **Engineering** — Deploy agents on the infrastructure you already have. One enforcement point, no new stack, whichever model you run.
-- **Compliance and audit** — The same gate produces the evidence: who mandated it, what it covered, proven before it ran.
-- **Legal and counterparties** — Proof that survives leaving your organization — verifiable without trusting the operator.
+The protocol defines a consequential action as any operation that affects external state, human wellbeing, financial position, legal standing, or reputation. That is the test — not a category on a list. If an action passes it, it needs a mandate and a ticket.
 
----
+Authority profiles published today: payments (refunds, charges, payouts), email (high-stakes sends), CRM (record changes and deletes), infrastructure (deploys and config), calendar (booking on someone's time), publishing (anything said in your name).
 
-### Where consequential actions need proof.
-
-HAP applies wherever AI agents take consequential action:
-
-- **Payments** — Refunds, charges, payouts.
-- **Email** — High-stakes sends.
-- **CRM** — Record changes and deletes.
-- **Infrastructure** — Deploys and config.
-- **Multi-owner approvals** — Two people must sign.
-- **Compliance audit** — Verifiable tickets.
+Those are the profiles that exist, not the boundary of what HAP governs. A profile is data — it declares which limits exist for one kind of authority — and anyone can publish one: no approval, no registry, no central list to be added to. Whatever your agents do that you would want a name against, that is what a profile describes.
 
 ---
 
@@ -3420,6 +3409,18 @@ scope enforcement from *compromise-resistant* to *shared with an
 honest-operator control*. Recorded so the trade is chosen rather than drifted
 into.
 
+### One execution per ticket — targets the next version
+
+Found 2026-09-04 during a gated release. *Cumulative Tracking* rule 5 guarantees **one ticket per logical execution**: a retried ticket request returns the original ticket, and bounded authority is consumed once. That held perfectly — and the action still ran twice. Two triggers inside one Gatekeeper requested a ticket for the same committed proposal; the Authority Server correctly replayed the original to the second; and nothing on the Gatekeeper side knew the tool had already been called. The effect was stopped by the downstream system's own conflict check, not by the protocol.
+
+The specification is half-stated. The Authority Server's half is normative. The Gatekeeper's half — that **a ticket authorizes at most one execution** — is nowhere, and only the Gatekeeper can supply it, because only it knows whether it went on to act. Direction, as Gatekeeper conformance:
+
+1. A Gatekeeper MUST keep a durable record of the tickets under which it has executed, written **before** the downstream call, so an interruption leaves "started, outcome unknown" rather than nothing.
+2. A replayed ticket (`idempotent: true`, or the review path's original returned after `executed`) is a **recovery signal for a lost response, not an authorization to act again**. With a record of completion the Gatekeeper MUST NOT execute; with a record of intent but no completion it MUST surface the ambiguity to the Mandate Owner rather than resolve it by guessing — unless the profile or manifest declares the action idempotent under its ticket id.
+3. Where several triggers can execute committed proposals, they MUST be serialized per proposal.
+
+This is the missing counterpart of rule 5 and is testable in a conformance suite: concurrent triggers against one committed proposal MUST produce one downstream effect. It does not change the Authority Server, the ticket, or the wire.
+
 ### Read classification for remote, vendor-controlled connectors — undated
 
 A connector reached through a remote MCP server the operator does not control has a tool list that cannot be enumerated when its manifest is written and can change without notice. Under *Tool-Gating Manifests* rule 1 such tools are refused until named. Where an operator chooses to name a catch-all action type for them (`charge@0.5` registers `unclassified` for this reason), genuine reads are counted as consequential, consume a write budget, and produce tickets — over-restrictive rather than unsafe, but it means a ticket exists for something no one executed. What the specification could add is a name for the situation: a declared *unclassified* action class, so a ticket carrying it reads as "this connector could not tell what this was, and treated it as consequential" rather than as a positive claim about the action.
@@ -3440,6 +3441,12 @@ Related, smaller pieces of the same machine-verification surface: content negoti
 ### Verifier policy for external relying parties — targets v0.8
 
 v0.6 made verifier policy the **primary enforcement tier** for owner signatures ("the relying party demands a minimum `binding`… MUST fail, not warn") but defined no interface for a relying party who is not running a gateway. An auditor, a counterparty's system, or a pipeline consuming a bearer ticket has a normative verification *procedure* but no defined way to express its policy (minimum binding, required owners, pinned DIDs) or a standard failure semantics. Same gap class as the projection above, and the two should land together: a small, declarative verifier-policy document that any conformant verifier evaluates identically.
+
+### Deploy binds the artifact digest; the source commit is the reader's pointer — undated
+
+Found 2026-09-04. A deploy ticket binds the **source commit** as text, so a released page can name its own approval in a footer a reader can check. Two things then tie that commit to the bytes that go live: the page's footer, and the deployment host's report of which commit produced the build. Both are self-asserted strings — a footer says what the build put there; an artifact commit's message says what its author typed; neither is signed. And reading the footer requires the staged build to be publicly fetchable, which is the wrong dependency for a verification step.
+
+Direction: **bind what goes live, not where it goes live, and not what a page says about itself.** Where the served artifact is committed, its tree hash is already a content digest of the served bytes; where the host builds, an image or bundle digest is. A future deploy profile binds the digest alongside the source commit (the declared-field binding already on this ledger), the effector verifies the digest of what it is about to activate — independently, per *Deployment Security Profile* — and the footer becomes a cross-check that may only refuse. The artifact → source link should become a build attestation rather than a commit message. Repository, environment, and pipeline remain covered by the dual-signed projection item above, not by this one.
 
 ### Subject export of evidence at the AS — undated (custody half promoted)
 
