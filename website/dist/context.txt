@@ -3421,6 +3421,19 @@ The specification is half-stated. The Authority Server's half is normative. The 
 
 This is the missing counterpart of rule 5 and is testable in a conformance suite: concurrent triggers against one committed proposal MUST produce one downstream effect. It does not change the Authority Server, the ticket, or the wire.
 
+### Per-transaction bounds must be able to require their value — targets the next version
+
+Found 2026-09-30 while exercising a new quote-to-order profile against the reference Gatekeeper. A `per_transaction` bound "applies wherever its `of` field is present in the execution context" (*Bounds*, rule 7). The converse follows: an execution that does not carry the field is not checked against the bound at all. A limit of 5,000 per quote refuses a declared value of 6,000 and permits a call that declares no value. Both enforcement points behave this way, correctly by the text.
+
+The same hole was closed for scope in v0.6. *Required dimensions (`requiredFor`)* exists because a constraint "is only as good as the Gatekeeper's ability to see the value it constrains", and absence of a value is indistinguishable from absence of enforcement. Bounds never received the counterpart. The exposure is widest where it matters most. A connector whose amount argument is optional, a tool-gating mapping with a mistyped field name, or a third-party connector that never maps the amount at all each turns a monetary cap into a limit that nothing can exceed, and nothing says so.
+
+**Direction:** a `per_transaction` bound MAY declare `requiredFor: string[]`, drawn from the profile's `actionTypes` registry with the same semantics as on a scope constraint. For a listed `actionType`, an execution whose context lacks the bound's `of` field, or carries a value that is not a number, MUST be refused by the Gatekeeper and by the Authority Server (`BOUND_EXCEEDED`, naming the bound and stating that the value is absent). For unlisted action types the bound keeps today's meaning, which is what lets one profile govern both a document with an amount and a deletion without one.
+
+- **Additive:** a profile that declares nothing behaves exactly as now, so no live mandate changes meaning.
+- **Profiles:** profiles that carry monetary or quantity caps should adopt it in their next version.
+- **Conformance:** testable at both enforcement points. For a listed action type, a missing value MUST be refused, a non-numeric value MUST be refused, and a value within the bound MUST pass.
+- **Rejected alternative:** making absence a refusal everywhere, without a declaration, would break bounds that are legitimately irrelevant to some action types. That breakage is why rule 7 is phrased by presence in the first place.
+
 ### Read classification for remote, vendor-controlled connectors — undated
 
 A connector reached through a remote MCP server the operator does not control has a tool list that cannot be enumerated when its manifest is written and can change without notice. Under *Tool-Gating Manifests* rule 1 such tools are refused until named. Where an operator chooses to name a catch-all action type for them (`charge@0.5` registers `unclassified` for this reason), genuine reads are counted as consequential, consume a write budget, and produce tickets — over-restrictive rather than unsafe, but it means a ticket exists for something no one executed. What the specification could add is a name for the situation: a declared *unclassified* action class, so a ticket carrying it reads as "this connector could not tell what this was, and treated it as consequential" rather than as a positive claim about the action.
