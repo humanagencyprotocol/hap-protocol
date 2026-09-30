@@ -195,6 +195,24 @@ Binding a mandate to an observable output location (`output_ref` in the scope sc
 
 The `binding: "eudi"` value and its validation semantics are normative; what remains is the wallet integration itself and its rotation story — tracked here because it is also the answer to key rotation, which no rotation chain or AS-mediated mechanism can provide.
 
+### "Gateway" appears in normative text without a definition — targets the next version
+
+Found 2026-09-10 in a terminology audit. The word *gateway* — an implementation's product name, defined nowhere in this specification — appears ten times in the published v0.7 text, including in normative sentences (a MAY on caching consumption state; where scope content rests encrypted; who computes `scope_hash`). Each occurrence stands in for one of the defined terms, and not always the same one: the caching, UI, and custody mentions mean the **Local App**; the hashing mention means the **Gatekeeper**; the forking list pairs "Gatekeeper / Gateway" as if they were two roles. The pattern is that product vocabulary leaked in wherever the text describes the packaged experience rather than the role. The fix is mechanical — replace each occurrence with the defined term it stands for — but it edits published normative text, so it waits for the next version rather than being corrected in place. It should land together with the vocabulary direction below, which resolves what "Local App" itself should become.
+
+### Owner Interface, approval surface, and the local custody domain — undated
+
+**Local App** names an accident of packaging. The roles table lists it — a piece of software — among actors, and its definition bundles three things that are distinct and only *happen* to be colocated in the reference implementation: the enforcement point (where Gatekeeper and Executor run, in front of the effectors — this cannot move), custody (where plaintext intent and scope live at rest), and the surface where the Mandate Owner reviews and signs. The moment an implementation offers a remote review client — a phone, a web client — the bundle comes apart, and "local" stops meaning *on the same machine*.
+
+Direction, three terms in place of one:
+
+1. **Owner Interface** — a role, not a component: wherever the Mandate Owner exercises ownership — authors intent, grants and revokes mandates, reviews proposals, inspects tickets. An implementation may have several (desktop, phone, web); each is mostly unconstrained UX.
+2. **Approval surface** — the normatively constrained part of any Owner Interface: the display where a commitment is shown and signed. The displayed-must-be-bound rule (`protocol.md` → *Conformance: what is displayed MUST be what is bound*) already attaches here; a remote approval surface adds one obligation — it MUST be a **verifying client**, not a renderer: decrypt, recompute the hashes, and check them against the *signed* mandate before showing anything as approvable. Otherwise blind-signing risk moves from the Local App to the phone.
+3. **Local custody domain** — the trust boundary formerly implied by "local": the set of endpoints holding the owner's keys and semantic plaintext. The Authority Server sits outside it, always.
+
+The transport for a remote Owner Interface already exists in the protocol: the approver disclosure channel (`intent-disclosure`) — content encrypted to a recipient key, the AS relaying ciphertext blindly, the recipient verifying the full chain before trusting what it displays. A remote owner surface is that channel with the owner as recipient: **the owner as their own remote approver.** The privacy posture is unchanged (the AS still sees hashes and ciphertext); the metadata concession — the AS learns who reviews what and when — is the one the approver flow already makes.
+
+What is genuinely new protocol surface is **device enrolment and revocation**: an owner with keys on several devices needs enrolment that is itself a consequential, verifiable act (else it is the account-takeover path), and per-device revocation that does not void the mandates. This is the same gap the Owner Signatures enrolment ceremony leaves open (above), and the two should be specified together. Open questions, deliberately unresolved here: whether a remote device is **review-only** (ephemeral per-decision disclosure — decrypt, show, sign, discard) or a **custody peer** holding plaintext at rest, and whether device keys are per-device DIDs under one owner identity or one provisioned key — review-only with per-device keys is the conservative default.
+
 ### The public layer — not a protocol item, recorded once
 
 The vocabulary is now the specification's. Websites, product copy, and AI-facing context documents follow the specification, not the other way round; the change is a copy proposal outside this ledger and is mentioned here only so the sequence is on record: spec first, wire second, copy third.
