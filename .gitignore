@@ -44,6 +44,9 @@ hap-linkedin-mcp/
 # Google Calendar MCP server (separate repository)
 hap-googlecalendar-mcp/
 
+# ERP MCP server (separate repository)
+hap-erp-mcp/
+
 # E2E tests (separate repository)
 hap-e2e/
 hap-deploy-mcp/
