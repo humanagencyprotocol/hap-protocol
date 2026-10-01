@@ -47,6 +47,9 @@ hap-googlecalendar-mcp/
 # ERP MCP server (separate repository)
 hap-erp-mcp/
 
+# Email MCP server (separate repository)
+hap-email-mcp/
+
 # E2E tests (separate repository)
 hap-e2e/
 hap-deploy-mcp/
