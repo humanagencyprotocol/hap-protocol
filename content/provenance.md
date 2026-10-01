@@ -57,7 +57,7 @@ This file exists because the execution boundary has become a crowded control poi
 
 ## Directions recorded but not yet binding
 
-Ideas appear in the review ledger before they are promoted, and the ledger is versioned and dated with the rest. Directions on the record with their first-appearance version: dual-signed public ticket projection (0.5), verifier policy for external relying parties (0.6), selective disclosure per field (0.5), witnessed transparency log (0.5), subject export of evidence at the AS (0.6), output provenance bound to observable outputs (0.2 as the deploy gate; companion spec since 0.5), `eudi` wallet integration and key rotation (0.6), sub-mandates and hierarchies of accountability (0.7), Owner Interface / approval-surface separation with a local custody domain, and remote review as the owner acting as their own approver (0.7). See the current `review.md`.
+Ideas appear in the review ledger before they are promoted, and the ledger is versioned and dated with the rest. Directions on the record with their first-appearance version: dual-signed public ticket projection (0.5), verifier policy for external relying parties (0.6), selective disclosure per field (0.5), witnessed transparency log (0.5), subject export of evidence at the AS (0.6), output provenance bound to observable outputs (0.2 as the deploy gate; companion spec since 0.5), `eudi` wallet integration and key rotation (0.6), sub-mandates and hierarchies of accountability (0.7), Owner Interface / approval-surface separation with a local custody domain, and remote review as the owner acting as their own approver (0.7), a ticket naming the request it answers via a signed `idempotencyKey` (0.7). See the current `review.md`.
 
 ## Maintaining this record
 

@@ -145,6 +145,17 @@ The specification is half-stated. The Authority Server's half is normative. The 
 
 This is the missing counterpart of rule 5 and is testable in a conformance suite: concurrent triggers against one committed proposal MUST produce one downstream effect. It does not change the Authority Server, the ticket, or the wire.
 
+### A ticket names the request it answers — targets the next version
+
+*Cumulative Tracking* rule 5 binds a retried ticket request to its original ticket through the `idempotencyKey` — but the ticket does not carry that key. A Gatekeeper therefore cannot tell from the signed ticket alone whether it answers the request it sent, or is another valid ticket for the same mandate, action and context. Exactly-once holds at the Authority Server; the Gatekeeper has nothing signed to hold it against. On the review path the signed `proposalId` already does this job; the synchronous path lacks its counterpart.
+
+Direction:
+
+1. When a ticket request carries an `idempotencyKey`, the AS MUST copy it verbatim into the signed ticket — at issuance, as part of the payload it signs.
+2. A Gatekeeper MUST refuse a ticket whose `idempotencyKey` differs from the one it sent, and SHOULD refuse a ticket whose `timestamp` falls outside a short freshness window.
+
+Every ticket then names the single request it answers, and the chain request → ticket → the Gatekeeper's execution record becomes checkable end to end. It adds one field to the ticket; a verifier that checks the signature over the whole canonical payload is unaffected, and tickets issued before the field existed stay valid as issued. It records that an execution was *authorized* for that request, not that it *happened* — a signed record of the execution itself belongs to *Output Provenance*.
+
 ### Per-transaction bounds must be able to require their value — targets the next version
 
 Found 2026-09-30 while exercising a new quote-to-order profile against the reference Gatekeeper. A `per_transaction` bound "applies wherever its `of` field is present in the execution context" (*Bounds*, rule 7). The converse follows: an execution that does not carry the field is not checked against the bound at all. A limit of 5,000 per quote refuses a declared value of 6,000 and permits a call that declares no value. Both enforcement points behave this way, correctly by the text.
