@@ -3445,6 +3445,20 @@ The same hole was closed for scope in v0.6. *Required dimensions (`requiredFor`)
 - **Conformance:** testable at both enforcement points. For a listed action type, a missing value MUST be refused, a non-numeric value MUST be refused, and a value within the bound MUST pass.
 - **Rejected alternative:** making absence a refusal everywhere, without a declaration, would break bounds that are legitimately irrelevant to some action types. That breakage is why rule 7 is phrased by presence in the first place.
 
+### A profile can restrict the commitment modes of its mandates — targets the next version
+
+Found 2026-10-05 while designing a profile under which an agent proposes mandates and agent instructions for a person to approve. Such a profile is only safe as review-only: every action it governs must wait for a person. Today the profile cannot say so. `commitment_mode` is chosen by the person signing the mandate (*Commitment*), and nothing ties it to the profile, so the same profile can be granted as `automatic` — by a slip on a mandate screen, or by a direct request to the Authority Server. The Authority Server signs whatever mode it is asked to sign.
+
+**Direction:** a profile MAY declare `commitment_modes: string[]`, the commitment modes a mandate under it may carry.
+
+1. When a profile declares `commitment_modes`, the Authority Server MUST refuse to sign a mandate whose `commitment_mode` is not listed. `review_above_cap` counts as its own mode: a profile that lists only `review` does not admit it, because it lets actions below the caps run without approval.
+2. The declaration is read fail-closed. An empty list, a value that is not a list, or entries that are not commitment modes narrow what is allowed and never widen it. A declaration with no valid entry admits no mandate.
+3. A surface that offers commitment modes to a Mandate Owner SHOULD offer only the listed ones. The Authority Server's refusal is the rule; the surface only avoids a signing that would be refused.
+
+- **Additive:** a profile without the field admits every mode, so no live mandate changes meaning.
+- **Conformance:** testable at the Authority Server. For a profile that lists only `review`, a request to sign `automatic` MUST be refused and a request to sign `review` MUST succeed. A profile without the field MUST accept both.
+- **Not covered:** the field constrains what is signed, not what the Gatekeeper does with it. Routing still follows the signed `commitment_mode` (*Commitment*), and that needs no change.
+
 ### Read classification for remote, vendor-controlled connectors — undated
 
 A connector reached through a remote MCP server the operator does not control has a tool list that cannot be enumerated when its manifest is written and can change without notice. Under *Tool-Gating Manifests* rule 1 such tools are refused until named. Where an operator chooses to name a catch-all action type for them (`charge@0.5` registers `unclassified` for this reason), genuine reads are counted as consequential, consume a write budget, and produce tickets — over-restrictive rather than unsafe, but it means a ticket exists for something no one executed. What the specification could add is a name for the situation: a declared *unclassified* action class, so a ticket carrying it reads as "this connector could not tell what this was, and treated it as consequential" rather than as a positive claim about the action.
