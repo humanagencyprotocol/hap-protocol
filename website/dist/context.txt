@@ -3459,6 +3459,21 @@ Found 2026-10-05 while designing a profile under which an agent proposes mandate
 - **Conformance:** testable at the Authority Server. For a profile that lists only `review`, a request to sign `automatic` MUST be refused and a request to sign `review` MUST succeed. A profile without the field MUST accept both.
 - **Not covered:** the field constrains what is signed, not what the Gatekeeper does with it. Routing still follows the signed `commitment_mode` (*Commitment*), and that needs no change.
 
+### The owner's disclosure choice can be standing — targets the next version
+
+Found 2026-10-06 in a test run where an agent proposed mandates for its owner to approve. Disclosure is opt-in per mandate (*Identity Assurance* → *Two orthogonal knobs*; `governance.md` → *Invariant 2*). In practice, whether the name is attached then depends on whichever surface builds the request. The mandate screen asked the owner. The path that turned an approved agent proposal into a mandate never asked, so 27 of 29 tickets in the run came out without the owner's name, although the owner was verified and meant to stand behind every one. Nothing was wrong on the record: each ticket still names the owner's DID. What failed was the owner's choice, which was lost on one path.
+
+**Direction:** an Authority Server MAY hold a **standing disclosure choice** on the owner's account: "attach my verified name to every mandate I give".
+
+1. Only the owner can set it, in an authenticated session, as an explicit act. It MUST NOT be on by default, and the owner can withdraw it at any time.
+2. While it is set, the AS MUST stamp the disclosed `subjects` entry on every mandate that owner gives at `high`, whatever the request carries. A request cannot opt out of a standing choice. The owner withdraws the choice instead.
+3. Withdrawing it affects only mandates given afterwards. Signed mandates and their tickets stay as issued.
+4. A surface that builds a mandate request SHOULD show the owner, before signing, that the name will be attached.
+
+- **Why this satisfies Invariant 2:** the name appears only because the owner chose it. The choice is made once for every mandate instead of once per mandate. *Invariant 2*'s words "opt-in per authorization" should be read, and in the next version written, as "the owner's explicit choice, applied per authorization".
+- **Additive:** an account without the choice behaves exactly as now.
+- **Conformance:** testable at the AS. With the choice set, a mandate request without a disclosure flag MUST yield a mandate carrying `subjects` with the name, and its tickets MUST copy it. Without the choice, the per-mandate opt-in rule is unchanged.
+
 ### Read classification for remote, vendor-controlled connectors — undated
 
 A connector reached through a remote MCP server the operator does not control has a tool list that cannot be enumerated when its manifest is written and can change without notice. Under *Tool-Gating Manifests* rule 1 such tools are refused until named. Where an operator chooses to name a catch-all action type for them (`charge@0.5` registers `unclassified` for this reason), genuine reads are counted as consequential, consume a write budget, and produce tickets — over-restrictive rather than unsafe, but it means a ticket exists for something no one executed. What the specification could add is a name for the situation: a declared *unclassified* action class, so a ticket carrying it reads as "this connector could not tell what this was, and treated it as consequential" rather than as a positive claim about the action.
