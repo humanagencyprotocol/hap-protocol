@@ -3474,6 +3474,21 @@ Found 2026-10-06 in a test run where an agent proposed mandates for its owner to
 - **Additive:** an account without the choice behaves exactly as now.
 - **Conformance:** testable at the AS. With the choice set, a mandate request without a disclosure flag MUST yield a mandate carrying `subjects` with the name, and its tickets MUST copy it. Without the choice, the per-mandate opt-in rule is unchanged.
 
+### A profile can declare a maximum for a bound — targets the next version
+
+Found 2026-10-06 while designing a reporting profile whose mandate sets how far back an agent may read the evidence for a report (`reporting@0.2`, `read_max_age_days`). A bound limits each action. Nothing limits the bound itself: a Mandate Owner can sign any value, and the Authority Server signs whatever value it is asked to sign. For most bounds the owner's judgement is the right limit. For some the profile knows better. A reporting window of ten years turns a report into a search of the whole history, and no owner choice makes that the profile's purpose.
+
+**Direction:** a numeric bounds field MAY declare `maximum: number`, the largest value a mandate under the profile may carry for it. First declared by `reporting@0.2`: `read_max_age_days` with `maximum: 366`.
+
+1. When a field declares `maximum`, the Authority Server MUST refuse to sign a mandate whose value for that field exceeds it, or is not a number (`BOUNDS_INVALID_VALUE`, naming the field and the maximum).
+2. A component that enforces the bound SHOULD apply the lower of the signed value and `maximum`, so that a mandate signed in error is still limited.
+3. A surface that lets a Mandate Owner set the bound SHOULD NOT accept a value above `maximum`. The Authority Server's refusal is the rule; the surface only avoids a signing that would be refused.
+
+- **Additive:** a field without `maximum` behaves exactly as now, so no live mandate changes meaning.
+- **Profiles:** declaring or lowering a `maximum` changes which mandates are valid, so it is a profile version change, never an in-place edit.
+- **Conformance:** testable at the Authority Server. For a field with `maximum: 366`, a request to sign 367 MUST be refused, a non-numeric value MUST be refused, and 366 MUST succeed.
+- **Not covered:** a lower bound. No case needs it yet.
+
 ### Read classification for remote, vendor-controlled connectors — undated
 
 A connector reached through a remote MCP server the operator does not control has a tool list that cannot be enumerated when its manifest is written and can change without notice. Under *Tool-Gating Manifests* rule 1 such tools are refused until named. Where an operator chooses to name a catch-all action type for them (`charge@0.5` registers `unclassified` for this reason), genuine reads are counted as consequential, consume a write budget, and produce tickets — over-restrictive rather than unsafe, but it means a ticket exists for something no one executed. What the specification could add is a name for the situation: a declared *unclassified* action class, so a ticket carrying it reads as "this connector could not tell what this was, and treated it as consequential" rather than as a positive claim about the action.
