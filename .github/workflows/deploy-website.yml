@@ -59,8 +59,11 @@ jobs:
           echo "Build   : $DEPLOYMENT_URL"
           echo "Commit  : $COMMIT"
 
+          # v0.7: the public ticket lives at /api/as/public-ticket (the old
+          # /public-receipt path answers 308, which this check must not follow
+          # blindly — the gate reads exactly one, named endpoint).
           http_code=$(curl -sS -o receipt.json -w '%{http_code}' \
-            "$AS_BASE/api/as/public-receipt/$RECEIPT_ID" || true)
+            "$AS_BASE/api/as/public-ticket/$RECEIPT_ID" || true)
           if [ "$http_code" != "200" ]; then
             echo "::error::No such receipt (HTTP $http_code). Nothing released."
             exit 1
