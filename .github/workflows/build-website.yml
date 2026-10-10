@@ -82,7 +82,18 @@ jobs:
       - name: Identify the source commit
         run: |
           set -euo pipefail
-          src=$(git log -1 --format=%H -- . ':(exclude)website/dist' || true)
+          # On a push, the pushed commit IS the source: the trigger excludes
+          # website/dist, so it is never an artifact commit — and it is the
+          # commit the attestation below signs and the release ticket binds.
+          # `git log -- <paths>` must not be used here: it skips a merge commit
+          # that adds no change of its own (a merged pull request) and reports
+          # the branch commit instead, so page and ticket named different
+          # commits for the same bytes (2026-10-10, merge 8fdcbd7 vs 3cef64e).
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            src="${GITHUB_SHA}"
+          else
+            src=$(git log -1 --format=%H -- . ':(exclude)website/dist' || true)
+          fi
           echo "SOURCE_SHA=${src:-${GITHUB_SHA}}" >> "$GITHUB_ENV"
           echo "Artifact will report being built from ${src:-$GITHUB_SHA}"
 
