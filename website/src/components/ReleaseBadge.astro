@@ -126,7 +126,9 @@ const contentHash = normalized
       const who = r.identity?.name ? esc(r.identity.name) : 'a decision owner';
       const via = r.identity ? ` <span class="rp-dim">· verified by ${esc(r.issuer)}</span>` : '';
       return `
-        <p class="rp-head rp-ok">This build was approved before it went live</p>
+        ${r.signatureValid === true
+          ? '<p class="rp-head rp-ok">This build was approved before it went live</p>'
+          : '<p class="rp-head rp-warn">A ticket names this build, but its signature could not be verified</p>'}
         <dl class="rp-kv">
           <dt>Commit</dt><dd>
             <a href="https://github.com/${esc(REPO)}/commit/${esc(COMMIT)}" target="_blank"
@@ -136,8 +138,10 @@ const contentHash = normalized
             Paste the full sha into the receipt page to check it yourself.</span></dd>
           <dt>Approved by</dt><dd>${who}${via}</dd>
           <dt>Released</dt><dd>${new Date(r.timestamp * 1000).toLocaleString()}</dd>
-          <dt>Signature</dt><dd class="rp-ok">valid</dd>
-          <dt>Receipt</dt><dd><a href="${esc(AS)}/r/${encodeURIComponent(r.id)}" target="_blank" rel="noopener">${esc(r.id).slice(0, 8)}… — full receipt ↗</a></dd>
+          <dt>Signature</dt>${r.signatureValid === true
+            ? '<dd class="rp-ok">valid</dd>'
+            : '<dd class="rp-warn">could not be verified</dd>'}
+          <dt>Receipt</dt><dd><a href="${esc(AS)}/t/${encodeURIComponent(r.id)}" target="_blank" rel="noopener">${esc(r.id).slice(0, 8)}… — full receipt ↗</a></dd>
         </dl>
         <p class="rp-note"><strong>What this does not show.</strong> This page told Suveren which
         build it is. So you are seeing that a human approved releasing <em>that</em> build — not that
@@ -180,14 +184,15 @@ const contentHash = normalized
       }
       show('<p class="rp-note">Checking with the Authority Server…</p>');
       try {
-        const res = await fetch(`${AS}/api/as/receipts/by-content/${encodeURIComponent(hash)}`);
+        const res = await fetch(`${AS}/api/as/tickets/by-content/${encodeURIComponent(hash)}`);
         const body = await res.json();
-        if (res.ok && Array.isArray(body.receipts) && body.receipts.length) {
+        const tickets = Array.isArray(body.tickets) ? body.tickets : [];
+        if (res.ok && tickets.length) {
           const extra =
-            body.receipts.length > 1
-              ? `<p class="rp-note">Released ${body.receipts.length} times — the most recent is shown.</p>`
+            tickets.length > 1
+              ? `<p class="rp-note">Released ${tickets.length} times — the most recent is shown.</p>`
               : '';
-          show(renderFound(body.receipts[0]) + extra);
+          show(renderFound(tickets[0]) + extra);
         } else {
           show(`
             <p class="rp-head rp-warn">No receipt found for this build</p>
