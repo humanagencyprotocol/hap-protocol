@@ -3489,6 +3489,23 @@ Found 2026-10-06 while designing a reporting profile whose mandate sets how far 
 - **Conformance:** testable at the Authority Server. For a field with `maximum: 366`, a request to sign 367 MUST be refused, a non-numeric value MUST be refused, and 366 MUST succeed.
 - **Not covered:** a lower bound. No case needs it yet.
 
+### The Authority Server never sees what an action contains — targets the next version
+
+Found 2026-10-12 in a demo run of the reference implementation. A review-mode proposal reached the Authority Server with its full tool arguments readable: an email's text, a quote's lines, the intent of a mandate an agent proposed. They were kept and returned on every listing. Nothing in the protocol forbade it. The AS used them for exactly one thing: to check, when the ticket was requested, that the action was the one approved, and a fingerprint does that. Mandate intents already work this way (`intent-disclosure`: the AS relays ciphertext and sees hashes). Proposals were left out.
+
+**Direction:** the content of a proposed action is end-to-end encrypted. The AS sees who may decide, the bound values it enforces, and fingerprints. It never sees the content.
+
+1. The component that submits a proposal MUST encrypt its content (the action's arguments and anything rendered from them for the approver) to the keys of everyone who may read it: the submitter, the Mandate Owner, and each possible approver. It MUST send the content's fingerprint with it. This is the same construction as the approver disclosure channel.
+2. The values the AS enforces bounds on (the execution context: the fields a bound refers to) stay readable to the AS. Without them it cannot enforce. Nothing else of the action is readable to it.
+3. The AS MUST bind the ticket to the proposal by fingerprint. A ticket request whose content fingerprint differs from the proposal's MUST be refused, and the refusal MUST NOT carry content.
+4. A decision (approve, reject, send back) SHOULD carry the fingerprint of what the deciding surface decrypted and showed. The AS MUST refuse a decision whose fingerprint differs from the proposal's. With an approver signature (*Owner Signatures* above) the fingerprint is what the approver signs.
+5. An approval surface that cannot decrypt (no key for this device) MUST NOT offer the decision. It shows that the content is encrypted for another device.
+
+- **Why the AS can still do its job:** it enforces bounds on the execution context, binds tickets by fingerprint, and keeps the signed record. None of these needs the content.
+- **Devices:** reading a proposal on several surfaces (a desktop gateway, a phone) means one key per device, enrolled and revoked by the owner. This is the open question in *Owner Interface, approval surface, and the local custody domain* below, now with a first case.
+- **Migration:** content an AS already holds readable SHOULD be removed once the proposal is decided. The submitting component keeps its own archive.
+- **Conformance:** testable at the AS. A stored proposal MUST NOT contain readable arguments. A ticket request with a different fingerprint MUST be refused without echoing content. A decision with a wrong fingerprint MUST be refused.
+
 ### Read classification for remote, vendor-controlled connectors — undated
 
 A connector reached through a remote MCP server the operator does not control has a tool list that cannot be enumerated when its manifest is written and can change without notice. Under *Tool-Gating Manifests* rule 1 such tools are refused until named. Where an operator chooses to name a catch-all action type for them (`charge@0.5` registers `unclassified` for this reason), genuine reads are counted as consequential, consume a write budget, and produce tickets — over-restrictive rather than unsafe, but it means a ticket exists for something no one executed. What the specification could add is a name for the situation: a declared *unclassified* action class, so a ticket carrying it reads as "this connector could not tell what this was, and treated it as consequential" rather than as a positive claim about the action.
