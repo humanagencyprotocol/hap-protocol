@@ -230,6 +230,22 @@ Found 2026-10-12 in a demo run of the reference implementation. A review-mode pr
 - **Migration:** content an AS already holds readable SHOULD be removed once the proposal is decided. The submitting component keeps its own archive.
 - **Conformance:** testable at the AS. A stored proposal MUST NOT contain readable arguments. A ticket request with a different fingerprint MUST be refused without echoing content. A decision with a wrong fingerprint MUST be refused.
 
+### System context on an approval surface — targets the next version
+
+Found 2026-10-13 in a demo run of the reference implementation. An agent proposed a quote with `customer_id: cust-1` and a line `item_id: item-1, qty: 10`. The approval surface showed exactly those bound values. They were correct and complete, and they meant nothing to the person deciding. The implementation can read who `cust-1` is and what `item-1` is from the system the action goes to, and show that next to the values (customer name, credit limit, article name, list price, stock). These are not parameters of the action, and the ticket does not bind them. *Conformance: what is displayed MUST be what is bound* (`protocol.md`) forbids displaying a consequential parameter that is not bound. It does not say what may be shown **next to** the bound parameters to make them understandable.
+
+**Direction:** an approval surface MAY show **system context**: data the Gatekeeper reads from the target system before approval, never data supplied by the agent.
+
+1. System context MUST be visibly distinguished from bound values on the surface. A reader must be able to tell "this is what you approve" from "this is what the system currently says about it".
+2. System context MUST NOT replace a bound value. A name is shown next to the id it resolves, never instead of it.
+3. System context MUST come from the Gatekeeper's own read of the target system. Text from the agent is never system context.
+4. Where system context decides whether the action is acceptable (the state of the record the action changes, its version or revision), the implementation SHOULD bind it: by the record's version carried in the approved action, or by re-reading before execution and refusing on any difference. Context that only explains a bound value (a customer's name next to its id) need not be bound.
+5. The surface SHOULD state when the context was read.
+
+- **Why this satisfies the display rule:** the rule protects the commitment, meaning what the ticket holds. System context is not part of the commitment, and point 1 keeps it from being mistaken for it. Point 4 covers the case where context is the real subject of the decision.
+- **Not covered:** how an implementation declares which reads to make. That is implementation configuration (in the reference implementation, the connector manifest).
+- **Conformance:** testable on an approval surface. Bound values and system context are distinguishable. Removing every system context element leaves every bound value visible. No agent-supplied text appears as system context.
+
 ### Read classification for remote, vendor-controlled connectors — undated
 
 A connector reached through a remote MCP server the operator does not control has a tool list that cannot be enumerated when its manifest is written and can change without notice. Under *Tool-Gating Manifests* rule 1 such tools are refused until named. Where an operator chooses to name a catch-all action type for them (`charge@0.5` registers `unclassified` for this reason), genuine reads are counted as consequential, consume a write budget, and produce tickets — over-restrictive rather than unsafe, but it means a ticket exists for something no one executed. What the specification could add is a name for the situation: a declared *unclassified* action class, so a ticket carrying it reads as "this connector could not tell what this was, and treated it as consequential" rather than as a positive claim about the action.
