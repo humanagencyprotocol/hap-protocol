@@ -213,6 +213,38 @@ Found 2026-10-06 while designing a reporting profile whose mandate sets how far 
 - **Conformance:** testable at the Authority Server. For a field with `maximum: 366`, a request to sign 367 MUST be refused, a non-numeric value MUST be refused, and 366 MUST succeed.
 - **Not covered:** a lower bound. No case needs it yet.
 
+### Group roles: who may grant, who approves above the cap — targets the next version
+
+Found 2026-10-14 while setting up a team of ten in the reference implementation. Two rules in *Personal Mode vs Group Mode* and *Review-Above-Cap Mode* combine badly. The granting user MUST be a required approver, so every member who needs the profile is on the approver list. `above_cap_approvers` are the DIDs that MUST approve an above-cap proposal, so every above-cap action then needs every member's approval. One list carries two roles: permission to grant, and control above the group's threshold. Neither rule says whether the proposer may approve their own above-cap action.
+
+**Direction:** group configuration names two roles per profile.
+
+1. **Grantors** — who may sign a mandate for the profile. In group mode the Authority Server MUST verify the Mandate Owner is a grantor (replacing "is a required approver" for this purpose).
+2. **Above-cap approvers** — who may approve a proposal raised by a cap exceedance. The list MAY be empty.
+3. `above_cap_approvals` — how many distinct approvers must approve (default 1). A proposal is committed when that many have approved.
+4. The proposer of an above-cap action MUST NOT count as one of its approvers. An approver set that cannot reach `above_cap_approvals` without the proposer makes the cap hard for that proposer.
+5. A cap MAY be marked hard: a ticket request above it MUST be refused, never routed. With no above-cap approvers every cap is hard, and the Authority Server SHOULD refuse to sign a mandate whose bound exceeds a hard cap rather than sign one that fails on every action.
+6. Roles, `above_cap_approvals` and which caps are hard are signed into the mandate with `above_cap_caps` and `above_cap_approvers`; changing them requires a new mandate.
+
+- **Why:** permission and control are different people in any team larger than two. Requiring every approver turns a threshold into a standstill as soon as one approver is absent.
+- **Compatibility:** a group whose grantors equal its approvers, with `above_cap_approvals` equal to the list length, behaves as today.
+- **Conformance:** testable at the Authority Server. A grantor who is not an approver can sign; an above-cap proposal commits after the configured number of distinct approvals; the proposer's approval is not counted; a hard cap refuses with no proposal.
+
+### A group can cap reads and capability switches — targets the next version
+
+Found 2026-10-14 together with the entry above. *Read Authorization* says a read limit one party enforces against another — a team admin capping a member's reach — "re-enters the signed surface", but defines no mechanism. Reads carry no ticket, so the Authority Server's above-cap check never sees them, and a read cannot be approved one by one. Separately, `above_cap_caps` maps a field to a numeric cap, so a capability switch (an `enum` bound such as `read_access: none | unlimited`) cannot be capped at all.
+
+**Direction:**
+
+1. A group cap on a bound the Gatekeeper alone enforces (a read bound; the profile marks it `enforcedBy: "gatekeeper"`) is always hard. The Authority Server MUST refuse to sign a mandate above it and MUST sign the group cap into the mandate as a ceiling.
+2. The Gatekeeper MUST NOT apply a local read policy beyond a signed group ceiling. In personal mode, and below the ceiling, the local read policy governs as today (*Read window precedence*).
+3. An `enum` bound's `values` are ordered from most permissive to most restrictive, as every published profile already lists them (`read_access: ["unlimited", "none"]`). A group cap on an `enum` bound is one of its values; a mandate whose value comes earlier in the order exceeds the cap.
+4. An `enum` bound SHOULD declare what it gates (`gates`: reads, or named action types), so that a Gatekeeper applies it to every tool of that kind without a per-tool declaration, and a missing declaration cannot leave it unenforced.
+
+- **Why:** a team admin needs to limit how far a member's agent reads and whether it reads at all; today neither holds.
+- **Compatibility:** groups without read caps and profiles without ordered enums behave as today. Declaring `gates` or reordering `values` is a profile version change.
+- **Conformance:** testable. A mandate above a group read cap is refused; a Gatekeeper with a local window above the signed ceiling reads only up to the ceiling; a mandate with `read_access: unlimited` under a group cap of `none` is refused; the order of every published profile's enum values is unchanged.
+
 ### The Authority Server never sees what an action contains — targets the next version
 
 Found 2026-10-12 in a demo run of the reference implementation. A review-mode proposal reached the Authority Server with its full tool arguments readable: an email's text, a quote's lines, the intent of a mandate an agent proposed. They were kept and returned on every listing. Nothing in the protocol forbade it. The AS used them for exactly one thing: to check, when the ticket was requested, that the action was the one approved, and a fingerprint does that. Mandate intents already work this way (`intent-disclosure`: the AS relays ciphertext and sees hashes). Proposals were left out.
