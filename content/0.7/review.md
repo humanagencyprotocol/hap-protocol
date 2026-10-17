@@ -290,6 +290,20 @@ Found 2026-10-14 while extending the approval surface of the reference implement
 - **Not covered:** how an implementation declares which records can be referenced and which entries are read (implementation configuration; in the reference implementation, the connector manifest); disputes across approving devices that do not hold the snapshot.
 - **Conformance:** testable on an approval surface and at the effector. An agent reference is labelled as the agent's; an unreadable reference does not block; the reference never reaches the effector; no entry is labelled as related; where `shown_hash` is supported, each decider's fingerprint is recorded separately and a later decision does not overwrite an earlier one.
 
+### A profile can name its area for people: display name and icon — targets the next version
+
+Found 2026-10-17 while reworking an approval surface so that people think in areas of work ("Customers", "Payments") rather than in the tools that carry them out ("CRM", "Mollie"). A profile already is that area: it is what a mandate grants, whichever connector executes it. Its `name` is the only display field it has, and the names grew without a rule. Some name an area ("Email"), some an act ("Charge", "Deploy"), some are long ("Customer Management"). Nothing lets a profile give a surface a recognisable mark, so each surface invents one per tool.
+
+**Direction:** `name` is the profile's area name, for people: a short noun phrase for the area of work ("Customers", "Payments"), not an act and not a tool. A profile MAY declare `icon: string`, one plain word naming the area's mark ("customers", "payments").
+
+1. `icon` is a word, never markup or an image. A surface draws its own mark for the word and MUST fall back to a neutral mark for a word it does not know. A surface MUST NOT render content fetched from a profile as markup.
+2. Both fields are display only. They MUST NOT take part in enforcement, signing or matching. A mandate, ticket or bound check MUST NOT change meaning when either field changes.
+3. A surface SHOULD show the `name` and `icon` of the newest version of a profile that it knows, also for mandates signed against an older version. The area is the same across versions; only the terms differ.
+
+- **Additive:** a profile without `icon` behaves exactly as now. Renaming a profile's `name` is a version change like any other edit, so no published profile changes in place.
+- **Conformance:** not testable at the enforcement points, by design (rule 2). A conformance suite can check that a mandate signed under a profile version verifies identically whatever `name` and `icon` a newer version declares.
+- **Rejected alternative:** an image or SVG in the profile. Profiles come from outside the surface that renders them. Markup from a profile is an injection path into the approval surface, which must show only what is bound, and it would give every profile its own visual style.
+
 ### Read classification for remote, vendor-controlled connectors — undated
 
 A connector reached through a remote MCP server the operator does not control has a tool list that cannot be enumerated when its manifest is written and can change without notice. Under *Tool-Gating Manifests* rule 1 such tools are refused until named. Where an operator chooses to name a catch-all action type for them (`charge@0.5` registers `unclassified` for this reason), genuine reads are counted as consequential, consume a write budget, and produce tickets — over-restrictive rather than unsafe, but it means a ticket exists for something no one executed. What the specification could add is a name for the situation: a declared *unclassified* action class, so a ticket carrying it reads as "this connector could not tell what this was, and treated it as consequential" rather than as a positive claim about the action.
