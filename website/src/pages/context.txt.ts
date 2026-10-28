@@ -43,7 +43,7 @@ A human sets what the automation may do — scope, limits, duration. Every conse
 
 ### No mandate, no ticket. No ticket, no execution.
 
-Vocabulary (v0.7, one word per thing on the wire, in the spec, and in public): **mandate** (what a person gives an agent — never "attestation" or "grant"), **mandate ticket** / **ticket** (obtained before each action, kept as proof after — never "receipt"), **bounds** (the enforced limits), **scope** (the local signed dimension — never "context"), **Mandate Owner** (the identifiable person who gives the mandate — never "Decision Owner"), **without a mandate** (the condition the protocol exists to end).
+Vocabulary (since v0.7, one word per thing on the wire, in the spec, and in public): **mandate** (what a person gives an agent — never "attestation" or "grant"), **mandate ticket** / **ticket** (obtained before each action, kept as proof after — never "receipt"), **bounds** (the enforced limits), **scope** (the local signed dimension — never "context"), **Mandate Owner** (the identifiable person who gives the mandate — never "Decision Owner"), **without a mandate** (the condition the protocol exists to end).
 
 The ticket is not a post-execution log. It is the precondition for execution — and, afterwards, the verifiable proof that a mandate existed before it ran, with an identifiable person behind it. Agents request execution; they do not hold the keys.
 
@@ -65,7 +65,7 @@ Most systems make you choose: a gate that blocks, or a log that explains. The sa
 - **Outward — a stranger can check it.** Hand someone the ticket and they verify the signature and the content themselves — no account, no relationship with you. Cryptography, not testimony.
 - **Back — you can answer for it.** Evidence created before the act, not reconstructed after: which mandate, which bounds, which content. What an auditor, an insurer, or a court asks for.
 
-What holds today, and what comes next: today the Authority Server signs that the human authorized it — the chain holds as far as you trust one operator's key. Next, the human's own key co-signs the mandate (owner signatures — specified since v0.6, not yet implemented). Then it holds without trusting any operator, including us.
+Who you have to trust: with the Authority Server's signature alone, the chain holds as far as you trust that operator's key. The protocol also defines the human's own co-signature on the mandate (owner signatures, specified since v0.6). With it, the chain holds without trusting any operator.
 
 The same ticket does all three. That is what a signed artifact can do and a permission cannot.
 
@@ -213,14 +213,14 @@ Profiles are referenced by ID (e.g., \`charge@0.5\`) and are immutable once publ
 
 | Profile | Domain | Example bounds |
 |---------|--------|----------------|
-| \`charge@0.5\` | Charging customers (payments, refunds, subscriptions) | amount_max, amount_daily_max, amount_monthly_max, transaction_count_daily_max |
-| \`purchase@0.5\` | Spending company money (subscriptions, supplies, ads) | spend_max, spend_daily_max, spend_monthly_max |
-| \`email@0.6\` | Sending, drafting, and reading email | recipient_max, send_daily_max, read_max_age_days |
-| \`customers@0.7\` | CRM operations (contacts, deals, tasks) | read_access, export_access, write_daily_max, delete_daily_max |
-| \`calendar@0.5\` | Calendar access (read, draft, book) | booking_daily_max, booking_duration_max, lookahead_days_max |
-| \`publish@0.5\` | Public content (social, blog, etc.) | post_daily_max, post_monthly_max |
-| \`records@0.5\` | Personal structured data (queries, exports) | read_access, write_daily_max, delete_access, archive_access |
-| \`deploy@0.9\` | Releasing software to an environment | release_daily_max, rollback_allowed |
+| \`charge@0.7\` | Charging customers (payments, refunds, subscriptions) | amount_max, amount_daily_max, amount_monthly_max, charge_daily_max |
+| \`purchase@0.8\` | Spending company money (subscriptions, supplies, ads) | spend_max, spend_daily_max, spend_monthly_max |
+| \`email@0.10\` | Sending, drafting, and reading email | recipient_max, send_daily_max, read_max_age_days |
+| \`customers@0.11\` | CRM operations (contacts, deals, tasks) | read_access, export_access, write_daily_max, delete_daily_max |
+| \`calendar@0.6\` | Calendar access (read, draft, book) | booking_daily_max, booking_duration_max, lookahead_days_max |
+| \`publish@0.7\` | Public content (social, blog, etc.) | post_daily_max, post_monthly_max |
+| \`records@0.6\` | Personal structured data (queries, exports) | read_access, write_daily_max, delete_access, archive_access |
+| \`deploy@0.12\` | Releasing software to an environment | release_daily_max, rollback_allowed |
 
 All profiles require the same four gates: bounds, intent, commitment, and mandate owner. (The single \`intent\` gate replaced the v0.3 trio of problem, objective, and tradeoff; execution paths were removed in v0.4 and are forbidden from v0.5 on.)
 
@@ -240,7 +240,7 @@ HAP is not a paper spec. Every component described above is implemented and runn
 - **Authority Server** — hosted service at suveren.ai (not open source; runs the signing backend and public verification endpoints). Its implementation report against the specification: github.com/humanagencyprotocol/hap-e2e/blob/main/CONFORMANCE.md
 - **MCP integrations** — CRM, records, LinkedIn, Gmail, Mollie reference implementations
 
-An AI agent reading this context can connect to a running Suveren Gateway today and operate within bounds. The wire vocabulary of the running implementation still uses the pre-0.7 words (attestation, receipt) until its rename ships; the concepts are the same.
+An AI agent reading this context can connect to a running Suveren Gateway today and operate within bounds.
 
 ---
 

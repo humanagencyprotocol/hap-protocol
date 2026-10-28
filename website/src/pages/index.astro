@@ -61,13 +61,15 @@ import { siteConfig } from '../config';
           </div>
           <dl class="receipt-fields">
             <dt class="rf-key">profileId</dt>
-            <dd class="rf-val">charge@0.4</dd>
+            <dd class="rf-val">charge@0.7</dd>
             <dt class="rf-key">actionType</dt>
-            <dd class="rf-val">refund</dd>
+            <dd class="rf-val">charge</dd>
+            <dt class="rf-key">mandateId</dt>
+            <dd class="rf-val">mnd_3f9c… <span class="rf-note">— the mandate this ran under</span></dd>
             <dt class="rf-key">boundsHash</dt>
-            <dd class="rf-val">sha256:7a91… <span class="rf-note">— the mandate this ran under</span></dd>
+            <dd class="rf-val">sha256:7a91… <span class="rf-note">— the limits that mandate set</span></dd>
             <dt class="rf-key">executionContext</dt>
-            <dd class="rf-val">order #4821 · €48.00</dd>
+            <dd class="rf-val">amount 48.00 <span class="rf-note">— only what a limit reads</span></dd>
             <dt class="rf-key">cumulativeState</dt>
             <dd class="rf-val">€391 / €500 today <span class="rf-note">— enforced by the Authority Server</span></dd>
             <dt class="rf-key">subjects</dt>
@@ -83,13 +85,13 @@ import { siteConfig } from '../config';
           <li>A human authorizes <strong>bounded execution</strong> — scope, limits, time, and commitment mode.</li>
           <li>The <span class="role">Gatekeeper</span> verifies the mandate, checks per-action bounds, and enforces scope locally.</li>
           <li>The <span class="role">Authority Server</span> checks cumulative limits, expiry, and revocation, then <strong>signs the ticket</strong>.</li>
-          <li>The <span class="role">Executor</span> runs the action — only <strong>after</strong> the ticket exists — and keeps its own signed copy.</li>
+          <li>The <span class="role">Executor</span> runs the action — only <strong>after</strong> the ticket exists — and the <span class="role">Gatekeeper</span> keeps its own signed copy.</li>
         </ol>
       </div>
 
       <p class="neutrality">
         <strong>Open infrastructure.</strong> Any compliant Authority Server can
-        issue tickets — Suveren is one implementation. The protocol is open;
+        issue tickets. The protocol is open;
         no single vendor owns the trust layer.
       </p>
     </div>
@@ -97,11 +99,10 @@ import { siteConfig } from '../config';
 
   <!-- ──────────────────────────────────────────────────────────────────────
        3b. ONE SIGNED ACT — THREE JOBS
-       The three columns state what holds TODAY (the Authority Server vouches).
-       The "what comes next" box is deliberate: co-signature is specified and
-       unbuilt, and naming that is more credible than implying it already ships.
-       Keep it in step with content/<version>/review.md — if the register moves,
-       this box moves.
+       The three columns state what holds with the Authority Server's signature.
+       The "who you have to trust" box states protocol fact only (AS signature
+       vs owner co-signature) — no implementation status on the protocol site;
+       that lives in hap-e2e/CONFORMANCE.md.
   ────────────────────────────────────────────────────────────────────────── -->
   <section class="sec sec-alt">
     <div class="wrap">
@@ -131,11 +132,11 @@ import { siteConfig } from '../config';
       </div>
 
       <div class="today">
-        <p class="label">What holds today, and what comes next</p>
+        <p class="label">Who you have to trust</p>
         <p>
-          Today the Authority Server signs that the human authorized it — the chain holds
-          as far as you trust one operator's key. Next, the human's own key co-signs the
-          mandate. Then it holds <strong>without trusting any operator, including us</strong>.
+          With the Authority Server's signature alone, the chain holds as far as you trust
+          that operator's key. The protocol also defines the human's own co-signature on the
+          mandate. With it, the chain holds <strong>without trusting any operator</strong>.
         </p>
       </div>
 
@@ -171,8 +172,8 @@ import { siteConfig } from '../config';
           <tr><td class="old">OAuth / OpenID Connect</td><td class="old">Grants API access</td></tr>
           <tr><td class="old">Identity (EUDI, passkeys, WebAuthn)</td><td class="old">Proves who you are</td></tr>
           <tr><td class="old">MCP</td><td class="old">Exposes tools to agents</td></tr>
-          <tr><td class="old">Agent identity and lifecycle <span class="eg">(e.g. Entra Agent ID)</span></td><td class="old">Governs which agents exist and what they may reach</td></tr>
-          <tr><td class="old">Agent platforms and policy engines <span class="eg">(e.g. Bedrock AgentCore)</span></td><td class="old">Run agents and evaluate configured rules per call</td></tr>
+          <tr><td class="old">Agent identity and lifecycle</td><td class="old">Governs which agents exist and what they may reach</td></tr>
+          <tr><td class="old">Agent platforms and policy engines</td><td class="old">Run agents and evaluate configured rules per call</td></tr>
           <tr><td class="hap">HAP</td><td class="hap">Authorizes the consequential execution — against a mandate an identifiable person committed to, before it runs, with a signed ticket</td></tr>
         </tbody>
       </table>
@@ -356,7 +357,7 @@ import { siteConfig } from '../config';
       <p class="label">Open infrastructure</p>
       <h2>No single vendor owns the trust layer.</h2>
       <p class="body-lead">
-        HAP is an open standard — MIT-licensed, developed in the open, and maintained
+        HAP is an open-source protocol — MIT-licensed, developed in the open, and maintained
         by stewards, not owners. Any compliant Authority Server can issue tickets, and every
         value an implementation must reproduce is <a href="/vectors">published</a>.
       </p>
