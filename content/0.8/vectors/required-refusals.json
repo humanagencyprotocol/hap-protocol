@@ -51,8 +51,9 @@
     },
     {
       "id": "missing-idempotency-key",
-      "situation": "A synchronous (automatic-mode, no proposalId) request omits idempotencyKey.",
-      "expected_error": "IDEMPOTENCY_KEY_REQUIRED"
+      "situation": "A synchronous request (no proposalId, in any mode: automatic, or review_above_cap below the caps) omits idempotencyKey.",
+      "expected_error": "IDEMPOTENCY_KEY_REQUIRED",
+      "note": "v0.8 widens the v0.7 wording, which named automatic mode only."
     },
     {
       "id": "reused-idempotency-key",
@@ -72,7 +73,7 @@
     },
     {
       "id": "coverage-insufficient",
-      "situation": "Group mode: the union of live, non-revoked mandates matching this bounds_hash, scope_hash, profile_id, intent hash and commitment_mode does not cover the required approver set.",
+      "situation": "Group mode: the union of live, non-revoked mandates matching this bounds_hash, scope_hash, profile_id, intent hash and commitment_mode does not cover the required owners (v0.8: Group roles, rule 8; v0.7: the required approver set).",
       "expected_error": "COVERAGE_INSUFFICIENT"
     },
     {
@@ -101,9 +102,9 @@
     },
     {
       "id": "approval-impossible",
-      "situation": "v0.8 — review_above_cap: the request exceeds a cap and the signed above_cap_approvers minus the proposer cannot reach above_cap_approvals.",
+      "situation": "v0.8 — The request exceeds an approval-kind cap and the signed approvers still able to decide (not departed from the group, holding a reader key), other than the proposer, number fewer than above_cap_approvals.",
       "expected_error": "APPROVAL_IMPOSSIBLE",
-      "note": "Not APPROVAL_REQUIRED: the proposal it would raise could never commit. The proposer never counts as an approver."
+      "note": "Not APPROVAL_REQUIRED: the proposal it would raise could never commit. A configuration that could never reach the count is refused at signing instead (ABOVE_CAP_CONFIG_INVALID). A hard-cap or per-transaction refusal is decided first."
     }
   ],
   "mandate_request_refusals": [
@@ -259,8 +260,9 @@
     },
     {
       "id": "approvals-count-invalid",
-      "situation": "v0.8 — review_above_cap: above_cap_approvals is absent, not an integer ≥ 1, or greater than the length of above_cap_approvers.",
-      "expected_error": "ABOVE_CAP_CONFIG_INVALID"
+      "situation": "v0.8 — above_cap_approvers is signed and above_cap_approvals is absent, not an integer ≥ 1, or greater than the number of above_cap_approvers other than the Mandate Owner.",
+      "expected_error": "ABOVE_CAP_CONFIG_INVALID",
+      "note": "An owner listed as their own only approver, with a count of 1, can never commit: the proposer never counts."
     },
     {
       "id": "cosigned-request-the-group-would-promote",
@@ -338,7 +340,12 @@
     {
       "id": "decision-fingerprint-differs",
       "situation": "v0.8 — A decision carries a content fingerprint that differs from the proposal's.",
-      "required_behaviour": "The AS MUST refuse the decision."
+      "required_behaviour": "The AS MUST refuse the decision (PROPOSAL_CONTENT_MISMATCH)."
+    },
+    {
+      "id": "review-in-group-above-cap",
+      "situation": "v0.8 — A review mandate in a group with approval-kind caps; a proposal whose values exceed a signed cap is approved by the Mandate Owner alone.",
+      "required_behaviour": "MUST NOT commit until above_cap_approvals other signed approvers have also approved (Group roles, rule 7)."
     },
     {
       "id": "reported-failure",
@@ -375,9 +382,9 @@
     },
     {
       "id": "approvers-not-a-subset",
-      "situation": "v0.8 — The caller supplies an approver list for an above-cap proposal that is not a subset of the signed above_cap_approvers (or, in review mode, is anyone but the Mandate Owner).",
+      "situation": "v0.8 — The caller supplies an approver list or reader set for an above-cap proposal that differs from the signed above_cap_approvers (omits one or adds anyone).",
       "expected_error": "PROPOSAL_APPROVERS_INVALID",
-      "note": "Deciders come from the signed mandate. A Gatekeeper may narrow the list; nothing may widen it."
+      "note": "Deciders come from the signed mandate: exactly the signed above_cap_approvers, all of them readers. Neither narrowing nor widening is allowed — the Gatekeeper acts for the proposer."
     }
   ]
 }

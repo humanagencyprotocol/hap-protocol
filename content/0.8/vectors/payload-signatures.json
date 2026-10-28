@@ -59,7 +59,7 @@
       "id": "ticket-payload",
       "signed_by": "authority_server",
       "key": "as",
-      "note": "The AS-signed mandate ticket. mandateId names the mandate it ran under (a bounds_hash alone is ambiguous once a revoked mandate has been replaced); limits is the mandate's full plaintext bounds object including the profile key; executionContext carries a non-integral number; cumulativeState is nested; groupId is null (personal mode) and null is signed, not omitted. New in v0.8: idempotencyKey is copied verbatim from the request into the signed payload, so the ticket names the single request it answers; a Gatekeeper refuses a ticket whose key differs from the one it sent.",
+      "note": "The AS-signed mandate ticket. mandateId names the mandate it ran under (a bounds_hash alone is ambiguous once a revoked mandate has been replaced); limits is the mandate's full plaintext bounds object including the profile key; executionContext carries a non-integral number; cumulativeState is nested; groupId is null (personal mode) and null is signed, not omitted. New in v0.8: idempotencyKey is copied verbatim from the request into the signed payload, so the ticket names the single request it answers; a Gatekeeper refuses a ticket whose key differs from the one it sent. executionContext carries only what a bound reads (amount; currency is a scope value and never travels — Ticket Request Schema, rule 7), and contentHash is accompanied by the contentBinding declaration it was computed under.",
       "payload": {
         "id": "vector-ticket-1",
         "mandateId": "vector-mandate-1",
@@ -72,8 +72,7 @@
         "action": "create_payment_link",
         "actionType": "charge",
         "executionContext": {
-          "amount": 12.5,
-          "currency": "EUR"
+          "amount": 12.5
         },
         "cumulativeState": {
           "daily": {
@@ -92,10 +91,14 @@
         },
         "contentHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
         "timestamp": 1767139260,
-        "idempotencyKey": "vector-idem-1"
+        "idempotencyKey": "vector-idem-1",
+        "contentBinding": {
+          "version": "1",
+          "kind": "jcs"
+        }
       },
-      "canonical": "{\"action\":\"create_payment_link\",\"actionType\":\"charge\",\"boundsHash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"contentHash\":\"sha256:6666666666666666666666666666666666666666666666666666666666666666\",\"cumulativeState\":{\"daily\":{\"amount\":45,\"count\":8},\"monthly\":{\"amount\":320,\"count\":47}},\"executionContext\":{\"amount\":12.5,\"currency\":\"EUR\"},\"groupId\":null,\"id\":\"vector-ticket-1\",\"idempotencyKey\":\"vector-idem-1\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"limits\":{\"amount_daily_max\":500,\"amount_max\":100,\"profile\":\"charge@0.5\"},\"mandateId\":\"vector-mandate-1\",\"profileId\":\"charge@0.5\",\"timestamp\":1767139260,\"userId\":\"user-vector-1\",\"version\":\"0.8\"}",
-      "signature": "yqHtiWNniUzaHsSztmO_DRu9vl2MaCrCVEMeNmRxKFnJjeYUK3odIWnoHeGiXdwOgYQUIrbrFmzlqt0iUoNNCQ"
+      "canonical": "{\"action\":\"create_payment_link\",\"actionType\":\"charge\",\"boundsHash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"contentBinding\":{\"kind\":\"jcs\",\"version\":\"1\"},\"contentHash\":\"sha256:6666666666666666666666666666666666666666666666666666666666666666\",\"cumulativeState\":{\"daily\":{\"amount\":45,\"count\":8},\"monthly\":{\"amount\":320,\"count\":47}},\"executionContext\":{\"amount\":12.5},\"groupId\":null,\"id\":\"vector-ticket-1\",\"idempotencyKey\":\"vector-idem-1\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"limits\":{\"amount_daily_max\":500,\"amount_max\":100,\"profile\":\"charge@0.5\"},\"mandateId\":\"vector-mandate-1\",\"profileId\":\"charge@0.5\",\"timestamp\":1767139260,\"userId\":\"user-vector-1\",\"version\":\"0.8\"}",
+      "signature": "wyIXN0FTxvJIrxrhBHwtAfUT50GdOc51r3o_uqegXxlkyUN2JOEB-j_dls6MTCewbqUJzrFKcLGWMaYscyjFDw"
     },
     {
       "id": "mandate-projection",
@@ -161,7 +164,7 @@
       "id": "mandate-projection-above-cap",
       "signed_by": "mandate_owner",
       "key": "owner",
-      "note": "A projection for a review_above_cap mandate. above_cap_caps, above_cap_approvers and (new in v0.8) above_cap_approvals are conditional projection fields — present exactly when the mode is review_above_cap, all three together — so a compromised AS cannot keep the mode string and raise the caps, swap the approvers, or drop the count. disclose_fields is likewise included exactly when the mandate narrows disclosure. A projection built to the v0.7 field list (without above_cap_approvals) for a v0.8 above-cap mandate does not reconstruct.",
+      "note": "A projection for a review_above_cap mandate. above_cap_caps, above_cap_approvers and (new in v0.8) above_cap_approvals are conditional projection fields — present exactly when the mandate carries them — under review_above_cap, or (v0.8) under review in a group with approval-kind caps — all three together — so a compromised AS cannot keep the mode string and raise the caps, swap the approvers, or drop the count. disclose_fields is likewise included exactly when the mandate narrows disclosure. A projection built to the v0.7 field list (without above_cap_approvals) for a v0.8 above-cap mandate does not reconstruct.",
       "payload": {
         "typ": "HAP-mandate-projection",
         "version": "0.8",
@@ -182,38 +185,39 @@
           "did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT"
         ],
         "disclose_fields": [
-          "currency"
+          "amount"
         ],
         "expires_at": 1767225600,
         "nonce": "vector-nonce-3",
         "above_cap_approvals": 1
       },
-      "canonical": "{\"above_cap_approvals\":1,\"above_cap_approvers\":[\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\"],\"above_cap_caps\":{\"amount_max\":50},\"bounds_hash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"commitment_mode\":\"review_above_cap\",\"disclose_fields\":[\"currency\"],\"execution_context_hash\":\"sha256:3333333333333333333333333333333333333333333333333333333333333333\",\"expires_at\":1767225600,\"gate_content_hashes\":{\"intent\":\"sha256:4444444444444444444444444444444444444444444444444444444444444444\"},\"nonce\":\"vector-nonce-3\",\"owner_did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"profile_hash\":\"sha256:5555555555555555555555555555555555555555555555555555555555555555\",\"profile_id\":\"charge@0.5\",\"scope_hash\":\"sha256:2222222222222222222222222222222222222222222222222222222222222222\",\"typ\":\"HAP-mandate-projection\",\"version\":\"0.8\"}",
-      "signature": "FU1lyruZk_iklzOqUYluWRMydHMJx6xpSx2sU6Qd5hos7AUpxrq3XiwTEco_k7qIAE3t28A1pciz0FFCMaZIBA"
+      "canonical": "{\"above_cap_approvals\":1,\"above_cap_approvers\":[\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\"],\"above_cap_caps\":{\"amount_max\":50},\"bounds_hash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"commitment_mode\":\"review_above_cap\",\"disclose_fields\":[\"amount\"],\"execution_context_hash\":\"sha256:3333333333333333333333333333333333333333333333333333333333333333\",\"expires_at\":1767225600,\"gate_content_hashes\":{\"intent\":\"sha256:4444444444444444444444444444444444444444444444444444444444444444\"},\"nonce\":\"vector-nonce-3\",\"owner_did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"profile_hash\":\"sha256:5555555555555555555555555555555555555555555555555555555555555555\",\"profile_id\":\"charge@0.5\",\"scope_hash\":\"sha256:2222222222222222222222222222222222222222222222222222222222222222\",\"typ\":\"HAP-mandate-projection\",\"version\":\"0.8\"}",
+      "signature": "HCDYEqWF4mpiEorwNgg6Iya9ly1Buy6u7qvSc2hLQ0XGdKN0X7FNgGg-Vka-5nTQNRhq059vwEU-XEOj82tpDQ"
     },
     {
       "id": "approval",
       "signed_by": "mandate_owner",
       "key": "owner",
-      "note": "A per-action approval in review mode, for a proposal under the co-signed mandate (vector-mandate-2). Signing a rejection matters as much: set decision to \"reject\". content_hash equals the ticket's contentHash where the profile binds content; where it does not, it is the proposal's content fingerprint (proposalContentHash).",
+      "note": "A per-action approval in review mode, for a proposal under the co-signed mandate (vector-mandate-2). Signing a rejection matters as much: set decision to \"reject\". content_hash equals the ticket's contentHash where the profile binds content; where it does not, it is the proposal's content fingerprint (proposalContentHash). New in v0.8: approver_did names who decided — here the Mandate Owner, in review mode — and the signature verifies under the key that DID carries.",
       "payload": {
         "typ": "HAP-approval",
         "version": "0.8",
         "proposal_id": "vector-proposal-1",
         "mandate_id": "vector-mandate-2",
         "decision": "commit",
-        "content_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+        "content_hash": "sha256:6868686868686868686868686868686868686868686868686868686868686868",
         "decided_at": 1767139250,
-        "nonce": "vector-nonce-2"
+        "nonce": "vector-nonce-2",
+        "approver_did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw"
       },
-      "canonical": "{\"content_hash\":\"sha256:6666666666666666666666666666666666666666666666666666666666666666\",\"decided_at\":1767139250,\"decision\":\"commit\",\"mandate_id\":\"vector-mandate-2\",\"nonce\":\"vector-nonce-2\",\"proposal_id\":\"vector-proposal-1\",\"typ\":\"HAP-approval\",\"version\":\"0.8\"}",
-      "signature": "VFvpelowgpkyO47hUh9FGPDVH7h2ULcV_w3QphPSI0ETPLUWbBcZWbvX_8WBzOEtXdQ7jj1ugIxNveFt_vBmBw"
+      "canonical": "{\"approver_did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"content_hash\":\"sha256:6868686868686868686868686868686868686868686868686868686868686868\",\"decided_at\":1767139250,\"decision\":\"commit\",\"mandate_id\":\"vector-mandate-2\",\"nonce\":\"vector-nonce-2\",\"proposal_id\":\"vector-proposal-1\",\"typ\":\"HAP-approval\",\"version\":\"0.8\"}",
+      "signature": "hS17xzGRLrYmyklQzhsU70FNcn4bG6lwiDFB2J0hjSJEO_Y6o5VilogNT59sIRFAmwgwi9SuZ5KBTLBDGQ8EAg"
     },
     {
       "id": "ticket-payload-review",
       "signed_by": "authority_server",
       "key": "as",
-      "note": "The AS-signed ticket on the review path (new case in v0.8). It carries no idempotencyKey — the proposal's committed→executed transition is its replay protection — and instead binds proposalId, the proposal's content fingerprint proposalContentHash (copied verbatim from what the AS compared), and the owner's HAP-approval signature as the object approvalSignature, whose signed bytes are reconstructible from this ticket (proposalId, mandateId, contentHash, decided_at, nonce) — byte-identical to the approval case, so the two chain. contentHash and proposalContentHash are different objects and both are carried.",
+      "note": "The AS-signed ticket on the review path (new case in v0.8). It carries no idempotencyKey — the proposal's committed→executed transition is its replay protection — and instead binds proposalId, the proposal's content fingerprint proposalContentHash (copied verbatim from what the AS compared), and the owner's HAP-approval signature as the object approvalSignature, whose signed bytes are reconstructible from this ticket (proposalId, mandateId, contentHash — the profile binds content here, so the approval's content_hash is contentHash — decided_at, nonce, and approver_did, the owner of the mandate) — byte-identical to the approval case, so the two chain. contentHash (a v2 field binding over a declared subset) and proposalContentHash (the whole proposal content) are different objects and both are carried.",
       "payload": {
         "id": "vector-ticket-2",
         "mandateId": "vector-mandate-2",
@@ -226,8 +230,7 @@
         "action": "create_payment_link",
         "actionType": "charge",
         "executionContext": {
-          "amount": 12.5,
-          "currency": "EUR"
+          "amount": 12.5
         },
         "cumulativeState": {
           "daily": {
@@ -244,24 +247,28 @@
           "amount_max": 100,
           "amount_daily_max": 500
         },
-        "contentHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+        "contentHash": "sha256:6868686868686868686868686868686868686868686868686868686868686868",
         "contentBinding": {
-          "version": "1",
-          "kind": "jcs"
+          "version": "2",
+          "kind": "jcs",
+          "fields": [
+            "amount",
+            "description"
+          ]
         },
         "proposalId": "vector-proposal-1",
         "proposalContentHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
         "approvalSignature": {
           "alg": "EdDSA",
-          "signature": "VFvpelowgpkyO47hUh9FGPDVH7h2ULcV_w3QphPSI0ETPLUWbBcZWbvX_8WBzOEtXdQ7jj1ugIxNveFt_vBmBw",
+          "signature": "hS17xzGRLrYmyklQzhsU70FNcn4bG6lwiDFB2J0hjSJEO_Y6o5VilogNT59sIRFAmwgwi9SuZ5KBTLBDGQ8EAg",
           "nonce": "vector-nonce-2",
           "decided_at": 1767139250
         },
         "timestamp": 1767139300
       },
       "chains_to": "approval",
-      "canonical": "{\"action\":\"create_payment_link\",\"actionType\":\"charge\",\"approvalSignature\":{\"alg\":\"EdDSA\",\"decided_at\":1767139250,\"nonce\":\"vector-nonce-2\",\"signature\":\"VFvpelowgpkyO47hUh9FGPDVH7h2ULcV_w3QphPSI0ETPLUWbBcZWbvX_8WBzOEtXdQ7jj1ugIxNveFt_vBmBw\"},\"boundsHash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"contentBinding\":{\"kind\":\"jcs\",\"version\":\"1\"},\"contentHash\":\"sha256:6666666666666666666666666666666666666666666666666666666666666666\",\"cumulativeState\":{\"daily\":{\"amount\":57.5,\"count\":9},\"monthly\":{\"amount\":332.5,\"count\":48}},\"executionContext\":{\"amount\":12.5,\"currency\":\"EUR\"},\"groupId\":null,\"id\":\"vector-ticket-2\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"limits\":{\"amount_daily_max\":500,\"amount_max\":100,\"profile\":\"charge@0.5\"},\"mandateId\":\"vector-mandate-2\",\"profileId\":\"charge@0.5\",\"proposalContentHash\":\"sha256:7777777777777777777777777777777777777777777777777777777777777777\",\"proposalId\":\"vector-proposal-1\",\"timestamp\":1767139300,\"userId\":\"user-vector-1\",\"version\":\"0.8\"}",
-      "signature": "8iKl5oOXDjeM3TiiLYQ9fnFgmoMaNU5ybwHG7UaEoNf5XzEhV9RlDQRNVudQHRW9xVsHws2Wjb7ziY0iSkpPBw"
+      "canonical": "{\"action\":\"create_payment_link\",\"actionType\":\"charge\",\"approvalSignature\":{\"alg\":\"EdDSA\",\"decided_at\":1767139250,\"nonce\":\"vector-nonce-2\",\"signature\":\"hS17xzGRLrYmyklQzhsU70FNcn4bG6lwiDFB2J0hjSJEO_Y6o5VilogNT59sIRFAmwgwi9SuZ5KBTLBDGQ8EAg\"},\"boundsHash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"contentBinding\":{\"fields\":[\"amount\",\"description\"],\"kind\":\"jcs\",\"version\":\"2\"},\"contentHash\":\"sha256:6868686868686868686868686868686868686868686868686868686868686868\",\"cumulativeState\":{\"daily\":{\"amount\":57.5,\"count\":9},\"monthly\":{\"amount\":332.5,\"count\":48}},\"executionContext\":{\"amount\":12.5},\"groupId\":null,\"id\":\"vector-ticket-2\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"limits\":{\"amount_daily_max\":500,\"amount_max\":100,\"profile\":\"charge@0.5\"},\"mandateId\":\"vector-mandate-2\",\"profileId\":\"charge@0.5\",\"proposalContentHash\":\"sha256:7777777777777777777777777777777777777777777777777777777777777777\",\"proposalId\":\"vector-proposal-1\",\"timestamp\":1767139300,\"userId\":\"user-vector-1\",\"version\":\"0.8\"}",
+      "signature": "Q-1UtcuIs_BBwmrsmQpqFo-DF67AIo4jmcq0QbiXrbMDMIjd004SRH7N9AHkpMRKfgyDvybPZkp5HYEj9_qPCw"
     },
     {
       "id": "ticket-projection",
@@ -279,10 +286,14 @@
         "profileId": "charge@0.5",
         "actionType": "charge",
         "boundsHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "contentHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+        "contentHash": "sha256:6868686868686868686868686868686868686868686868686868686868686868",
         "contentBinding": {
-          "version": "1",
-          "kind": "jcs"
+          "version": "2",
+          "kind": "jcs",
+          "fields": [
+            "amount",
+            "description"
+          ]
         },
         "owner": {
           "did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
@@ -296,8 +307,8 @@
       },
       "chains_to": "ticket-payload-review",
       "owner_entry_from": "mandate-cosigned",
-      "canonical": "{\"actionType\":\"charge\",\"boundsHash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"contentBinding\":{\"kind\":\"jcs\",\"version\":\"1\"},\"contentHash\":\"sha256:6666666666666666666666666666666666666666666666666666666666666666\",\"id\":\"vector-ticket-2\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"mandateId\":\"vector-mandate-2\",\"owner\":{\"alg\":\"EdDSA\",\"binding\":\"webauthn\",\"did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"nonce\":\"vector-nonce-1\",\"signature\":\"tIWCmCBZnRmgYh7zxUQFVa8S4VCnsrtyQavoK4KXGnu9J1bkCGP6aVobGXOvVQWseteOYKsRKpD-ssiUCMOsAQ\",\"signed_at\":1767139100,\"signing_surface\":\"gatekeeper_local\"},\"profileId\":\"charge@0.5\",\"timestamp\":1767139300,\"typ\":\"HAP-ticket-projection\",\"valid_until\":1767225700,\"version\":\"0.8\"}",
-      "signature": "i3Hzw6yv9IEprgE6Tf1rSAb4XxD-RjrX_-v3jgQ0hMM90-I1FsN6HbAvJcHU5j_av0gnAPIe2pRbbrQizdvvCQ"
+      "canonical": "{\"actionType\":\"charge\",\"boundsHash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"contentBinding\":{\"fields\":[\"amount\",\"description\"],\"kind\":\"jcs\",\"version\":\"2\"},\"contentHash\":\"sha256:6868686868686868686868686868686868686868686868686868686868686868\",\"id\":\"vector-ticket-2\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"mandateId\":\"vector-mandate-2\",\"owner\":{\"alg\":\"EdDSA\",\"binding\":\"webauthn\",\"did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"nonce\":\"vector-nonce-1\",\"signature\":\"tIWCmCBZnRmgYh7zxUQFVa8S4VCnsrtyQavoK4KXGnu9J1bkCGP6aVobGXOvVQWseteOYKsRKpD-ssiUCMOsAQ\",\"signed_at\":1767139100,\"signing_surface\":\"gatekeeper_local\"},\"profileId\":\"charge@0.5\",\"timestamp\":1767139300,\"typ\":\"HAP-ticket-projection\",\"valid_until\":1767225700,\"version\":\"0.8\"}",
+      "signature": "Ioom2ivlAtgFw5FTC7QXXm5mGc7BCavwTkt8nb2VDo_UhPGKL6WgVeuEtQX77w33mAbjzzXKBG6T24me2l_YAQ"
     }
   ]
 }

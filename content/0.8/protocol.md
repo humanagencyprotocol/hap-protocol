@@ -2,7 +2,7 @@
 title: "Human Agency Protocol — Core Specification"
 version: "Version 0.8"
 date: "October 2026"
-status: "Normative specification"
+status: "Normative specification — draft"
 description: "The normative HAP specification: profiles, bounds, scope, gates, mandates, proposals, mandate tickets, content binding, read authorization, group roles, and owner signatures. No mandate, no ticket. No ticket, no execution."
 ---
 
@@ -164,7 +164,7 @@ A representative deployment composing HAP with OAuth and MCP:
 3. The Gatekeeper intercepts MCP write (consequential) calls.
 4. The Gatekeeper maps the tool arguments into a profile-defined execution context.
 5. The Gatekeeper verifies the human mandate (bounds, scope, intent, commitment mode).
-6. The Authority Server checks bounds, cumulative limits, expiry, revocation, and required-approver coverage.
+6. The Authority Server checks bounds, cumulative limits, expiry, revocation, and required-owner coverage.
 7. The Authority Server issues a signed mandate ticket.
 8. The executor performs the API call only after the ticket is issued.
 
@@ -184,7 +184,7 @@ HAP MAY transmit cryptographic commitments (e.g., hashes), structural metadata, 
 
 The bounds/scope split is the structural mechanism that enforces this invariant: bounds (abstract limits) flow to the AS; scope (operational details) stays local. The AS only sees `scope_hash`, never the scope content.
 
-**Proposal content (v0.8).** The content of a proposed action — its arguments, and anything rendered from them for an approver — is semantic content and falls under this invariant. On the review path it reaches the Authority Server only encrypted to the parties who may decide on it, together with its fingerprint; the AS relays ciphertext and compares fingerprints (*Proposals — what the Authority Server receives*). The per-call values a bound reads are the second deliberate exception beside the bounds, and the last one: a Gatekeeper MUST NOT send any other per-call value, in any request (*Ticket Request Schema*, rule 7).
+**Proposal content (v0.8).** The content of a proposed action — its arguments, and anything rendered from them for an approver — is semantic content and falls under this invariant. On the review path it reaches the Authority Server only encrypted to the parties who may decide on it, together with its fingerprint; the AS relays ciphertext and compares fingerprints (*Proposals — what the Authority Server receives*). The per-call values a bound reads are the second deliberate exception beside the bounds. Proposal ciphertext (unreadable to the AS) and identity the owner chose to disclose (*Identity Assurance*) are not semantic evidence sent in the clear. Beyond these, a Gatekeeper MUST NOT send any other per-call value, in any request (*Ticket Request Schema*, rule 7).
 
 Any disclosure of semantic content MUST be an explicit, human-initiated action outside the protocol. The protocol makes authorship verifiable without exposing content.
 
@@ -238,7 +238,7 @@ The relationship is the same one TLS has to the operating system it runs on: TLS
 
 An approval surface is where blind-signing risk lives. Two obligations attach to every one of them, local or remote:
 
-1. **Displayed is bound.** It MUST NOT show as approvable a consequential parameter the ticket will not hold, and MUST NOT bind one it does not show (*Conformance: what is displayed MUST be what is bound*). What may be shown *beside* the bound values — system context, the request the action answers — is specified under *Content Binding* and MUST be visibly distinguished from them.
+1. **Displayed is bound.** It MUST NOT show as approvable a consequential parameter the ticket will not hold, and MUST NOT bind one it does not show (*Conformance: what is displayed MUST be what is bound*). What may be shown *beside* the bound values — system data, the request the action answers — is specified under *Content Binding* and MUST be visibly distinguished from them.
 2. **A remote surface verifies before it shows.** A surface outside the Gatekeeper's process — a phone, a web client — receives proposal content through the disclosure channel (*Proposals — what the Authority Server receives*): ciphertext the AS relays blindly. Before it shows anything as approvable it MUST decrypt, recompute the content fingerprint and any content-binding hash, and check them against the proposal the AS holds and the *signed* mandate. A surface that renders what the AS sends without checking moves blind-signing risk from the local custody domain to the phone. A surface that cannot decrypt — no key for this device — MUST NOT offer the decision; it says the content is encrypted for another device.
 
 Device enrolment and per-device revocation for remote surfaces are not yet specified (`review.md` → *Device enrolment and revocation*).
@@ -293,12 +293,13 @@ Commitment closes alternatives and authorizes proceeding. Commitment is recorded
 
 - `automatic` — the agent acts within the bounds without per-action human approval
 - `review` — each agent action becomes a proposal that the human must approve before execution
+- `review_above_cap` — automatic below the signed caps; above them, a proposal to the signed above-cap approvers
 
 `commitment_mode` is part of the **signed** mandate payload. The Gatekeeper MUST drive its review-vs-automatic routing from the signed value, not from any unsigned metadata an Authority Server returns alongside it. If the signed `commitment_mode` requires review (`review` or `review_above_cap`) but the AS supplies no pending approvers, the two disagree — a possible commitment-mode downgrade — and the Gatekeeper MUST fail closed (refuse to auto-execute) rather than treat the action as automatic.
 
 **Mandate Owner — Who is accountable for the authorization?**
 
-Execution requires an identifiable human who is a required approver for the decision.
+Execution requires an identifiable human who is a grantor for the decision, and the mandates of every required owner (*Group roles*).
 
 ### Direction State
 
@@ -554,7 +555,7 @@ The scope schema defines operational scoping fields that stay local. Scope field
 
 Some profiles have an empty scope schema (e.g., `records` — whose bounds are all capability flags and a single cumulative count, with no operational scoping). The `scope_hash` is **always** computed and included in the mandate payload, regardless of whether the schema is empty. When scope is empty, the canonical string is `""` and `scope_hash` is the well-known sha256 of the empty string. Implementations MUST NOT omit `scope_hash` from the mandate payload — a missing `scope_hash` is a malformed mandate, not "no scope."
 
-Allowed values for an `enum` or `subset` scope field live in `constraint.values: string[]`. v0.4 permitted a top-level `field.enum: string[]` as an alternative location; v0.5 retires it for consistency with `boundType: { kind: 'enum', values: [...] }` on the bounds side. Profile authors MUST place allowed values in `constraint.values`. Implementations MUST read from `constraint.values` and MUST NOT fall back to `field.enum`. Published profile versions that still carry `field.enum` are governed by deviation rule D3 (`review.md`): the rule above stands, those versions are grandfathered, and each profile moves the values at its next version.
+Allowed values for an `enum` or `subset` scope field live in `constraint.values: string[]`. v0.4 permitted a top-level `field.enum: string[]` as an alternative location; v0.5 retires it for consistency with `boundType: { kind: 'enum', values: [...] }` on the bounds side. Profile authors MUST place allowed values in `constraint.values`. Implementations MUST read from `constraint.values` and MUST NOT fall back to `field.enum`, except for the published profile versions deviation rule D3 grandfathers (`review.md`). Published profile versions that still carry `field.enum` are governed by deviation rule D3 (`review.md`): the rule above stands, those versions are grandfathered, and each profile moves the values at its next version.
 
 #### Scope kinds (`scopeKind`, new in v0.6)
 
@@ -629,7 +630,7 @@ Window semantics are fixed by the protocol so that independent ASes computing ag
 2. An Owner Interface MAY cache consumption state from ticket responses for display, but the AS value is canonical.
 3. Cumulative resolution is deterministic: given the same ticket history and the same window definitions above, every AS yields the same totals.
 4. A bound's window is one of `daily`, `weekly`, or `monthly` with the semantics defined above. Consumption is partitioned by `actionType`; a ticket contributes to a window only for its own `actionType`, and a bound counts only the action types its `appliesTo` names (all of them when absent).
-5. **Exactly-once.** One logical execution consumes bounded authority exactly once. A retried ticket request — for any reason (lost response, network retry, agent re-run) — MUST NOT increment cumulative state or create a second ticket for the same logical execution. On the synchronous path (`automatic` mode) this is enforced by a required `idempotencyKey` (see *Ticket Issuance* in the Authority Server spec); on the review path it is enforced by the proposal's `committed → executed` transition. The two paths give the same guarantee. This is the Authority Server's half; the Gatekeeper's half — a ticket authorizes at most one execution — is *One execution per ticket* (new in v0.8).
+5. **Exactly-once.** One logical execution consumes bounded authority exactly once. A retried ticket request — for any reason (lost response, network retry, agent re-run) — MUST NOT increment cumulative state or create a second ticket for the same logical execution. On the synchronous path — any ticket request without a `proposalId`, in `automatic` mode and below the caps in `review_above_cap` — this is enforced by a required `idempotencyKey` (*Ticket Issuance*, below); on the review path it is enforced by the proposal's `committed → executed` transition. The two paths give the same guarantee. This is the Authority Server's half; the Gatekeeper's half — a ticket authorizes at most one execution — is *One execution per ticket* (new in v0.8).
 6. **Consumption counts tickets, not outcomes (new in v0.8).** Cumulative state is computed from issued tickets. An execution that fails after its ticket was issued keeps its consumption; an outcome reported afterwards MUST NOT release bounded authority, and the AS MUST NOT recount on the strength of one. The ticket is proof of authorization, not of completion, and a budget that refills on reported failure is a budget the Executor controls. Reporting outcomes at all is an open direction (`review.md`); where an implementation records them, they are display-only.
 
 ### Enforcement Authority
@@ -671,7 +672,7 @@ Different constraint categories are enforced by different components. This table
 | TTL expiry | HOC at the AS; CRE at the Gatekeeper and any verifier | `expires_at` is in the signed mandate. |
 | Revocation | **HOC** | The Gatekeeper holds no revocation list; a revoked mandate is still a valid signature. |
 | Commitment mode (`review` routing) | **CRE** against a later compromise; HOC at issuance unless owner-signed | The Gatekeeper routes from the signed `commitment_mode`, never from AS metadata; a downgrade fails closed. An AS malicious *at issuance* signs any mode — only an owner signature over the projection pins it. |
-| Required-approver coverage | **HOC** | Group configuration is an AS record. Owner signatures make *which owners signed* CRE; *which owners were required* remains HOC. |
+| Required-owner coverage | **HOC** | Group configuration is an AS record. Owner signatures make *which owners signed* CRE; *which owners were required* remains HOC. |
 | Approval of a proposal | HOC; **CRE where owner-signed** (`HAP-approval`) | An unsigned approval is an AS state transition. |
 | Mandate authenticity — who committed | HOC; **CRE where owner-signed** | The v0.6 mechanism exists for exactly this promotion. |
 | Ticket authenticity, timestamp, pre-flight ordering | **HOC** | The AS signs what the AS witnessed. Ordering is a claim about a sequence only the AS sees; a witnessed transparency log (`review.md`) is the only mechanism on the table that reaches it. |
@@ -823,9 +824,9 @@ In group mode the Authority Server MAY sign a *stricter* mode than the one reque
 
 | Field | When required | Description |
 |-------|---|---|
-| `above_cap_caps` | `commitment_mode === "review_above_cap"` | Map of bounds field name → numeric cap. Ticket requests exceeding any cap return `APPROVAL_REQUIRED`. |
-| `above_cap_approvers` | `commitment_mode === "review_above_cap"` | List of DIDs that may approve a proposal raised by a cap exceedance. Since v0.8 how many of them must approve is `above_cap_approvals`; a v0.7 mandate, which carries no count, requires all of them. |
-| `above_cap_approvals` | `commitment_mode === "review_above_cap"` (new in v0.8) | Integer ≥ 1: how many *distinct* approvers from `above_cap_approvers` must approve a proposal raised by a cap exceedance. The proposer never counts (*Group roles, approval count, and hard caps*). |
+| `above_cap_caps` | `review_above_cap`, or `review` in a group with approval-kind caps (v0.8; *Group roles*, rule 7) | Map of bounds field name → numeric cap. Ticket requests exceeding any cap return `APPROVAL_REQUIRED`. |
+| `above_cap_approvers` | `review_above_cap`, or `review` in a group with approval-kind caps (v0.8; *Group roles*, rule 7) | List of DIDs that may approve a proposal raised by a cap exceedance. Since v0.8 how many of them must approve is `above_cap_approvals`; a v0.7 mandate, which carries no count, requires all of them. |
+| `above_cap_approvals` | with `above_cap_approvers` (new in v0.8) | Integer ≥ 1: how many *distinct* approvers from `above_cap_approvers` must approve a proposal raised by a cap exceedance. The proposer never counts (*Group roles, approval count, and hard caps*). |
 | `intent_disclosure_hash` | The mandate carries an encrypted-intent disclosure object (companion spec `intent-disclosure@0.1`) | `sha256` binding the disclosure's `intent_ciphertext` and `approvers_frozen` into the signed payload, so the AS cannot alter the ciphertext or approver set undetected. Defined in `governance.md` → *Companion Specifications* → `intent-disclosure@0.1`. |
 | `subjects` | The Mandate Owner disclosed identity (new in v0.6) | Signed identity-assurance block, one entry per owner. See *Identity Assurance* below. |
 | `disclose_fields` | The owner narrows which execution-context fields tickets under this mandate may disclose (new in v0.7) | `string[]`, a subset of the profile's `disclose_fields` list. See *Ticket Disclosure Is Declared*. (The name is deliberately not `disclose`: `subjects[].disclose` already names the identity-disclosure object.) |
@@ -841,7 +842,7 @@ In group mode the Authority Server MAY sign a *stricter* mode than the one reque
 7. `mandate_owners` MUST contain exactly one entry in v0.7 and v0.8 (the authenticated owner). The entry MUST carry `did`. An entry that also carries `signature` MUST carry all of `alg`, `signed_at`, `nonce`, `binding`, `signing_surface`, and its `did` MUST be key-bearing (see *Owner Signatures*). `binding` is required-present and value-open: an AS MUST NOT reject an entry for a `binding` value it does not recognize (*Owner Signatures*).
 8. The envelope header MAY carry `kid`. When present it MUST identify the same key as `issuer` (for a `did:key` issuer, the multibase key fingerprint), and a verifier MUST reject a disagreement — the field a party writes loses to the field a party cannot forge.
 9. **Time.** `issued_at` MUST NOT be in the future by more than the verifier's clock tolerance, and `expires_at` MUST be greater than `issued_at`. A verifier SHOULD tolerate clock skew of at most 300 seconds when checking `issued_at`, `expires_at`, a ticket's `timestamp`, and an owner signature's `signed_at`; the tolerance never extends a mandate's life past `expires_at + 300 s`.
-10. **`above_cap_approvals` (v0.8).** Present exactly when `commitment_mode` is `review_above_cap`; an integer ≥ 1 and ≤ the length of `above_cap_approvers`; otherwise `ABOVE_CAP_CONFIG_INVALID`. It is a conditional projection field (*Owner Signatures*), so an owner who co-signs commits to the count as well as to the approvers.
+10. **`above_cap_approvals` (v0.8).** Present exactly when `above_cap_approvers` is: always for `review_above_cap`, and for `review` where the group configures approval-kind caps (*Group roles*, rule 7). An integer ≥ 1 and no greater than the number of `above_cap_approvers` other than the Mandate Owner; otherwise `ABOVE_CAP_CONFIG_INVALID`. It is a conditional projection field (*Owner Signatures*), so an owner who co-signs commits to the count as well as to the approvers.
 
 ### Signing Canonicalization
 
@@ -938,7 +939,7 @@ v0.4 introduced two commitment modes; v0.5 adds a third. The choice is part of t
 commitment_mode: "automatic"
 ```
 
-The agent acts within the human's bounds without per-action approval. Each tool call still produces a ticket — the AS enforces bounds and cumulative limits at ticket time. The human commits once (the mandate) and accepts that the agent will act inside those bounds for the TTL duration. Because the ticket is issued synchronously with no proposal, every automatic-mode ticket request MUST carry an `idempotencyKey` (Cumulative Tracking rule 5) so a retried call is counted exactly once.
+The agent acts within the human's bounds without per-action approval. Each tool call still produces a ticket — the AS enforces bounds and cumulative limits at ticket time. The human commits once (the mandate) and accepts that the agent will act inside those bounds for the TTL duration. Because the ticket is issued synchronously with no proposal, every ticket request without a `proposalId` MUST carry an `idempotencyKey` (Cumulative Tracking rule 5) so a retried call is counted exactly once.
 
 This is the right mode when:
 
@@ -966,7 +967,7 @@ This is the right mode when:
 commitment_mode: "review_above_cap"
 ```
 
-The agent acts automatically while every per-transaction value stays within the **group cap** for the relevant bound; the moment any value would exceed a group cap, the AS refuses to issue a ticket and instead returns an `APPROVAL_REQUIRED` error carrying the list of approvers the group has configured. The Gatekeeper then converts the call into a proposal addressed to those approvers and waits.
+The agent acts automatically while every per-transaction value stays within the **group cap** for the relevant bound; the moment any value would exceed a group cap, the AS refuses to issue a ticket and returns `APPROVAL_REQUIRED`. The Gatekeeper then converts the call into a proposal addressed to the signed `above_cap_approvers` and waits (*Group roles*, rule 6).
 
 The cap set is profile-and-group-specific. A group admin configures, per profile, a `caps` map (e.g., `{ amount_max: 1000 }`), a list of approver DIDs, and (v0.8) how many of them must approve. v0.5 lifts this from an AS-internal convention into a signed protocol mode so a third-party Gatekeeper can know in advance whether a tool call may produce a synchronous ticket or a proposal.
 
@@ -992,26 +993,30 @@ This is the right mode when:
 Two v0.7 rules combined badly in a team of ten: the granting user had to be a required approver, so every member who needed the profile was on the approver list; and `above_cap_approvers` were the DIDs that *must* approve, so every above-cap action needed every member. One list carried two roles — permission to grant, and control above the threshold — and nothing said whether the proposer could approve their own above-cap action. v0.8 separates the roles:
 
 1. **Grantors** — who may sign a mandate for the profile. In group mode the Authority Server MUST verify the Mandate Owner is a grantor (this replaces "is a required approver" for granting; `OWNER_NOT_APPROVER` keeps its code).
-2. **Above-cap approvers** — who may approve a proposal raised by a cap exceedance. Signed as `above_cap_approvers`. The list MAY be empty.
+2. **Above-cap approvers** — who may approve a proposal raised by a cap exceedance. Signed as `above_cap_approvers`, present exactly when above-cap fields are signed (rule 7). A group MAY configure none; its caps are then hard (rule 5) and no mandate is promoted (rule 7).
 3. **`above_cap_approvals`** — how many distinct approvers must approve before the proposal is committed. Signed. Default 1 when the group configures nothing.
 4. **The proposer never counts.** The Mandate Owner under whose mandate the action was proposed MUST NOT count as one of its approvers, whether or not they are on the list. A proposal is committed when `above_cap_approvals` *other* approvers have approved.
-5. **Hard caps.** A cap MAY be marked hard: a ticket request above it MUST be refused, never routed. A cap on a bound the Gatekeeper alone enforces, or on an `enum` bound, is always hard (*Group ceilings*). Where there are no above-cap approvers, or where the approvers minus the proposer cannot reach `above_cap_approvals`, every cap is hard for that mandate. The Authority Server MUST refuse to sign a mandate whose bound exceeds a hard cap (`GROUP_CAP_EXCEEDED`) rather than sign one that fails on every action; a ticket request that reaches an unreachable approval MUST be refused with `APPROVAL_IMPOSSIBLE`, not `APPROVAL_REQUIRED`, because the proposal it would raise could never commit.
-6. **The signed set is the decider set.** An above-cap proposal is addressed to the signed `above_cap_approvers`. The Authority Server MUST derive who may decide from the signed mandate and MUST NOT accept a caller-supplied approver list that is not a subset of it (`PROPOSAL_APPROVERS_INVALID`). A Gatekeeper MAY narrow the list; nothing may widen it.
-7. **Promotion.** Where a group configures approval-kind caps for a profile, an `automatic` mandate request is issued as `review_above_cap` carrying the group's caps, approvers, and count — the signed mode is what the Gatekeeper routes on, and the owner sees it before signing (*Mandate Request Schema*). An owner-chosen `review_above_cap` keeps the owner's own caps where they are stricter than the group's; the signed cap for each field is the stricter of the two.
+5. **Hard caps.** A cap MAY be marked hard: a ticket request above it MUST be refused, never routed. A cap on a bound the Gatekeeper alone enforces, or on an `enum` bound, is always hard (*Group ceilings*). Where there are no above-cap approvers, or where the approvers other than the Mandate Owner number fewer than `above_cap_approvals`, every cap is hard for that mandate and it is not signed as `review_above_cap`. The Authority Server MUST refuse to sign a mandate whose bound exceeds a hard cap (`GROUP_CAP_EXCEEDED`) rather than sign one that fails on every action.
+   **Approval that became unreachable.** The signed set is fixed at signing, but a signed approver can stop being able to decide afterwards — they left the group, or hold no reader key for the proposal (*Proposals*, rule 1). Where the approvers still able to decide, other than the proposer, number fewer than `above_cap_approvals`, the AS MUST refuse a ticket request above a cap with `APPROVAL_IMPOSSIBLE`, not `APPROVAL_REQUIRED`, because the proposal it would raise could never commit. **Precedence:** a hard-cap or per-transaction refusal (`BOUND_EXCEEDED`) is decided first; `APPROVAL_IMPOSSIBLE` and `APPROVAL_REQUIRED` apply only to a request that exceeds an approval-kind cap and nothing harder.
+6. **The signed set is the decider set.** An above-cap proposal is addressed to exactly the signed `above_cap_approvers`. The Authority Server MUST derive who may decide from the signed mandate and MUST refuse a proposal whose caller-supplied approver list, or whose `readers`, leaves out any signed approver or adds anyone else (`PROPOSAL_APPROVERS_INVALID`). Neither the Gatekeeper nor the AS may narrow the set: the Gatekeeper acts for the proposer, and a proposer who could choose which approvers see the proposal could choose a friendly one.
+7. **Promotion.** Where a group configures approval-kind caps for a profile, an `automatic` mandate request is issued as `review_above_cap` carrying the group's caps, approvers, and count — the signed mode is what the Gatekeeper routes on, and the owner sees it before signing (*Mandate Request Schema*). An owner-chosen `review_above_cap` keeps the owner's own caps where they are stricter than the group's: the signed cap for each field is the stricter of the two, and the approvers and the count are always the group's.
+   **`review` in a group with approval-kind caps** is signed as `review` **and** carries the group's `above_cap_caps`, `above_cap_approvers` and `above_cap_approvals`. Every action still waits for the Mandate Owner; a proposal whose values exceed a cap is committed only when the owner **and** `above_cap_approvals` other approvers have approved. Without this, choosing the stricter mode would remove the group's control above the threshold. In `review` mode the above-cap fields are present exactly when the group configures approval-kind caps (*Mandate Payload*, rule 10).
 
-A group whose grantors equal its approvers, with `above_cap_approvals` equal to the list length, behaves exactly as a v0.7 group did. The group record itself remains an AS record (*AS Group Configuration*); what of it the owner agreed to travels in the signed mandate and, where the owner co-signs, in the projection.
+8. **Required owners** — the members each of whose mandate must exist before a ticket issues (*Multi-Owner Coverage Rule*). A third role, separate from the other two: a grantor *may* sign, a required owner *must*. Default: none beyond the granting owner. Required-owner coverage is checked at ticket time (`OWNER_NOT_COVERED`, `COVERAGE_INSUFFICIENT`).
+
+A group whose grantors, required owners and approvers are one list, with `above_cap_approvals` equal to the list length, behaves exactly as a v0.7 group with that `requiredApprovers` list did. The group record itself remains an AS record (*AS Group Configuration*); what of it the owner agreed to travels in the signed mandate and, where the owner co-signs, in the projection.
 
 ### Normative Rules
 
 1. `commitment_mode` MUST be present in the signed mandate payload.
 2. Changing the commitment mode requires a new mandate (the AS must re-sign).
-3. In `review` mode, the Gatekeeper MUST NOT request a ticket before the human has explicitly approved the specific action.
+3. In `review` mode, the Gatekeeper MUST NOT request a ticket before the human has explicitly approved the specific action: it submits a proposal (*Proposals — what the Authority Server receives*), and requests the ticket with the committed `proposalId`.
 4. In `automatic` mode, the Gatekeeper MUST request a ticket for every tool call before executing.
 5. The AS MUST NOT issue a ticket for an action that has not been explicitly approved when the mandate is in `review` mode. Approval flows are AS-defined; the protocol requires only that approval precede ticket issuance.
-6. In `review_above_cap` mode, the Gatekeeper MUST request a ticket synchronously for every call. If the AS returns `APPROVAL_REQUIRED`, the Gatekeeper MUST submit a proposal targeting the approvers named in the AS response (or, defensively, the `above_cap_approvers` from the signed mandate). On approval, the ticket request is replayed with the resulting `proposalId`.
+6. In `review_above_cap` mode, the Gatekeeper MUST request a ticket synchronously for every call. If the AS returns `APPROVAL_REQUIRED`, the Gatekeeper MUST submit a proposal addressed to the signed `above_cap_approvers` (*Group roles*, rule 6). On approval, it requests the ticket with the committed `proposalId`.
 7. `above_cap_caps` keys MUST reference fields declared in the profile's `boundsSchema`. The AS MUST reject mandates where they do not.
-8. **A profile can restrict the modes (v0.8).** A profile MAY declare `commitment_modes: string[]`. When it does, the Authority Server MUST refuse to sign a mandate whose `commitment_mode` is not admitted (`COMMITMENT_MODE_NOT_ALLOWED`). The declaration is read fail-closed: an empty list, a value that is not a list, or entries that are not commitment modes narrow what is allowed and never widen it — a declaration with no valid entry admits no mandate. `review_above_cap` is admitted if and only if `automatic` is listed: it is automatic below the caps and stricter above them, so a profile that admits `automatic` has admitted it, and a profile that lists only `review` has not (actions below the caps would run without approval). A surface that offers commitment modes SHOULD offer only the admitted ones. The field constrains what is signed, not what the Gatekeeper does with it: routing still follows the signed `commitment_mode`. A profile without the field admits every mode.
-9. In group mode, the Authority Server MUST verify the Mandate Owner is a **grantor** for the profile before signing (*Group roles*), MUST sign `above_cap_approvals` with the approvers, MUST refuse a bound above a hard cap (`GROUP_CAP_EXCEEDED`), and MUST NOT count the proposer among a proposal's approvers.
+8. **A profile can restrict the modes (v0.8).** A profile MAY declare `commitment_modes: string[]`. When it does, the Authority Server MUST refuse to sign a mandate whose `commitment_mode` is not admitted (`COMMITMENT_MODE_NOT_ALLOWED`). The declaration is read fail-closed: an empty list, a value that is not a list, or entries that are not commitment modes narrow what is allowed and never widen it — a declaration with no valid entry admits no mandate. `review_above_cap` is admitted if and only if `automatic` is listed: it is automatic below the caps and stricter above them, so a profile that admits `automatic` has admitted it, and a profile that lists only `review` has not (actions below the caps would run without approval). A surface that offers commitment modes SHOULD offer only the admitted ones. The field constrains what is signed, not what the Gatekeeper does with it: routing still follows the signed `commitment_mode`. An entry `review_above_cap` in the list is ignored: the mode follows from `automatic` alone. A profile without the field admits every mode.
+9. In group mode the Authority Server applies *Group roles* rules 1–8 before signing; rule 7 there says which mode and which above-cap fields are signed.
 
 ---
 
@@ -1071,8 +1076,7 @@ The Gatekeeper sends the following to the AS when requesting a mandate ticket:
   "actionType": "charge",
   "idempotencyKey": "uuid",
   "executionContext": {
-    "amount": 5,
-    "currency": "EUR"
+    "amount": 5
   }
 }
 ```
@@ -1087,7 +1091,7 @@ The Gatekeeper sends the following to the AS when requesting a mandate ticket:
 | `idempotencyKey` | A caller-supplied unique key identifying this logical execution. The AS MUST treat two requests bearing the same `idempotencyKey` as the same logical execution and return the original ticket without re-consuming bounds (Cumulative Tracking rule 5). |
 | `executionContext` | The specific values for this call: exactly the fields referenced by `boundType.of` for `per_transaction` and `cumulative_sum` bounds, and nothing else (rule 7). |
 | `contentHash`, `contentBinding` | OPTIONAL (v0.6). The content-binding hash the Gatekeeper computed and the declaration it computed it under; the AS copies both into the signed ticket (*Content Binding*). Never a field value. |
-| `proposalId` | Review path. The committed proposal this request executes; replaces `idempotencyKey` (*Proposal / Review / Approval Lifecycle*). |
+| `proposalId` | Review path. The committed proposal this request executes; replaces `idempotencyKey` (*Proposal / Review / Approval Lifecycle*). The request carries the same `actionType` and wire `executionContext` as the proposal did; the AS refuses any difference (`PROPOSAL_MISMATCH`). |
 | `proposalContentHash` | Review path (new in v0.8). The fingerprint of the proposal's content, as submitted with the proposal; the AS compares it and copies it into the signed ticket (*Proposals — what the Authority Server receives*). |
 
 **Normative rules on identifiers:**
@@ -1098,7 +1102,7 @@ The Gatekeeper sends the following to the AS when requesting a mandate ticket:
 4. `actionType` MUST be a member of the profile's `boundsSchema.actionTypes` registry. The AS MUST reject other values with `INVALID_ACTION_TYPE`.
 5. The ticket request body MUST NOT include a `path` field. v0.5+ ASes MUST reject requests carrying it. (v0.4 retired `path` from bounds; v0.5 finishes the removal across all wire formats.)
 6. AS storage keys MAY combine `boundsHash` with the mandate owner's identity (e.g., `${boundsHash}:${userId}`) to disambiguate two members of the same group committing to identical bounds. This is an AS implementation detail and does not affect the wire contract: ticket requests still use `boundsHash` plus the AS's authenticated request context.
-7. **Only what a bound reads travels (new in v0.8).** `executionContext` MUST contain only the fields some `boundType.of` of the profile names (`per_transaction` and `cumulative_sum` bounds), plus `action_type` where a manifest places it there. A value that exists to satisfy a *scope* constraint — recipients, domains, environments, calendars — is checked locally and MUST NOT be transmitted, in a ticket request or in a proposal: the AS holds no plaintext allowlist to compare it against, so the disclosure buys nothing and costs the privacy the bounds/scope split exists to protect. A content binding contributes `contentHash` and `contentBinding`, never a bound field's value. A field's presence on the wire follows from a bound that reads it, never from a manifest mapping that happens to produce it. The Gatekeeper MUST enforce this before any AS call; an AS MAY refuse a request carrying a key no bound of the profile reads (`MALFORMED_TICKET_REQUEST`). Hashing the values instead is not an answer — recipients and environments are short and enumerable, and an unsalted hash falls to a dictionary.
+7. **Only what a bound reads travels (new in v0.8).** `executionContext` MUST contain only the fields some `boundType.of` of the profile names (`per_transaction` and `cumulative_sum` bounds), plus `action_type` where a manifest places it there — the one carve-out, stated here and pointed to elsewhere. A value that exists to satisfy a *scope* constraint — recipients, domains, environments, calendars — is checked locally and MUST NOT be transmitted, in a ticket request or in a proposal: the AS holds no plaintext allowlist to compare it against, so the disclosure buys nothing and costs the privacy the bounds/scope split exists to protect. A content binding contributes `contentHash` and `contentBinding`, never a bound field's value. A field's presence on the wire follows from a bound that reads it, never from a manifest mapping that happens to produce it. The Gatekeeper MUST enforce this before any AS call; an AS MAY refuse a request carrying a key no bound of the profile reads (`MALFORMED_TICKET_REQUEST`). Hashing the values instead is not an answer — recipients and environments are short and enumerable, and an unsalted hash falls to a dictionary.
 8. **Reserved keys never travel.** A key beginning with `_` MUST NOT appear in `executionContext`; an AS MUST refuse one (`MALFORMED_TICKET_REQUEST`). Such keys are advisory metadata for the Owner Interface (*Tool-Gating Manifests*, rule 5).
 
 ### Ticket Payload Schema
@@ -1114,8 +1118,7 @@ The Gatekeeper sends the following to the AS when requesting a mandate ticket:
   "action": "create_payment_link",
   "actionType": "charge",
   "executionContext": {
-    "amount": 5,
-    "currency": "EUR"
+    "amount": 5
   },
   "cumulativeState": {
     "daily":   { "amount": 45,  "count": 8 },
@@ -1152,17 +1155,18 @@ The Gatekeeper sends the following to the AS when requesting a mandate ticket:
 | `contentBinding` | OPTIONAL (new in v0.6) — the profile's `content_binding` declaration echoed into the signed ticket, including the bound field list for a field binding, so a verifier knows exactly what the hash covers. |
 | `subjects` | OPTIONAL (new in v0.6) — the disclosed subset of the mandate's signed identity block, copied so the ticket self-verifies. See *Identity Assurance*. |
 | `proposalId` | OPTIONAL (new in v0.6) — on the review path, the proposal this ticket executed, bound into the signed payload. |
-| `approvalSignature` | OPTIONAL (new in v0.6) — on the review path, the owner's `HAP-approval` signature for the executed proposal, as the object `{ "alg": "EdDSA", "signature": "base64url…", "nonce": "…", "decided_at": … }` together with the approval's `decision` and `content_hash` reconstructible from the ticket (`proposalId`, `mandateId`, `contentHash`), so a holder verifies it against the owner's DID without the AS. MUST be present when the AS verified an approval signature before issuing. A hash of the signature is NOT an acceptable substitute — it would be checkable only by fetching the signature from the AS. See *Owner Signatures* → *Approvals*. |
+| `approvalSignature` | OPTIONAL (new in v0.6) — on the review path, the owner's `HAP-approval` signature for the executed proposal, as the object `{ "alg": "EdDSA", "signature": "base64url…", "nonce": "…", "decided_at": … }` together with the approval's `decision` and `content_hash` reconstructible from the ticket (`proposalId`, `mandateId`, and `contentHash` where the profile binds content, else `proposalContentHash`), so a holder verifies it against the owner's DID without the AS. MUST be present when the AS verified an approval signature before issuing. A hash of the signature is NOT an acceptable substitute — it would be checkable only by fetching the signature from the AS. See *Owner Signatures* → *Approvals*. |
+| `approvalSignatures` | OPTIONAL (new in v0.8) — on an above-cap proposal, one entry per approval the AS verified before issuing: `{ "approver_did", "alg", "signature", "nonce", "decided_at" }`, each the signature of that approver's `HAP-approval`. MUST be present when the AS verified approver signatures. A verifier checks that at least `above_cap_approvals` entries come from distinct DIDs in the signed `above_cap_approvers`, none of them the proposer's. |
 | `signature` | Ed25519 signature of the canonical ticket payload, encoded as base64url without padding |
 
-**Signature:** The AS signs the ticket with the same Ed25519 key used for mandates. The signing input is produced by the **Signing Canonicalization** rules above (sorted keys, no whitespace, base64url-encoded signature). The ticket's own `signature` field MUST NOT be present in the bytes being signed.
+**Signature:** The AS signs the ticket with the same Ed25519 key used for mandates. A ticket carries no `typ`; every other object this key signs does (`HAP-mandate` in its header, `HAP-ticket-projection`). A ticket verifier MUST reject an object carrying `typ`, so a projection or any other signed object can never be accepted as a ticket. The signing input is produced by the **Signing Canonicalization** rules above (sorted keys, no whitespace, base64url-encoded signature). The ticket's own `signature` field MUST NOT be present in the bytes being signed.
 
 **Ticket payload — normative rules:**
 
 1. The persisted ticket MUST contain `actionType`. v0.4 implementations that omitted it MUST be migrated.
 2. The ticket MUST NOT contain a `path` field. Persisted v0.4 tickets that included `path` MAY remain unchanged for audit, but new tickets MUST NOT include it.
 3. `groupId` is `null` only when the AS runs in true personal mode (no group construct at all). AS implementations MAY model personal mode as a "group of one" with a synthesized group ID; in that case `groupId` is non-null and reflects the synthesized identifier.
-4. **A ticket names the request it answers (v0.8).** When the ticket request carried an `idempotencyKey`, the AS MUST copy it verbatim into the signed payload, including on an idempotent replay. A Gatekeeper MUST refuse to execute under a ticket whose `idempotencyKey` is absent or differs from the key it sent (`TICKET_REQUEST_MISMATCH`), and SHOULD refuse a ticket whose `timestamp` lies outside a short freshness window — 300 seconds either way, the skew tolerance of Mandate rule 9. Exactly-once (*Cumulative Tracking* rule 5) holds at the Authority Server; this is what the Gatekeeper holds it against, and it makes the chain request → ticket → execution record checkable end to end. On the review path the signed `proposalId` does the same job. A ticket issued under v0.7 carries no key and is read under its own version.
+4. **A ticket names the request it answers (v0.8).** When the ticket request carried an `idempotencyKey`, the AS MUST copy it verbatim into the signed payload, including on an idempotent replay. A Gatekeeper that sent a key MUST refuse to execute under a ticket whose `idempotencyKey` is absent or differs from it (`TICKET_REQUEST_MISMATCH`), and SHOULD refuse a freshly issued ticket whose `timestamp` lies outside a short freshness window — 300 seconds either way, the skew tolerance of Mandate rule 9. A **replay** is exempt from the freshness check: the AS returns the original ticket with its original `timestamp`, beside it (unsigned) `idempotent: true`, and the Gatekeeper treats it under *One execution per ticket*, rule 2, rather than refusing a ticket whose bounds were already consumed. Exactly-once (*Cumulative Tracking* rule 5) holds at the Authority Server; this is what the Gatekeeper holds it against, and it makes the chain request → ticket → execution record checkable end to end. On the review path the signed `proposalId` does the same job. A ticket issued under v0.7 carries no key and is read under its own version.
 5. **`proposalContentHash` (v0.8).** On the review path, where the proposal carried a content fingerprint (*Proposals — what the Authority Server receives*), the AS MUST copy it into the signed ticket, so a holder of the content ties the ticket to what was decided on without asking the AS. Where the profile declares a content binding the ticket carries both `contentHash` and `proposalContentHash`: they are different objects (the binding covers a declared subset chosen so the intended verifier can reproduce it; the fingerprint covers the whole proposal content as the approver saw it), and they may coincide only when the binding is `jcs` over the whole payload.
 
 ### Cumulative State
@@ -1195,7 +1199,7 @@ Any party holding the **complete signed ticket** and the AS's public key can ver
 
 A valid ticket proves: this AS authorized this specific execution, under this mandate, at this time, with these cumulative totals.
 
-**The holder is the verifier.** A single Ed25519 signature covers the whole ticket, so verification requires every signed field. A **redacted public view** of a ticket (one that hides `userId`, `cumulativeState`, `limits`, or recipients) cannot be independently re-verified from the public view alone — a "signature valid" indicator on such a page is the AS re-verifying its own signature. For a private action the holder (the recipient of the mail, the pipeline receiving the dispatch, the issuer's own log) is the party that matters, so the guarantee holds where it is needed. Since v0.8 a *public* view can be made verifiable: the AS signs a public-only projection separately (*Public ticket projection*, next). A redacted view that is **not** such a projection MUST NOT be presented as independently verified, and a "signature valid" indicator on one is the AS re-verifying its own signature.
+**The holder is the verifier.** A single Ed25519 signature covers the whole ticket, so verification requires every signed field. A **redacted public view** of a ticket (one that hides `userId`, `cumulativeState`, `limits`, or recipients) cannot be independently re-verified from the public view alone — such an indicator is the AS re-verifying its own signature. For a private action the holder (the recipient of the mail, the pipeline receiving the dispatch, the issuer's own log) is the party that matters, so the guarantee holds where it is needed. Since v0.8 a *public* view can be made verifiable: the AS signs a public-only projection separately (*Public ticket projection*, next). A redacted view that is **not** such a projection MUST NOT be presented as independently verified, and a "signature valid" indicator on one is the AS re-verifying its own signature.
 
 ### Public ticket projection — `HAP-ticket-projection` (new in v0.8)
 
@@ -1226,9 +1230,9 @@ Where a ticket is shown to parties other than its holder — a public page, a ma
 
 **Construction (normative):**
 
-1. `id`, `mandateId`, `timestamp`, `profileId`, `actionType`, `boundsHash`, `contentHash`, `contentBinding`, and `subjects` are copied **verbatim** from the signed ticket; each of the optional ones is present exactly when the ticket carries it. `executionContext` contains exactly the fields the governing `disclose_fields` list names (*Ticket Disclosure Is Declared*) and is absent when that list is empty. `owner` is the mandate's `mandate_owners` entry, present exactly when that entry carries a signature. `valid_until` is set by the AS at projection time. Nothing else may appear: no `userId`, `cumulativeState`, `limits`, `action`, or undeclared execution-context field — the projection MUST NOT widen what the ticket discloses.
+1. `typ` is `"HAP-ticket-projection"`, and a projection verifier MUST require it. `version`, `issuer`, `id`, `mandateId`, `timestamp`, `profileId`, `actionType`, `boundsHash`, `contentHash`, `contentBinding`, and `subjects` are copied **verbatim** from the signed ticket; each of the optional ones is present exactly when the ticket carries it. `executionContext` contains exactly the fields the governing `disclose_fields` list names (*Ticket Disclosure Is Declared*) and is absent when that list is empty. `owner` is the mandate's `mandate_owners` entry, present exactly when that entry carries a signature. `valid_until` is set by the AS at projection time. Nothing else may appear: no `userId`, `cumulativeState`, `limits`, `action`, or undeclared execution-context field — the projection MUST NOT widen what the ticket discloses.
 2. Signing is the same as for the ticket: JCS of the object without `signature`, Ed25519 by the key `issuer` names, base64url without padding. `issuer` names the key that signed the projection, which SHOULD be the ticket's; a verifier trusts it by the same policy it applies to tickets.
-3. **Validity window.** A projection is a bearer proof once it is handed to a third party, and idempotency is retry-dedup, not replay defence. A relying party MUST refuse a projection presented after `valid_until`, and where repeating the action is itself the harm MUST consume the projection's `id` atomically (`governance.md` → *Deployment Security Profile*, item 5). The AS chooses the window; it SHOULD be short for machine verification and MUST NOT exceed the ticket's `retention_minimum`.
+3. **Validity window.** A projection is a bearer proof once it is handed to a third party, and idempotency is retry-dedup, not replay defence. A relying party MUST refuse a projection presented after `valid_until`, and where repeating the action is itself the harm MUST consume the projection's `id` atomically (`governance.md` → *Deployment Security Profile*, item 5). The AS chooses the window; it SHOULD be short for machine verification and MUST NOT end later than 86 400 seconds after the ticket's `timestamp`.
 4. **What the owner entry is for.** It lets the chain *start* from the public view — ticket → mandate → owner's own key. It is verifiable only against the mandate obtained through *Verification API for Third Parties* (the owner signed the mandate projection, which the ticket projection cannot reconstruct), and the projection MUST NOT claim more than that.
 5. **What it proves.** A valid projection proves that this AS issued a ticket with these public fields, under this mandate, at this time, for content with this hash. It does not carry cumulative state or the private execution context, and cannot prove them; a holder who needs those verifies the complete ticket.
 
@@ -1320,25 +1324,25 @@ An implementation MUST NOT bind a field the transport will alter in delivery. Th
 
 An implementation MUST NOT display, on an approval surface, a consequential parameter it does not bind; and MUST NOT bind a parameter it does not display. **Bound but not displayed** means the human committed to something never seen. **Displayed but not bound** means the Executor may alter it after approval — the reviewer's attention was spent on a value the ticket does not hold. Where another mechanism independently constrains a displayed parameter (a pipeline that checks the repository it runs in; review-mode proposal matching that pins the whole argument set), that MUST be stated in the profile or manifest rather than left to coincidence. This is a conformance requirement, not a presentation guideline — and it is the one place where the "UI hints MUST NOT influence enforcement" rule below does not apply, because here the display *is* part of the enforcement claim. The protocol concedes elsewhere that it verifies commitment, not comprehension; that concession is only defensible if what was shown and what was signed are the same thing.
 
-### What may be shown next to what is bound — system context (new in v0.8)
+### What may be shown next to what is bound — system data (new in v0.8)
 
-An agent proposes a quote with `customer_id: cust-1` and a line `item_id: item-1, qty: 10`. The approval surface shows exactly those bound values; they are correct, complete, and mean nothing to the person deciding. The rule above says what may not be shown as approvable; it does not say what may be shown *beside* the bound values to make them understandable. An approval surface MAY show **system context**: data the Gatekeeper reads from the target system before approval — the customer's name and credit limit, the article's name, list price, and stock — and never data supplied by the agent.
+An agent proposes a quote with `customer_id: cust-1` and a line `item_id: item-1, qty: 10`. The approval surface shows exactly those bound values; they are correct, complete, and mean nothing to the person deciding. The rule above says what may not be shown as approvable; it does not say what may be shown *beside* the bound values to make them understandable. An approval surface MAY show **system data**: data the Gatekeeper reads from the target system before approval — the customer's name and credit limit, the article's name, list price, and stock — and never data supplied by the agent.
 
-1. System context MUST be visibly distinguished from bound values. A reader must be able to tell *this is what you approve* from *this is what the system currently says about it*.
-2. System context MUST NOT replace a bound value. A name is shown next to the id it resolves, never instead of it. Removing every system-context element leaves every bound value visible.
-3. System context MUST come from the Gatekeeper's own read of the target system. Text from the agent is never system context, and no agent-supplied text may appear as if it came from elsewhere.
-4. Where system context decides whether the action is acceptable — the state of the record the action changes, its version or revision — the implementation SHOULD bind it: by the record's version carried in the approved action, or by re-reading before execution and refusing on any difference. Context that only explains a bound value need not be bound.
+1. System data MUST be visibly distinguished from bound values. A reader must be able to tell *this is what you approve* from *this is what the system currently says about it*.
+2. System data MUST NOT replace a bound value. A name is shown next to the id it resolves, never instead of it. Removing every system-context element leaves every bound value visible.
+3. System data MUST come from the Gatekeeper's own read of the target system. Text from the agent is never system data, and no agent-supplied text may appear as if it came from elsewhere.
+4. Where system data decides whether the action is acceptable — the state of the record the action changes, its version or revision — the implementation SHOULD bind it: by the record's version carried in the approved action, or by re-reading before execution and refusing on any difference. Context that only explains a bound value need not be bound.
 5. The surface SHOULD state when the context was read.
 
-The display rule protects the commitment — what the ticket holds. System context is not part of the commitment, and rule 1 keeps it from being mistaken for one; rule 4 covers the case where the context *is* the subject of the decision. Which reads an implementation makes is implementation configuration (in the reference implementation, the connector manifest), not protocol.
+The display rule protects the commitment — what the ticket holds. System data is not part of the commitment, and rule 1 keeps it from being mistaken for one; rule 4 covers the case where the context *is* the subject of the decision. Which reads an implementation makes is implementation configuration (in the reference implementation, the connector manifest), not protocol.
 
 ### The request an action answers, and binding what was shown (new in v0.8)
 
-The person approving a reply or a quote needs the **request** it answers — the customer's email, a logged call — and the counterparty's latest entries, not only the bound values and system context. Three rules follow.
+The person approving a reply or a quote needs the **request** it answers — the customer's email, a logged call — and the counterparty's latest entries, not only the bound values and system data. Three rules follow.
 
 1. **The agent may point, but not speak.** Which request an action answers is known to the agent, not to the Gatekeeper. The agent MAY supply a **reference** — system, record kind, id — in a reserved `_`-prefixed argument. The Gatekeeper reads the record itself and shows it; the shown text is the system's, but the *choice* of record is the agent's claim, and the surface MUST label it so ("linked by the agent"). A reference that cannot be read MUST NOT block the action; the surface says it could not be read. A reference is not a parameter of the action: it MUST NOT enter the execution context, MUST NOT enter a content binding's hashed object, and MUST NOT reach the Executor (*Tool-Gating Manifests*, rule 5). A ticket's `contentHash` therefore never covers bytes the Executor did not receive.
 2. **Context the Gatekeeper finds on its own.** The Gatekeeper MAY show the latest entries it can read for the same counterparty, matched only on declared exact keys — never on time or wording. The surface MUST NOT present them as related to this request: same counterparty is not same matter. Text an agent wrote earlier through the Gatekeeper and now read back is still the agent's text, and the surface MUST mark it so.
-3. **Binding what was shown.** System context and these reads are unbound and change after the decision. An implementation MAY let a decision carry a fingerprint of exactly what the surface displayed — `shown_hash`, `sha256` over a canonical serialization of the displayed snapshot — keep the snapshot in the decider's custody, and have the Authority Server record the fingerprint **per decider**, unsigned, without ever seeing the content. A later decision MUST NOT overwrite an earlier decider's fingerprint. Afterwards the snapshot and the fingerprint show what that decider saw. This does not extend *what is displayed MUST be what is bound* — it covers more and proves less: the snapshot is held by the decider's side and the fingerprint is recorded, not signed, so it shows the snapshot is unchanged since the decision, not that it was honestly produced. A decider-signed decision (`HAP-approval` carrying the fingerprint) would strengthen it.
+3. **Binding what was shown.** System data and these reads are unbound and change after the decision. An implementation MAY let a decision carry a fingerprint of exactly what the surface displayed — `shown_hash`, `sha256` over a canonical serialization of the displayed snapshot — keep the snapshot in the decider's custody, and have the Authority Server record the fingerprint **per decider**, unsigned, without ever seeing the content. A later decision MUST NOT overwrite an earlier decider's fingerprint. `shown_hash` is not a field of `HAP-approval`; it travels beside the decision. Afterwards the snapshot and the fingerprint show what that decider saw. This does not extend *what is displayed MUST be what is bound* — it covers more and proves less: the snapshot is held by the decider's side and the fingerprint is recorded, not signed, so it shows the snapshot is unchanged since the decision, not that it was honestly produced. A decider-signed decision (`HAP-approval` carrying the fingerprint) would strengthen it.
 
 ### Verification, and what a match does not prove
 
@@ -1364,7 +1368,7 @@ This is the same fail-closed reading used throughout this specification: an unse
 
 ### Principle
 
-> Profiles define what bounds and scope exist. The AS (per group) defines who must commit. The AS verifies identity and required-approver coverage before signing.
+> Profiles define what bounds and scope exist. The AS (per group) defines who must commit. The AS verifies identity and required-owner coverage before signing.
 
 The protocol separates three concerns:
 
@@ -1373,7 +1377,7 @@ The protocol separates three concerns:
 | **Profile** | What bounds and scope fields exist | `charge@0.5` defines `amount_max`, `currency`, `action_type` |
 | **AS group config** | Who must commit for which profile | "For group acme, the `charge` profile requires alice's mandate" |
 
-Required-approver sets are organizational policy, not protocol semantics. They live on the AS, configured per group.
+Group roles — grantors, required owners, above-cap approvers — are organizational policy, not protocol semantics. They live on the AS, configured per group.
 
 ### Identity Is Not Authority
 
@@ -1381,7 +1385,7 @@ Required-approver sets are organizational policy, not protocol semantics. They l
 
 An identity system may prove that a Mandate Owner is a specific natural person — that is necessary, but not sufficient. HAP additionally requires that this verified identity is *authorized* to act for the relevant profile, group, or organizational context. In group mode, that authority is resolved by the Authority Server's required-approver configuration (or by trusted authority credentials the AS accepts); in personal mode, the user commits directly for their own actions.
 
-This is why authentication is out of HAP Core scope (below) while required-approver coverage is enforced by the AS: identity systems answer *"who is this?"*; HAP answers *"is this person authorized to commit this action, and is there proof?"*
+This is why authentication is out of HAP Core scope (below) while required-owner coverage is enforced by the AS: identity systems answer *"who is this?"*; HAP answers *"is this person authorized to commit this action, and is there proof?"*
 
 ### Authentication
 
@@ -1403,7 +1407,7 @@ The verified DID is recorded in the mandate's `mandate_owners`. The AS MUST NOT 
 
 ### AS Group Configuration
 
-Required approvers moved from profiles to AS group configuration in v0.5. v0.8 names two roles per profile and the caps between them (*Group roles, approval count, and hard caps*):
+Required approvers moved from profiles to AS group configuration in v0.5. v0.8 names three roles per profile and the caps between them (*Group roles, approval count, and hard caps*):
 
 ```json
 {
@@ -1411,6 +1415,7 @@ Required approvers moved from profiles to AS group configuration in v0.5. v0.8 n
   "profiles": {
     "charge@0.5": {
       "grantors": ["did:key:alice", "did:key:bob"],
+      "required": [],
       "approvers": ["did:key:carol"],
       "approvals": 1,
       "caps": {
@@ -1422,7 +1427,7 @@ Required approvers moved from profiles to AS group configuration in v0.5. v0.8 n
 }
 ```
 
-The shape is illustrative — group configuration is an AS record, not a wire artifact. What is normative is the roles, and which of them the signed mandate carries: `approvers` and `approvals` become `above_cap_approvers` and `above_cap_approvals`; `caps` of kind `approval` become `above_cap_caps`; caps of kind `hard` are a signing-time refusal (`GROUP_CAP_EXCEEDED`) and leave no field, because the signed bound value is itself below them. The v0.7 form — one `requiredApprovers` list per profile — reads as grantors and approvers being the same list with `approvals` equal to its length.
+The shape is illustrative — group configuration is an AS record, not a wire artifact. What is normative is the roles, and which of them the signed mandate carries: `required` is the required owners, checked at ticket time and never signed; `approvers` and `approvals` become `above_cap_approvers` and `above_cap_approvals`; `caps` of kind `approval` become `above_cap_caps`; caps of kind `hard` are a signing-time refusal (`GROUP_CAP_EXCEEDED`) and leave no field, because the signed bound value is itself below them. The v0.7 form — one `requiredApprovers` list per profile — reads as grantors, required owners and approvers being the same list, with `approvals` equal to its length.
 
 The profile defines *what* fields exist. The group admin defines *who* may grant and *who* approves above the caps for each profile.
 
@@ -1430,8 +1435,8 @@ The profile defines *what* fields exist. The group admin defines *who* may grant
 
 **Personal mode** (no group):
 - All profiles are available to the user
-- No required approvers — the single user commits directly
-- The AS skips approver-coverage checks
+- No required owners — the single user commits directly
+- The AS skips coverage checks
 - The mandate's `mandate_owners` records the user's own DID
 
 **Group mode:**
@@ -1448,19 +1453,7 @@ This separation means:
 
 ### Authorization Mapping (Group Mode)
 
-Within a group, the AS holds, per profile, the members whose mandate is required:
-
-```json
-{
-  "group": "acme-corp",
-  "requiredApprovers": {
-    "charge@0.5": ["did:key:alice", "did:key:bob"],
-    "purchase@0.5": ["did:key:carol"]
-  }
-}
-```
-
-The profile defines WHAT bounds exist. The group config defines WHO must commit for each profile — and, since v0.8, who approves above the caps and how many (*Group roles, approval count, and hard caps*). These are separate concerns:
+The group configuration above is the mapping: per profile, who may grant, who must hold a mandate, who approves above the caps, and how many. The profile defines WHAT bounds exist; the group configuration defines WHO. These are separate concerns:
 
 - Changing the profile (adding a bound) is a **protocol change**
 - Changing the AS config (adding a person) is a **personnel change**
@@ -1525,7 +1518,7 @@ Validation: `disclose.name` only when `assurance:"high"`; `as_vouched ⇒ trust_
 Disclosure is the owner's choice per authorization. In practice whether the name is attached then depends on whichever surface builds the request, and a path that never asks — an agent-proposed mandate turned into a request by software — silently drops the choice the owner meant to make for every mandate. An Authority Server MAY therefore hold a **standing disclosure choice** on the owner's account: *attach my verified name to every mandate I give*.
 
 1. Only the owner can set it, in an authenticated session, as an explicit act. It MUST NOT be on by default, and the owner can withdraw it at any time.
-2. While it is set, the AS MUST stamp the disclosed `subjects` entry on every mandate that owner gives at `high`, whatever the request carries. A request cannot opt out of a standing choice; the owner withdraws the choice instead.
+2. While it is set, the AS MUST stamp the disclosed `subjects` entry on every mandate that owner gives at `high`, whatever the request carries, subject to the method rules above (*Validation*: an `eudi` entry still requires its owner signature). A request cannot opt out of a standing choice; the owner withdraws the choice instead.
 3. Withdrawing it affects only mandates given afterwards. Signed mandates and their tickets stay as issued.
 4. A surface that builds a mandate request SHOULD show the owner, before signing, that the name will be attached.
 
@@ -1596,7 +1589,7 @@ The human signs *before* the AS does, so they cannot sign the finished mandate �
 }
 ```
 
-Canonicalization is RFC 8785 JCS → SHA-256, versioned via `version`; a verifier MUST pin the version. Field absence is defined, not incidental. Conditional fields, each included exactly when the mandate carries it and omitted otherwise: `intent_disclosure_hash`; `above_cap_caps`, `above_cap_approvers`, and (v0.8) `above_cap_approvals` (when `commitment_mode` is `review_above_cap` — all three, always together); `disclose_fields` (when the mandate narrows disclosure). A projection that omits a conditional field the mandate carries, or carries one the mandate omits, does not reconstruct and the signature MUST fail.
+Canonicalization is RFC 8785 JCS → SHA-256, versioned via `version`; a verifier MUST pin the version. Field absence is defined, not incidental. Conditional fields, each included exactly when the mandate carries it and omitted otherwise: `intent_disclosure_hash`; `above_cap_caps`, `above_cap_approvers`, and (v0.8) `above_cap_approvals` (when the mandate carries them: under `review_above_cap`, or `review` in a group with approval-kind caps (v0.8; *Group roles*, rule 7) — all three, always together); `disclose_fields` (when the mandate narrows disclosure). A projection that omits a conditional field the mandate carries, or carries one the mandate omits, does not reconstruct and the signature MUST fail.
 
 Every field except `typ`, `owner_did`, and `nonce` exists verbatim in the mandate payload, so a verifier **reconstructs the projection from the mandate it holds** and checks the signature over it — no side channel, no second fetch. `expires_at` exists at signing time because the co-signing owner chooses it and sends it in the request (*Mandate Request Schema*); the AS signs that value or refuses. `owner_did` MUST equal the `did` of the `mandate_owners` entry carrying the signature; a verifier MUST reject an entry whose signature verifies only over a projection naming a different `owner_did`.
 
@@ -1653,6 +1646,7 @@ In `review` mode the mandate is a container; the per-action approval is where th
 {
   "typ": "HAP-approval",
   "version": "0.8",
+  "approver_did": "did:key:…",
   "proposal_id": "…",
   "mandate_id": "…",
   "decision": "commit",
@@ -1662,7 +1656,7 @@ In `review` mode the mandate is a container; the per-action approval is where th
 }
 ```
 
-The AS MUST verify the approval signature before issuing the ticket for the proposal, and the ticket MUST carry the approval signature itself in the signed payload (field `approvalSignature` — see *Ticket Payload Schema*; never a hash of it, which a holder could check only by asking the AS) — so the ticket proves the human approved **this content**, rather than that the AS says a proposal reached its approved state. Approval transport and storage remain AS-defined, as before.
+`approver_did` (new in v0.8) names who decided — the Mandate Owner in `review` mode, or an above-cap approver — and the signature verifies under the key that DID carries. The AS MUST verify the approval signature before issuing the ticket for the proposal, and the ticket MUST carry the approval signature itself in the signed payload (field `approvalSignature` — see *Ticket Payload Schema*; never a hash of it, which a holder could check only by asking the AS) — so the ticket proves the human approved **this content**, rather than that the AS says a proposal reached its approved state. Approval transport and storage remain AS-defined, as before.
 
 **What `content_hash` covers.** Where the profile declares a content binding, the approval's `content_hash` MUST equal the ticket's `contentHash` — the human approved these bytes. Where the profile binds no content, `content_hash` is `sha256` over the RFC 8785 JCS of the proposal's argument set — which since v0.8 is the proposal's content fingerprint, `proposalContentHash` (*Proposals — what the Authority Server receives*), carried in the signed ticket. Stated honestly: without a content binding, checking that link requires holding the proposal content, so it serves the owner and the Gatekeeper rather than a cold third party.
 
@@ -1704,11 +1698,11 @@ Verifier policy has been the primary enforcement tier since v0.6, and until now 
 
 | Line | Unmet means | Code |
 |---|---|---|
-| `trusted_issuers` | The artifact's `issuer` is not listed, or its signature does not verify under that key | `INVALID_SIGNATURE` |
-| `min_binding` | No `mandate_owners` entry (or projection `owner`) carries a signature at this binding or above. Order: `raw` < `webauthn` < `eudi`; a binding the policy does not know satisfies no minimum above `raw` | `OWNER_SIGNATURE_REQUIRED` |
-| `required_owners` | A listed DID has no verified owner signature on a mandate the ticket chains to | `OWNER_SIGNATURE_REQUIRED` |
+| `trusted_issuers` | The artifact's `issuer` is not listed, or its signature does not verify under that key. An untrusted issuer is reported under the same code on purpose: to this relying party an unlisted key is no signature | `INVALID_SIGNATURE` |
+| `min_binding` | No `mandate_owners` entry carries a verified signature at this binding or above. A projection `owner` entry counts only once verified against the mandate (*Public ticket projection*, rule 4). Order: `raw` < `webauthn` < `eudi`; a binding the policy does not know satisfies no minimum above `raw` | `OWNER_SIGNATURE_REQUIRED` |
+| `required_owners` | The DID the policy lists has no verified owner signature on the mandate the ticket chains to. A ticket chains to one mandate, so this line names one DID; a relying party that needs several owners verifies their mandates through *Multi-Owner Coverage Rule* | `OWNER_SIGNATURE_REQUIRED` |
 | `profile_hashes` | The mandate's `profile_hash` for that `profile_id` differs | `PROFILE_HASH_MISMATCH` |
-| `freshness_seconds` | The ticket's `timestamp` (or the projection's `valid_until`) is outside the window | `POLICY_UNMET` |
+| `freshness_seconds` | `now − timestamp` exceeds the value, or, for a projection, `now` is after `valid_until` | `POLICY_UNMET` |
 | `required_fields` | A listed execution-context field is not disclosed in the projection, or absent from the complete ticket | `POLICY_UNMET` |
 | `require_approval_signature` | The ticket carries no `approvalSignature` on the review path | `APPROVAL_SIGNATURE_REQUIRED` |
 
@@ -1716,7 +1710,7 @@ Verifier policy has been the primary enforcement tier since v0.6, and until now 
 
 ### Multi-owner: every required owner signs
 
-No quorum. Required-owner coverage already requires the union of granting owners to cover the required set, and the multi-owner coverage rule requires all required owners to commit to the same hashes. Where owner signatures are required, each required owner's mandate carries that owner's `mandate_owners` entry. Quorum would be a new authority semantic, not a signing detail; it belongs in group configuration as *who is required* — and once required, each signs.
+No quorum. Required-owner coverage already requires the union of granting owners to cover the required owners (*Group roles*, rule 8), and the multi-owner coverage rule requires all required owners to commit to the same hashes. Where owner signatures are required, each required owner's mandate carries that owner's `mandate_owners` entry. Quorum would be a new authority semantic, not a signing detail; it belongs in group configuration as *who is required* — and once required, each signs.
 
 ### Verification procedure
 
@@ -1832,7 +1826,7 @@ ASes do not trust executors. They enable users to enforce boundaries.
 
 A v0.8 AS has five primary responsibilities:
 
-1. **Mandate issuance** — sign authorizations after verifying profile compliance, identity, and (in group mode) required-approver coverage
+1. **Mandate issuance** — sign authorizations after verifying profile compliance, identity, and (in group mode) the grant; and, before tickets, required-owner coverage
 2. **Ticket issuance** — sign mandate tickets after checking per-transaction bounds and cumulative limits
 3. **Cumulative state tracking** — maintain running totals (daily, weekly, monthly) per cumulative group, profile, and action type (*Cumulative State Tracking* below — the bucket is shared by every mandate exercising it)
 4. **Revocation** — maintain a revocation list and refuse to issue tickets against revoked mandates
@@ -2009,7 +2003,7 @@ For the full set of error codes a ticket request may return, see [Error Codes](#
 
 ### Proposals — what the Authority Server receives (new in v0.8)
 
-On the review path the Gatekeeper submits a **proposal** and someone decides on it before a ticket is requested. v0.7 fixed neither the proposal's shape nor what of it the AS may see, and the first implementation sent the action's full arguments readable — an email's text, a quote's lines, the intent of a mandate an agent proposed — and kept them. The AS used them for one thing: to check, at ticket time, that the action was the one approved. A fingerprint does that. Mandate intents already work this way (`governance.md` → `intent-disclosure@0.1`: the AS relays ciphertext and sees hashes); proposals now do too. The proposal transport remains unspecified (`review.md` → *A wire binding*); the object and its rules are normative.
+On the review path the Gatekeeper submits a **proposal** and someone decides on it before a ticket is requested. v0.7 fixed neither the proposal's shape nor what of it the AS may see, so an AS could receive and keep the action's full arguments — an email's text, a quote's lines, the intent of a mandate an agent proposed. The only thing the AS needs them for is to check, at ticket time, that the action is the one approved. A fingerprint does that. Mandate intents already work this way (`governance.md` → `intent-disclosure@0.1`: the AS relays ciphertext and sees hashes); proposals now do too. The proposal transport remains unspecified (`review.md` → *A wire binding*); the object and its rules are normative.
 
 ```json
 {
@@ -2035,11 +2029,11 @@ On the review path the Gatekeeper submits a **proposal** and someone decides on 
 
 **Normative rules:**
 
-1. **Content is encrypted to its readers.** The proposal's *content* — the action's arguments, and anything rendered from them for an approver (previews, attachments by reference) — is serialized as RFC 8785 JCS, encrypted under a fresh 256-bit content key with AES-256-GCM, and the key wrapped to each reader with HPKE exactly as `intent-disclosure@0.1` specifies for intent. The readers are the submitter, the Mandate Owner, and everyone who may decide: in `review` mode the owner; in `review_above_cap` mode the signed `above_cap_approvers`. `readers` MUST equal the key set of `encrypted_keys`.
+1. **Content is encrypted to its readers.** The proposal's *content* — the action's arguments, and anything rendered from them for an approver (previews, attachments by reference) — is serialized as RFC 8785 JCS, encrypted under a fresh 256-bit content key with AES-256-GCM, and the key wrapped to each reader with HPKE exactly as `intent-disclosure@0.1` specifies for intent. The readers are the submitting Gatekeeper's own custody domain, the Mandate Owner, and everyone who may decide: in `review` mode the owner; above a cap, also the signed `above_cap_approvers` — all of them (*Group roles*, rule 6). Each reader is named by DID and wrapped to that DID's **reader key**, an X25519 key distinct from any signing key, obtained as `intent-disclosure@0.1` obtains approver keys (and with its stated limitation: the AS serves them). A decider for whom no reader key exists cannot decrypt and therefore cannot decide; for reachability that decider counts as unable to decide (*Group roles*, rule 5). `readers` MUST equal the key set of `encrypted_keys`; an AS MUST refuse a proposal where they differ (`PROPOSAL_NOT_ENCRYPTED`).
 2. **The fingerprint is the handle.** `proposalContentHash` is `"sha256:" + hex(sha256(JCS(content)))` over the plaintext content. It is what the AS compares, what the ticket carries (*Ticket Payload*, rule 5), and — where the profile binds no content — what an owner-signed `HAP-approval` signs as `content_hash`.
 3. **The AS reads nothing else.** The readable parts of a proposal are `action`, `actionType`, `executionContext` (subject to *Ticket Request Schema*, rule 7), the identifiers, the reader set, the fingerprint, and the content-binding hash and declaration. An AS MUST refuse a proposal that carries content in the clear (`PROPOSAL_NOT_ENCRYPTED`). It MUST NOT echo content in any response, including refusals, and it relays `ciphertext` and a reader's own `encrypted_keys` entry only to a DID in `readers`.
-4. **Deciders come from the signed mandate.** The AS MUST derive who may decide from the mandate (*Group roles*, rule 6) and MUST refuse a caller-supplied approver list that is not a subset of it (`PROPOSAL_APPROVERS_INVALID`). The proposer never counts (*Group roles*, rule 4); a proposal is committed when `above_cap_approvals` distinct other approvers have approved, or, in `review` mode, when the owner has.
-5. **Decisions carry the fingerprint.** A decision — approve, reject, send back — SHOULD carry the fingerprint of what the deciding surface decrypted and showed; the AS MUST refuse a decision whose fingerprint differs from the proposal's. With an owner signature, `HAP-approval` is the decision and its `content_hash` is the fingerprint (or the content-binding hash where the profile binds content). A decision MAY also carry `shown_hash`, recorded per decider and unsigned (*Content Binding* → *The request an action answers, and binding what was shown*).
+4. **Deciders come from the signed mandate.** The AS MUST derive who may decide from the mandate and MUST refuse a caller-supplied approver list or reader set that differs from it (*Group roles*, rule 6; `PROPOSAL_APPROVERS_INVALID`). The proposer never counts (*Group roles*, rule 4); a proposal is committed when `above_cap_approvals` distinct other approvers have approved, or, in `review` mode, when the owner has — and, where its values exceed a signed cap, the approvers as well (*Group roles*, rule 7).
+5. **Decisions carry the fingerprint.** A decision — approve, reject, send back — SHOULD carry the fingerprint of what the deciding surface decrypted and showed; the AS MUST refuse a decision whose fingerprint differs from the proposal's (`PROPOSAL_CONTENT_MISMATCH`). With an owner signature, `HAP-approval` is the decision and its `content_hash` is the fingerprint (or the content-binding hash where the profile binds content). A decision MAY also carry `shown_hash`, recorded per decider and unsigned (*Content Binding* → *The request an action answers, and binding what was shown*).
 6. **The ticket is bound by fingerprint.** The ticket request that follows approval carries `proposalId` and `proposalContentHash`, never the arguments; the AS compares the fingerprint with the proposal's (`PROPOSAL_CONTENT_MISMATCH` on any difference) and copies it into the signed ticket.
 7. **A surface that cannot decrypt does not decide.** An approval surface holding no key for the proposal MUST NOT offer the decision; it shows that the content is encrypted for another device (*Approval surfaces*).
 8. **After the decision.** The AS SHOULD discard the ciphertext once the proposal is decided and its ticket issued or refused; the fingerprint and the decision record are what retention covers. The submitting Gatekeeper keeps its own archive of the content (*Retention and Gatekeeper custody*).
@@ -2048,7 +2042,7 @@ What this does and does not give: confidentiality of proposal content holds agai
 
 ### Multi-Owner Coverage Rule
 
-When a profile requires multiple approvers (e.g., `purchase@0.5` requiring two members), each required owner commits separately. All such mandates share the same `bounds_hash`, `scope_hash`, and `gate_content_hashes.intent`. Before issuing a ticket, the AS MUST validate that the union of granting owners (the `did`s in `mandate_owners`) covers the required approver set, then issue the ticket. If any required owner's mandate is missing → the AS refuses to issue tickets → the agent cannot act.
+When a group names several required owners for a profile (*Group roles*, rule 8), each commits separately. All such mandates share the same `bounds_hash`, `scope_hash`, and `gate_content_hashes.intent`. Before issuing a ticket, the AS MUST validate that the union of granting owners (the `did`s in `mandate_owners`) covers the required owners, then issue the ticket. If any required owner's mandate is missing → the AS refuses to issue tickets → the agent cannot act.
 
 To resolve the union at ticket time, the AS MUST gather all live, non-revoked mandates matching the same `bounds_hash`, `scope_hash`, `profile_id`, `gate_content_hashes.intent`, and `commitment_mode`, and take the union of their `mandate_owners` DIDs. Because storage and idempotency keys are scoped per mandate owner, each required owner's mandate is stored independently and discovered by this match rather than overwriting another's.
 
@@ -2192,7 +2186,7 @@ The Gatekeeper performs validation in two phases: **local verification** and **A
    - Verify Ed25519 signature (base64url-decoded) against the canonical mandate payload
    - Verify TTL not expired
    - Read `commitment_mode` from the signed payload; it is the only source the Gatekeeper routes on (*Commitment-Mode Handling*), and the signed mode MUST agree with any unsigned AS metadata or the Gatekeeper fails closed (*Decision States* → *Commitment*)
-7. **Required-approver coverage is not a local check.** Group configuration is an AS record the Gatekeeper cannot read (*Enforcement classes*: HOC). The Gatekeeper MUST NOT infer coverage locally; it relies on the AS refusing the ticket (`OWNER_NOT_COVERED`, `COVERAGE_INSUFFICIENT`) and treats that refusal as final.
+7. **Required-owner coverage is not a local check.** Group configuration is an AS record the Gatekeeper cannot read (*Enforcement classes*: HOC). The Gatekeeper MUST NOT infer coverage locally; it relies on the AS refusing the ticket (`OWNER_NOT_COVERED`, `COVERAGE_INSUFFICIENT`) and treats that refusal as final.
 8. **Check per-transaction bounds** — for every bounds field where `boundType.kind === "per_transaction"`, verify that `execution[boundType.of] <= boundValue`. Where the bound declares `requiredFor` for this action type and the value is absent or not a number, refuse (`BOUND_EXCEEDED`; Bounds Schema rule 8). Per-transaction bounds carry no `appliesTo` (Bounds Schema rule 7); cumulative bounds are the AS's alone (*Display-Only Logs*), and any local mirror of them for display MUST honour `appliesTo`.
 9. **Validate `actionType`** — verify the resolved `actionType` (from the tool-gating manifest's `staticExecution.action_type`) is a member of the profile's `boundsSchema.actionTypes`.
 10. **Check scope constraints** — for every scope field with an `enum`, `subset`, or `pattern` constraint, verify that the corresponding value in the execution request satisfies the constraint. This check is **required** locally because the AS only holds `scope_hash` and cannot enforce scope constraints at ticket time. A non-conforming execution context MUST be rejected here before any AS call.
@@ -2208,7 +2202,7 @@ For every authorized write execution, the Gatekeeper sends a ticket request to t
 
 The request body MUST NOT include `path`, `attestationHash`, `frame_hash`, or any other v0.3/v0.4-era identifier. v0.5+ ASes MUST reject these. `actionType` MUST be in the profile's `boundsSchema.actionTypes` registry; the Gatekeeper SHOULD validate locally before round-tripping.
 
-**Idempotency (exactly-once).** On the synchronous path (`automatic` mode), the Gatekeeper MUST generate one `idempotencyKey` per tool invocation and reuse it **unchanged** on every retry of that invocation's ticket request. The key MUST be unique per logical execution and MUST NOT be derived from the action's content — two intentionally identical actions are distinct executions and each must be counted. Retrying a ticket request is only safe (and only permitted) when the key is present: a transient failure that hides the AS response *after* it committed is recovered by the retry, which the AS dedups to the original ticket instead of double-counting. The Gatekeeper MUST NOT retry past a **definitive** AS rejection — `BOUND_EXCEEDED`, `CUMULATIVE_LIMIT_EXCEEDED`, `APPROVAL_REQUIRED`, `INVALID_ACTION_TYPE`, `MANDATE_REVOKED`, `MANDATE_EXPIRED`, `IDEMPOTENCY_MISMATCH` — which fail closed on the first response. Review-mode commits carry a `proposalId` instead and omit the key (the proposal CAS is their replay protection). On receipt (v0.8), the Gatekeeper MUST check that the ticket's `idempotencyKey` equals the one it sent (*Ticket Payload*, rule 4); a ticket that answers another request is refused (`TICKET_REQUEST_MISMATCH`) and the action does not run.
+**Idempotency (exactly-once).** On the synchronous path (any ticket request without a `proposalId`), the Gatekeeper MUST generate one `idempotencyKey` per tool invocation and reuse it **unchanged** on every retry of that invocation's ticket request. The key MUST be unique per logical execution and MUST NOT be derived from the action's content — two intentionally identical actions are distinct executions and each must be counted. Retrying a ticket request is only safe (and only permitted) when the key is present: a transient failure that hides the AS response *after* it committed is recovered by the retry, which the AS dedups to the original ticket instead of double-counting. The Gatekeeper MUST NOT retry past a **definitive** AS rejection — `BOUND_EXCEEDED`, `CUMULATIVE_LIMIT_EXCEEDED`, `APPROVAL_REQUIRED`, `APPROVAL_IMPOSSIBLE`, `INVALID_ACTION_TYPE`, `MANDATE_REVOKED`, `MANDATE_EXPIRED`, `IDEMPOTENCY_MISMATCH`, `MALFORMED_TICKET_REQUEST`, `COVERAGE_INSUFFICIENT`, `PROPOSAL_CONTENT_MISMATCH`; in general every code in *Error Codes* except a transport failure — which fail closed on the first response. Review-mode commits carry a `proposalId` instead and omit the key (the proposal CAS is their replay protection). On receipt (v0.8), the Gatekeeper MUST check that the ticket's `idempotencyKey` equals the one it sent (*Ticket Payload*, rule 4); a ticket that answers another request is refused (`TICKET_REQUEST_MISMATCH`) and the action does not run.
 
 On failure, the Gatekeeper MUST block execution and surface the error to the agent and (if applicable) to the human.
 
@@ -2230,7 +2224,7 @@ If the AS is unreachable or unresponsive when a ticket is requested, the Gatekee
 
 ### One execution per ticket (new in v0.8)
 
-*Cumulative Tracking* rule 5 guarantees one **ticket** per logical execution: a retried request returns the original ticket and bounded authority is consumed once. That held perfectly in a gated release — and the action still ran twice. Two triggers inside one Gatekeeper requested a ticket for the same committed proposal; the AS correctly replayed the original to the second; nothing on the Gatekeeper side knew the tool had already been called. The AS's half of exactly-once was normative; the Gatekeeper's half — **a ticket authorizes at most one execution** — was nowhere, and only the Gatekeeper can supply it, because only it knows whether it went on to act.
+*Cumulative Tracking* rule 5 guarantees one **ticket** per logical execution: a retried request returns the original ticket and bounded authority is consumed once. That can hold perfectly and the action still run twice: two triggers inside one Gatekeeper request a ticket for the same committed proposal, the AS correctly replays the original to the second, and nothing on the Gatekeeper side knows the tool has already been called. The AS's half of exactly-once was normative; the Gatekeeper's half — **a ticket authorizes at most one execution** — was nowhere, and only the Gatekeeper can supply it, because only it knows whether it went on to act.
 
 1. A Gatekeeper MUST keep a durable record of the tickets under which it has executed, written **before** the downstream call, so that an interruption leaves *started, outcome unknown* rather than nothing. The custody archive write (*Retention and Gatekeeper custody*) already precedes the call; the two MAY be one record.
 2. A replayed ticket — `idempotent: true` on the synchronous path, or the review path's original returned after `executed` — is a **recovery signal for a lost response, not an authorization to act again**. With a record of completion the Gatekeeper MUST NOT execute. With a record of intent but no completion it MUST surface the ambiguity to the Mandate Owner rather than resolve it by guessing. (The v0.7 ledger allowed a profile or manifest to declare an action "idempotent under its ticket id" as an escape hatch; no such declaration exists and none is defined — an undeclared declaration is the hazard the manifest rules forbid.)
@@ -2243,23 +2237,21 @@ This changes nothing at the AS, in the ticket, or on the wire, and it is testabl
 The Gatekeeper honors the signed `commitment_mode` on the mandate (see [Commitment Modes](#commitment-modes)):
 
 - **`automatic`** — request a ticket directly and execute on approval.
-- **`review`** — the Gatekeeper does not block on `PROPOSAL_REQUIRED` as a hard error; it surfaces the proposal to the user and waits for approval. Once the user approves, the Gatekeeper re-issues the ticket request with the `proposalId`, the AS atomically transitions the proposal from `committed` to `executed`, and the ticket is returned.
+- **`review`** — submit a proposal first (*Proposals — what the Authority Server receives*) and wait for the decision; once it is committed, request the ticket with the `proposalId`. The AS atomically transitions the proposal from `committed` to `executed` and returns the ticket. A ticket request without a `proposalId` is refused (`PROPOSAL_REQUIRED`).
 - **`review_above_cap`** — automatic below the caps; when the AS returns `APPROVAL_REQUIRED`, the Gatekeeper routes a proposal to the above-cap approvers (see routing below).
 
 **`review_above_cap` routing.** When the AS returns `APPROVAL_REQUIRED`, the Gatekeeper:
 
-1. Reads the `approvers` array from the AS error body.
-2. Falls back to the signed mandate's `above_cap_approvers` if the AS did not provide approvers.
-3. Submits a proposal (*Proposals — what the Authority Server receives*) addressed to the signed `above_cap_approvers`; since v0.8 the AS derives the decider set from the signed mandate and refuses a caller-supplied list that is not a subset of it.
-4. Returns control to the agent with a tracking token (proposal ID).
-5. On approval, replays the ticket request with the `proposalId` (the AS atomically transitions the proposal `committed → executed` and signs the ticket).
-6. On rejection, returns the rejection to the agent and does not retry.
+1. Submits a proposal (*Proposals — what the Authority Server receives*) addressed to exactly the signed `above_cap_approvers` (*Group roles*, rule 6). Any approver list in the AS's error body is ignored.
+2. Returns control to the agent with a tracking token (proposal ID).
+3. On approval, requests the ticket with the `proposalId` (the AS atomically transitions the proposal `committed → executed` and signs the ticket).
+4. On rejection, returns the rejection to the agent and does not retry.
 
-The signed `above_cap_approvers` is the source of truth; AS-supplied approvers are an operational hint only. A compromised AS that omits or shrinks the approver list MUST NOT be trusted to widen the action — the Gatekeeper enforces against the signed list.
+The signed `above_cap_approvers` is the only source of the decider set. A Gatekeeper MUST NOT address a proposal to approvers taken from an AS response, and MUST refuse to execute on a commit whose deciders it cannot reconcile with the signed list where it can see them.
 
 ### Proposal / Review / Approval Lifecycle
 
-In `review` mode, the ticket request returns `PROPOSAL_REQUIRED` with a `proposalId`. Example failure body:
+In `review` mode the Gatekeeper submits a proposal and waits; the ticket is requested only once the proposal is committed, with its `proposalId`. A ticket request under a `review` mandate that carries no `proposalId` is refused:
 
 ```json
 {
@@ -2267,14 +2259,13 @@ In `review` mode, the ticket request returns `PROPOSAL_REQUIRED` with a `proposa
   "errors": [
     {
       "code": "PROPOSAL_REQUIRED",
-      "message": "This authorization is in review mode. Submit a proposal and obtain human approval before requesting a ticket.",
-      "proposalId": "uuid-assigned-by-as"
+      "message": "This mandate is in review mode. Submit a proposal and obtain approval before requesting a ticket."
     }
   ]
 }
 ```
 
-The Gatekeeper surfaces the proposal to the user and waits. Once the user approves, the Gatekeeper re-issues the ticket request with the `proposalId`, the AS atomically transitions the proposal from `committed` to `executed`, and the ticket is returned. The proposal's `committed → executed` transition is the review path's replay protection (no idempotency key is used).
+The request that follows approval carries `proposalId`, `proposalContentHash`, and the same `actionType` and wire `executionContext` as the proposal (*Ticket Request Schema*). The AS atomically transitions the proposal from `committed` to `executed` and returns the ticket. That transition is the review path's replay protection (no idempotency key is used).
 
 What the proposal carries — encrypted content, its fingerprint, the readable execution context — is specified under *Proposals — what the Authority Server receives* (v0.8). The Gatekeeper MUST NOT send the proposal's content in the clear at any step, including the ticket request that follows approval: that request carries `proposalId` and `proposalContentHash`, never the arguments. The Gatekeeper MUST NOT re-run Phase 1 any less at execution time than at proposal time — the approved proposal pins the arguments, not the mandate's validity.
 
@@ -2422,8 +2413,8 @@ Normative consequences:
 *Bounds, Scope, and Disclosure* names the exception to "read policy is local": a read limit one party enforces *against* another — a team admin capping a member's reach — re-enters the signed surface. v0.7 named it and defined no mechanism; reads carry no ticket, so the AS's above-cap check never sees them, and a read cannot be approved one by one. The mechanism is the signed bound value itself:
 
 1. In group mode, a group cap on a bound the Gatekeeper alone enforces (marked `enforcedBy: "gatekeeper"`, *Bounds Schema* rule 11) or on an `enum` bound is **always hard**. The Authority Server MUST refuse to sign a mandate whose value exceeds the cap, and MUST refuse a mandate that omits the field where a cap exists (`GROUP_CAP_EXCEEDED`). No second field is signed: the signed value is below the cap by construction, and **the signed value is the ceiling**.
-2. In group mode the Gatekeeper MUST NOT read beyond the signed value. A local read policy MAY be lower; it cannot be higher. `applicableWindow(item)` is computed as above and then capped at the signed value.
-3. In personal mode the v0.6 precedence is unchanged: the local policy governs and a signed read bound is a fallback for mandates that predate it.
+2. The Gatekeeper MUST NOT read beyond the signed value of a bound marked `enforcedBy: "gatekeeper"`, in any mode — so it needs no unsigned signal to know whether a group ceiling applies. A local read policy MAY be lower; it cannot be higher. `applicableWindow(item)` is computed as above and then capped at the signed value.
+3. In personal mode the same cap applies: the owner set the signed value and can re-sign to raise it. A local policy still governs below the cap, and for a mandate that predates `enforcedBy` a signed read bound remains the fallback it was in v0.6.
 4. For an `enum` bound the cap is one of its values, and a mandate whose value comes earlier in the profile's `values` order exceeds it (*Bounds Schema*, rule 10): under a group cap of `none`, a mandate with `read_access: "unlimited"` is refused.
 
 This gives `enforcedBy: "gatekeeper"` — used by published profiles since before it was specified — its definition, and it makes a group's read ceiling verifiable by anyone holding the mandate: the ceiling is in the signed bytes. What remains unverifiable is whether the Gatekeeper honoured it, which is the stated limit of ticketless reads.
@@ -2511,18 +2502,18 @@ Each code names the party that emits it and the moment it is emitted. *AS · man
 | `BOUNDS_HASH_MISMATCH` | AS · mandate; Gatekeeper · local | Recomputed `bounds_hash` does not match the submitted bounds (AS) or the held mandate (Gatekeeper) |
 | `SCOPE_HASH_MISMATCH` | Gatekeeper · local; Verifier | Recomputed `scope_hash` does not match mandate |
 | `INVALID_SIGNATURE` | Gatekeeper · local; Verifier | The Authority Server's signature over the mandate fails verification |
-| `OWNER_NOT_COVERED` | AS · ticket | A required approver has no valid mandate for this execution |
+| `OWNER_NOT_COVERED` | AS · ticket | A required owner (*Group roles*, rule 8) has no valid mandate for this execution |
 | `TTL_EXPIRED` | Gatekeeper · local; Verifier | The held mandate's `expires_at` has passed (the AS's wire form of the same condition is `MANDATE_EXPIRED`) |
 | `PROFILE_NOT_FOUND` | AS · mandate; Gatekeeper · local | Referenced profile could not be resolved |
 | `PROFILE_INVALID` | AS · mandate; Gatekeeper · local | The profile fails validation — `appliesTo` names an unregistered action type, a `cumulative_count` bound lacks `appliesTo` (v0.7+ profiles), a bounds field lacks `boundType`, `appliesTo` on a `per_transaction` or `enum` bound (new in v0.7); `requiredFor` on a bound that is not `per_transaction` or naming an unregistered action type, a non-numeric `maximum` (new in v0.8) |
 | `PROFILE_HASH_MISMATCH` | AS · mandate | The mandate request's `profile_hash` does not match the AS's provisioned profile for `profile_id` (new in v0.7) |
-| `COVERAGE_INSUFFICIENT` | AS · ticket | The union of live mandates does not cover the required approver set (*Multi-Owner Coverage Rule*) |
+| `COVERAGE_INSUFFICIENT` | AS · ticket | The union of live mandates does not cover the required owners (*Multi-Owner Coverage Rule*) |
 | `MALFORMED_MANDATE` | AS · mandate; Verifier | Mandate structure or request is invalid — missing `scope_hash` or `commitment_mode`, `bounds` absent from the request, `disclose_fields` not a subset of the profile's, `expires_at` present without an owner signature or absent with one, a reused `(owner_did, nonce)` |
 | `VERSION_UNSUPPORTED` | AS · mandate | No protocol version is supported by both the requesting Gatekeeper and the AS (new in v0.7; see *Version negotiation*) |
 | `OWNER_NOT_APPROVER` | AS · mandate | Granting identity is not a grantor for the profile in this group (v0.7: not a required approver; the code is kept) |
 | `BOUNDS_INVALID_VALUE` | AS · mandate; Gatekeeper · local | A bounds value violates the profile's pattern, encoding, or range constraint, exceeds the field's `maximum` or is not a number where one is declared (v0.8), or contains a raw newline |
 | `SCOPE_INVALID_VALUE` | Gatekeeper · local | A scope value violates the profile's pattern, encoding, or enum/subset constraint, or contains a raw newline |
-| `ABOVE_CAP_CONFIG_INVALID` | AS · mandate | `above_cap_caps` references a field not declared in the profile's `boundsSchema`; `above_cap_approvals` absent, not an integer ≥ 1, or greater than the approver list (v0.8) |
+| `ABOVE_CAP_CONFIG_INVALID` | AS · mandate | `above_cap_caps` references a field not declared in the profile's `boundsSchema`; `above_cap_approvals` absent where approvers are signed, not an integer ≥ 1, or greater than the approvers other than the Mandate Owner (v0.8) |
 | `COMMITMENT_MODE_NOT_ALLOWED` | AS · mandate | The requested `commitment_mode` is not admitted by the profile's `commitment_modes` declaration (new in v0.8) |
 | `GROUP_CAP_EXCEEDED` | AS · mandate | Group mode: a bound exceeds a hard cap, or a bound under a group ceiling is omitted (new in v0.8) |
 | `OWNER_SIGNATURE_REQUIRED` | AS · mandate; Verifier | An applicable profile floor or policy requires an owner signature (at a minimum `binding`) and none that satisfies it is present (new in v0.6; renamed in v0.7) |
@@ -2537,26 +2528,26 @@ Each code names the party that emits it and the moment it is emitted. *AS · man
 | `MANDATE_REVOKED` | AS · ticket | Mandate has been revoked |
 | `BOUND_EXCEEDED` | AS · ticket; Gatekeeper · local | Per-transaction bound violated, or (v0.8) the bound's value is absent or not a number for an action type its `requiredFor` names |
 | `CUMULATIVE_LIMIT_EXCEEDED` | AS · ticket | Cumulative limit would be exceeded |
-| `COVERAGE_INSUFFICIENT` | AS · ticket | The union of live mandates does not cover the required approver set (also listed above) |
+| `COVERAGE_INSUFFICIENT` | AS · ticket | The union of live mandates does not cover the required owners (also listed above) |
 | `PROFILE_NOT_FOUND` | AS · ticket | The profile the mandate references can no longer be resolved (an operator fault under *Profile Bytes Retention*) |
 | `INVALID_ACTION_TYPE` | AS · ticket; Gatekeeper · local | The `actionType` in the ticket request is absent or not in the profile's `actionTypes` registry |
 | `APPROVAL_REQUIRED` | AS · ticket | The mandate is in `review_above_cap` mode and the request exceeds a configured cap; submit a proposal |
-| `APPROVAL_IMPOSSIBLE` | AS · ticket | The request exceeds a cap and the signed approvers minus the proposer cannot reach `above_cap_approvals`; the proposal could never commit (new in v0.8) |
+| `APPROVAL_IMPOSSIBLE` | AS · ticket | The request exceeds an approval-kind cap and the signed approvers still able to decide, other than the proposer, number fewer than `above_cap_approvals`; the proposal could never commit (new in v0.8; *Group roles*, rule 5) |
 | `PROPOSAL_CONTENT_MISMATCH` | AS · ticket | The request's `proposalContentHash` differs from the fingerprint submitted with the proposal, or is absent where the proposal carried one; the refusal carries no content (new in v0.8) |
-| `PROPOSAL_REQUIRED` | AS · ticket | Mandate is in review mode and a matching proposalId was not supplied |
+| `PROPOSAL_REQUIRED` | AS · ticket | A ticket request under a `review` mandate carries no `proposalId`; submit a proposal first |
 | `PROPOSAL_NOT_FOUND` | AS · ticket | The named proposal does not exist |
 | `PROPOSAL_NOT_APPROVED` | AS · ticket | Mandate is in review mode and the named proposal has not been committed yet |
 | `PROPOSAL_EXPIRED` | AS · ticket | The named proposal expired before it was committed |
 | `PROPOSAL_REJECTED` | AS · ticket | The named proposal was rejected |
-| `PROPOSAL_MISMATCH` | AS · ticket | The ticket request does not match the stored proposal (tool, args, or scope differ) |
+| `PROPOSAL_MISMATCH` | AS · ticket | The ticket request's readable fields — `action`, `actionType`, `executionContext`, `mandateId` — differ from the proposal's (v0.8: the AS holds no arguments; content is compared by fingerprint, `PROPOSAL_CONTENT_MISMATCH`) |
 | `PROPOSAL_MANDATE_MISMATCH` | AS · ticket | The named proposal references a different mandate than the ticket request |
 | `PROPOSAL_ALREADY_EXECUTED` | AS · ticket | A ticket has already been issued for this proposal |
 | `MALFORMED_TICKET_REQUEST` | AS · ticket | The request carries a retired v0.3/v0.4 identifier (`attestationHash`, `frame_hash`, or `path`); or (v0.8) a `mandateId` whose mandate's `bounds_hash` differs from `boundsHash`, a `_`-prefixed key in `executionContext`, or — where the AS checks it — a key no bound reads |
-| `IDEMPOTENCY_KEY_REQUIRED` | AS · ticket | A synchronous (`automatic`-mode, no `proposalId`) ticket request omitted the required `idempotencyKey` |
+| `IDEMPOTENCY_KEY_REQUIRED` | AS · ticket | A synchronous ticket request (no `proposalId`, in any mode) omitted the required `idempotencyKey` |
 | `IDEMPOTENCY_MISMATCH` | AS · ticket | An `idempotencyKey` was reused for a different execution (`profileId`, `action`, or `executionContext` differ) |
-| `APPROVAL_SIGNATURE_REQUIRED` | AS · ticket | An applicable requirement (profile floor or configured policy) demands an owner-signed approval for this proposal and none was provided (new in v0.6) |
+| `APPROVAL_SIGNATURE_REQUIRED` | AS · ticket; Verifier | An applicable requirement (profile floor or configured policy) demands an owner-signed approval for this proposal and none was provided (new in v0.6) |
 | `APPROVAL_SIGNATURE_INVALID` | AS · ticket; Verifier | The provided `HAP-approval` signature fails verification, or its `content_hash` does not match what it must cover (new in v0.6) |
-| `TICKET_REQUEST_MISMATCH` | Gatekeeper · local | The received ticket's `idempotencyKey` is absent or differs from the key the Gatekeeper sent, or its `timestamp` is outside the freshness window (new in v0.8) |
+| `TICKET_REQUEST_MISMATCH` | Gatekeeper · local | The received ticket's `idempotencyKey` is absent or differs from the key the Gatekeeper sent, a fresh ticket's `timestamp` is outside the freshness window, or its `version` differs from its mandate's (new in v0.8) |
 | `POLICY_UNMET` | Verifier | A line of the relying party's `HAP-verifier-policy` is unmet and no more specific code applies (new in v0.8) |
 
 ### Proposal Errors (new in v0.8)
@@ -2564,7 +2555,7 @@ Each code names the party that emits it and the moment it is emitted. *AS · man
 | Code | Emitted by | Meaning |
 |------|------------|---------|
 | `PROPOSAL_NOT_ENCRYPTED` | AS · proposal | The proposal carries content in the clear, or no content envelope and fingerprint where the action has content |
-| `PROPOSAL_APPROVERS_INVALID` | AS · proposal | The caller-supplied approver list is not a subset of the deciders the signed mandate names |
+| `PROPOSAL_APPROVERS_INVALID` | AS · proposal | The caller-supplied approver list or reader set differs from the deciders the signed mandate names |
 
 **Limits.** An AS MAY refuse a request that exceeds size limits it publishes (a bounds or scope value longer than a stated maximum, a `disclose_fields` list longer than the profile's, an `executionContext` above a stated byte size) with `MALFORMED_MANDATE` or `MALFORMED_TICKET_REQUEST` respectively; the protocol fixes no numbers, only that a refusal on size is a refusal and never a truncation.
 
@@ -2585,7 +2576,7 @@ Optional extensions and forward-looking directions — Output Provenance, select
 "Gatekeepers and Authority Servers MUST reject unknown or untrusted versions" is a safety rule, not a transition plan. The transition is specified so that upgrading one side does not silently stop the other:
 
 1. A mandate request carries `supported_versions: string[]` — the protocol versions the requesting Gatekeeper can verify and enforce. The AS issues the mandate at the **highest version both support**; where there is none, it refuses (`VERSION_UNSUPPORTED`). A request without the field is read as `["0.6"]`.
-2. A ticket is issued at the version of the **mandate it is issued under**, and carries it (`version`). The version was negotiated when the mandate was requested, by the Gatekeeper that will exercise it, so a ticket never arrives in a version its Gatekeeper cannot read and no ticket is issued — and counted — only to be refused. A Gatekeeper MUST still refuse to execute under a ticket whose `version` differs from its mandate's.
+2. A ticket is issued at the version of the **mandate it is issued under**, and carries it (`version`). The version was negotiated when the mandate was requested, by the Gatekeeper that will exercise it, so a ticket never arrives in a version its Gatekeeper cannot read and no ticket is issued — and counted — only to be refused. A Gatekeeper MUST still refuse to execute under a ticket whose `version` differs from its mandate's (`TICKET_REQUEST_MISMATCH`).
 3. An AS MUST continue to verify mandates of the versions it previously issued and **MUST continue to issue tickets against live mandates of those versions until they expire** — "TTLs bound the transition" means exactly this. It MUST NOT issue a mandate at a lower version than the highest the request supports. (v0.7 → v0.8: a v0.8 AS keeps issuing tickets against live v0.7 mandates, under v0.7 rules, and issues v0.8 mandates to any request whose `supported_versions` includes `"0.8"`.)
 4. A Gatekeeper that supports several versions MUST verify each artifact under the rules and field names of its own `version`; a v0.6 mandate is not re-interpreted under v0.7 names, nor a v0.7 ticket under v0.8 rules (it carries no `idempotencyKey` and is not refused for lacking one).
 
@@ -2593,9 +2584,9 @@ Vendor-specific version headers or compatibility endpoints are not protocol; thi
 
 ### Migration from v0.7
 
-v0.8 is **additive on the wire**: no field is renamed or retired, no signed-payload shape changes for an artifact that carries none of the new fields, and a v0.7 Gatekeeper keeps working against a v0.8 Authority Server through *Version negotiation*. Every new signed field is either OPTIONAL or conditional on something the request declares. What changes is what the specification *requires of behaviour*, mostly on the Gatekeeper and the Authority Server, each of which the reference implementation had already built and exercised before this text was written (`changelog.md`).
+v0.8 is **additive on the wire**: no field is renamed or retired, no signed-payload shape changes for an artifact that carries none of the new fields, and a v0.7 Gatekeeper keeps working against a v0.8 Authority Server through *Version negotiation*. Every new signed field is either OPTIONAL or conditional on something the request declares. What changes is what the specification *requires of behaviour*, mostly on the Gatekeeper and the Authority Server. Which of them were exercised by an implementation before promotion, and which are specification-led, is recorded in `changelog.md`.
 
-**Additive signed fields:** `idempotencyKey` and `proposalContentHash` on the ticket; `above_cap_approvals` on the mandate and in the owner-signed projection (conditional on `review_above_cap` — a projection built to the v0.7 field list for a v0.8 above-cap mandate produces a different signature, and an implementation part-way through MUST NOT mix the two); two new signed objects, `HAP-ticket-projection` and `HAP-verifier-policy` (the second is a document, not an artifact the AS signs).
+**Additive signed fields:** `idempotencyKey`, `proposalContentHash` and `approvalSignatures` on the ticket; `approver_did` on `HAP-approval`; `above_cap_approvals` on the mandate and in the owner-signed projection (conditional, with the other above-cap fields — a projection built to the v0.7 field list for a v0.8 above-cap mandate produces a different signature, and an implementation part-way through MUST NOT mix the two); one new signed object, `HAP-ticket-projection`; and one new unsigned document, `HAP-verifier-policy`, which a relying party holds.
 
 **Additive request fields:** `mandateId` and `proposalContentHash` on the ticket request; the proposal object (*Proposals — what the Authority Server receives*).
 
@@ -2613,7 +2604,7 @@ v0.8 is **additive on the wire**: no field is renamed or retired, no signed-payl
 6. **Group ceilings on reads and capability switches** (*Read Authorization*): the signed value is the ceiling in group mode; enum values are ordered.
 7. **Profile-declared `commitment_modes`, `maximum`, `requiredFor`**: three new refusals at issuance or ticket time.
 8. **Standing disclosure choice** (*Identity Assurance*): MAY, with its MUSTs.
-9. **System context and the request an action answers** (*Content Binding*): what may be shown beside the bound values, and `shown_hash`.
+9. **System data and the request an action answers** (*Content Binding*): what may be shown beside the bound values, and `shown_hash`.
 10. **Consumption counts tickets, not outcomes** (*Execution Context Schema*, rule 6).
 11. **Revocation on membership change**, with the cause named (*Revocation*).
 12. **Approval surfaces** (*Roles*): a remote surface is a verifying client.
@@ -2621,7 +2612,7 @@ v0.8 is **additive on the wire**: no field is renamed or retired, no signed-payl
 
 **Vocabulary:** *Local App* is retired in favour of *Owner Interface*, *approval surface*, and *local custody domain* (*Roles*); the ten occurrences of the word *gateway* in v0.7 normative text are replaced by the defined term each stood for. Nothing on the wire changes.
 
-**Deviation rules:** D2 (the field-name fallback for cumulative bounds) **closes** — its condition has held since 2026-10-09, and an implementation claiming v0.8 MUST have removed the fallback from every enforcement point. D1 is restated with its cut-off date; D3 (scope enum values in `field.enum`) is new. All three are in `review.md`.
+**Deviation rules:** D2 (the field-name fallback for cumulative bounds) **closes for v0.8 mandates** — a v0.8 mandate names a profile version that declares `appliesTo`, so no enforcement point may select a cumulative bound by field name for one. For a live v0.7 mandate the v0.7 condition still governs until it expires. D1 is restated with its cut-off date; D3 (scope enum values in `field.enum`) is new. All three are in `review.md`.
 
 Implementation order for a v0.7 implementation: core library types and vectors → Authority Server (issue `0.8`; keep issuing tickets against live `0.7` mandates until they expire) → Gatekeeper (wire execution context, execution record, ticket key check, encrypted proposals) → profiles (move `field.enum`, adopt `commitment_modes` / `maximum` / `requiredFor` where they apply — a new version of each) → conformance suite.
 
@@ -2690,7 +2681,7 @@ v0.6 is additive on the wire and stricter in governance. Existing v0.5 mandates 
 5. A DID used as a signing identity MUST be key-bearing. Existing non-key-bearing identifiers remain valid for audit and as identity DIDs; they MUST NOT sign mandates. An implementation minting decorative `did:key` strings (an identifier shaped like `did:key` carrying no key) MUST mint real key-bearing DIDs for any signing use; such an identifier fails structurally, since there is no key to verify against.
 6. Tool-gating manifests gain `manifestVersion`; a manifest without it is read as version `"1"`. The transform vocabulary is closed at version `"1"`.
 7. Read enforcement is normative: resource scopes that bind writes MUST bind reads; undeclared read governance MUST deny; an unset read window MUST deny. Gatekeepers that shipped v0.5's read model must add these checks.
-8. Read-window precedence: a local per-integration read policy takes precedence over a legacy signed read bound (e.g. `read_max_age_days`), which remains only as a fallback for older mandates. New profiles SHOULD NOT declare signed read-window bounds.
+8. Read-window precedence: a local per-integration read policy takes precedence over a legacy signed read bound (e.g. `read_max_age_days`), which remains only as a fallback for older mandates. New profiles SHOULD NOT declare signed read-window bounds, except as a group ceiling marked `enforcedBy: "gatekeeper"` (*Group ceilings*), where the signed value is the cap.
 
 ### Migration from v0.4
 
@@ -2704,7 +2695,7 @@ v0.5 is a minor version bump. The wire format and the signed-payload shape are u
 
 **Wire-side compatibility:**
 
-4. The ticket request body's `attestationHash` field has been renamed back to its content-address name `boundsHash` to match the spec. Servers MUST accept `boundsHash`. For one transition release they MAY also accept `attestationHash` as a deprecated alias; new code MUST emit `boundsHash`.
+4. The ticket request body's `attestationHash` field has been renamed back to its content-address name `boundsHash` to match the spec. Servers MUST accept `boundsHash`. For one transition release they MAY also accept `attestationHash` as a deprecated alias; new code MUST emit `boundsHash`. (Expired: since v0.5 the alias MUST be rejected — *Ticket Issuance*.)
 5. The ticket request body's `path` field is retired. Servers MUST reject requests that include it.
 6. The ticket response and persisted ticket MUST include `actionType`.
 7. Error codes follow the canonical list above. `LIMIT_EXCEEDED` is retired in favor of `BOUND_EXCEEDED` and `CUMULATIVE_LIMIT_EXCEEDED`.

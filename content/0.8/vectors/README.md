@@ -2,7 +2,7 @@
 title: "Human Agency Protocol — Conformance Vectors (v0.8)"
 version: "Version 0.8"
 date: "October 2026"
-status: "Normative data"
+status: "Normative data — draft"
 description: "The published answer key for a HAP implementation: canonical bounds and scope hashes, payload signatures under a published test key, profile hashes, and the refusals an implementation MUST produce. Checkable offline, with no server, no store, and no identity system."
 ---
 
@@ -40,7 +40,7 @@ Two keys rather than one, because a single key would have hidden a mistake worth
 Four of the cases chain, and the chains are the point:
 
 - `mandate-cosigned` carries the owner's signature inside a payload the AS then signed, and that inner signature is byte-identical to the standalone `mandate-projection` case — because the projection is *reconstructed from the mandate's own fields*, never fetched.
-- `ticket-payload-review` carries the owner's approval signature as `approvalSignature`, byte-identical to the `approval` case, and its signed bytes are reconstructible from the ticket (`proposalId`, `mandateId`, `contentHash`, `decided_at`, `nonce`).
+- `ticket-payload-review` carries the owner's approval signature as `approvalSignature`, byte-identical to the `approval` case, and its signed bytes are reconstructible from the ticket: `proposalId`, `mandateId`, the mandate owner as `approver_did`, `decided_at`, `nonce`, and as `content_hash` the ticket's `contentHash` — the profile binds content here; without a binding it would be `proposalContentHash`.
 - `ticket-projection` copies its public fields from `ticket-payload-review` and its `owner` entry from `mandate-cosigned`; the owner entry verifies only against the mandate, which the projection says plainly.
 
 An implementation that reproduces the cases separately but cannot rebuild one from another has the bytes right and the mechanism wrong, which is the failure the chains exist to catch.

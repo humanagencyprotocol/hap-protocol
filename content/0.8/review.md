@@ -2,7 +2,7 @@
 title: "Human Agency Protocol — Review and Future Directions"
 version: "Version 0.8"
 date: "October 2026"
-status: "Non-normative — future directions"
+status: "Non-normative — future directions (draft)"
 description: "The forward ledger for v0.8: open directions with their targets, the two specification-led surfaces tracked until an implementation closes them, and the deviation rules that bind every implementation. The record of what changed in v0.8 is changelog.md. Implementation status is not part of the specification."
 ---
 
@@ -16,9 +16,10 @@ Each open direction carries an explicit **target**; "undated" means no version c
 
 ## Specification-led in v0.8 — tracked until an implementation closes them
 
-Promotion rule 3 admits a direction that is additive and optional without an implementation, on the condition that it stays on this ledger until one exists. Two surfaces entered v0.8 that way:
+Promotion rule 3 admits a direction that is additive and optional without an implementation, on the condition that it stays on this ledger until one exists. Three surfaces entered v0.8 that way:
 
 - **Public ticket projection** (`protocol.md` → *Public ticket projection — `HAP-ticket-projection`*). The vector `ticket-projection` pins its bytes. What closes it: an Authority Server that serves the projection with its signature for a public ticket view and stops presenting any other redacted view as verified; a ticket-demanding effector that verifies it. Open design point: whether the projection should carry `proposalId` and `approvalSignature` on the review path, so the human-approval link can start from the public view as the owner-signature link now can. Deliberately not added without a case.
+- **Remote approval surfaces** (`protocol.md` → *Roles* → *Approval surfaces*). A surface away from the owner's device MUST verify before it shows. What closes it: a remote surface that verifies the mandate and the proposal fingerprint itself, and refuses to offer a decision it cannot decrypt. Device enrolment is the open half (*Device enrolment and revocation* below).
 - **Verifier policy** (`protocol.md` → *Owner Signatures* → *Verifier policy — `HAP-verifier-policy`*). What closes it: a verifier — a core-library helper, a pipeline, an auditor's tool — that evaluates a policy document and fails on the named line. The policy's lines are the ones the v0.6 procedure already implied; a relying party that needs a line not listed should say so here before an implementation invents one.
 
 Both were written so that P2 of the owner-signature order below is not a dependency: the owner entry in the projection, and the `min_binding` and `required_owners` lines of the policy, are conditional on owner signatures existing and impose nothing where they do not.
@@ -58,7 +59,7 @@ The immutability rule was violated before v0.6 closed the loophole normatively: 
 
 ### D2 — The field-name fallback for cumulative bounds (closed in v0.8)
 
-v0.7 permitted an enforcement point to keep a field-name fallback for mandates on profile versions that predate `appliesTo`, until no live, unexpired mandate referenced one. The condition has held since 2026-10-09. An implementation claiming v0.8 MUST have removed the fallback from every enforcement point (`protocol.md` → *Migration from v0.7*). Whether a given implementation has is a matter for its report. The rule is kept here, closed, so that the next reader does not reintroduce the fallback believing it still permitted.
+v0.7 permitted an enforcement point to keep a field-name fallback for mandates on profile versions that predate `appliesTo`, until no live, unexpired mandate referenced one. v0.8 closes it for v0.8 mandates: a v0.8 mandate names a profile version that declares `appliesTo`, so the fallback is unreachable for it and MUST NOT exist on its path (`protocol.md` → *Migration from v0.7*). For a live v0.7 mandate the v0.7 condition governs until it expires. Whether a given implementation has removed the fallback is a matter for its own report.
 
 ### D3 — Scope enum values in `field.enum` (grandfathered per version, closes per profile)
 

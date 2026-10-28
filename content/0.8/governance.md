@@ -2,7 +2,7 @@
 title: "Human Agency Protocol — Governance"
 version: "Version 0.8"
 date: "October 2026"
-status: "Normative — full prose"
+status: "Normative — full prose (draft)"
 description: "How HAP is governed: invariant constraints instead of institutions. No central authority, no registry, no approval process — conformance is enforced locally."
 ---
 
@@ -53,7 +53,7 @@ v0.7 states the boundary sharply: a Mandate Owner is **one identifiable natural 
 
 ### Invariant 3 — Required-Owner Coverage
 
-Each Mandate Owner is identified by DID. In group mode, execution is invalid if the profile's required approvers (as defined by the AS group configuration) are not all covered by the granting Mandate Owners. In personal mode, the user commits directly with no approver checks.
+Each Mandate Owner is identified by DID. In group mode, execution is invalid if the profile's required owners (as defined by the AS group configuration; `protocol.md` → *Group roles*, rule 8) are not all covered by the granting Mandate Owners. In personal mode, the user commits directly with no approver checks.
 
 ### Invariant 4 — Privacy Preservation
 
@@ -258,7 +258,7 @@ To support interoperability without institutional control, the HAP ecosystem mai
 > 1. **Canonical bounds and scope → hash.** A bounds object and a scope object, the exact canonical string each must produce, and its `sha256`. A one-character disagreement here means nothing either party signs will ever verify against the other, and it is invisible until two implementations meet.
 > 2. **Payload → signature.** A mandate, a synchronous ticket (carrying `idempotencyKey`), a review-path ticket (carrying `proposalId` and `proposalContentHash`), a mandate projection (plain and `review_above_cap` with its approval count), a co-signed mandate, an approval, and a public ticket projection, each with a published test key and the exact base64url signature. Pins field ordering, escaping, number formatting, and encoding together.
 > 3. **Request → required refusal.** A table of (situation, request, error code): no `actionType` → `INVALID_ACTION_TYPE`; over a cumulative bound → `CUMULATIVE_LIMIT_EXCEEDED`; review mode without an approved proposal → `PROPOSAL_REQUIRED`; a revoked mandate → `MANDATE_REVOKED`; an unregistered `appliesTo` member → `PROFILE_INVALID`; a retired identifier in a ticket request → `MALFORMED_TICKET_REQUEST`; a mode the profile does not admit → `COMMITMENT_MODE_NOT_ALLOWED`; a required value absent → `BOUND_EXCEEDED`; a proposal in the clear → `PROPOSAL_NOT_ENCRYPTED`. This set matters most, because refusal is where the safety lives.
-> 4. **Profile → `profile_hash`.** Published profiles and the value every party must compute for each — since v0.8 including one that declares `commitment_modes` and one that declares `maximum`.
+> 4. **Profile → `profile_hash`.** Published profiles and the value every party must compute for each — since v0.8 including one that declares `commitment_modes`, one that declares `maximum`, and one that declares `requiredFor`.
 >
 > An implementation that reproduces every vector is conformant on those points. What vectors cannot prove — *sequence*: that the ticket preceded execution, that cumulative state is counted correctly across many calls, that one ticket produced one execution — remains a claim about a running system and needs a live suite. This is a **normative deliverable of the specification**, not a promoted direction (a MUST-ship artifact is neither additive nor optional, so rule 3 does not apply). The files live at `content/<version>/vectors/`; each version's set is regenerated because `version` is in every signed payload.
 
@@ -293,7 +293,7 @@ Each obligation below is an **honest-operator control** (`protocol.md` → *Enfo
 - Records MUST be append-only — a renewal is a new record beside the old, an expired mandate is retained, and an export includes expired and superseded records (v0.8 states what *append-only* already meant)
 - ASes MUST maintain a revocation list (new in v0.4)
 - ASes SHOULD publish mandate and ticket counts and statistics
-- ASes MUST NOT issue mandates without verifying required-approver coverage (in group mode)
+- ASes MUST NOT issue mandates to anyone who is not a grantor, nor tickets without verifying required-owner coverage (in group mode)
 - ASes MUST NOT issue tickets for revoked or expired mandates
 - ASes MUST NOT hold the content of a proposed action in the clear, and MUST NOT echo it (v0.8)
 - A revocation record MUST name what initiated it (v0.8)
@@ -374,13 +374,13 @@ The protocol supports multiple ASes:
 
 ## Approver Authority Governance
 
-Since v0.5, required approvers are configured per group on the AS, not in profiles.
+Since v0.5, group roles are configured per group on the AS, not in profiles.
 
 ### Within Groups
 
-- The group admin defines, per profile, the **grantors** (who may give a mandate), the **above-cap approvers**, how many of them must approve, and the caps — hard or approval-kind (v0.8; in v0.7 one `requiredApprovers` list served both roles)
+- The group admin defines, per profile, the **grantors** (who may give a mandate), the **required owners** (whose mandate must exist), the **above-cap approvers**, how many of them must approve, and the caps — hard or approval-kind (v0.8; in v0.7 one `requiredApprovers` list served all three roles)
 - The group admin defines group membership — who may commit
-- A member who leaves a group leaves their mandates under it behind: the AS MAY revoke them on the membership change, naming the cause (v0.8)
+- A member who leaves or joins a group leaves the mandates they held under the previous membership behind: the AS MAY revoke them on the membership change, naming the cause (v0.8)
 - Authority grants SHOULD require approval from existing authority holders
 - Authority SHOULD have expiration (annual renewal)
 
@@ -396,7 +396,7 @@ Since v0.5, required approvers are configured per group on the AS, not in profil
 When mandate or ticket validity is disputed:
 
 1. Verify cryptographic validity (signatures, hashes)
-2. Verify required-approver coverage at time of mandate
+2. Verify the grant at time of mandate, and required-owner coverage at time of ticket
 3. Verify AS was trusted at time of mandate
 4. For tickets: verify the ticket was issued during the mandate's TTL window and before any revocation
 5. If all valid → mandate and ticket stand
@@ -560,7 +560,7 @@ This is the integrity anchor: `intent_ciphertext`, `encrypted_keys`, and `approv
 
 - **C1.** The AS MUST NOT be able to decrypt `intent_ciphertext`. If the AS holds any decryption key for any approver, the companion spec is not in force.
 - **C2.** The signed mandate payload MUST include `intent_disclosure_hash` as defined above. Without it, a malicious or compromised AS could swap ciphertexts, replace wrapped keys, or widen/shrink the approver set without invalidating the AS signature over the mandate; against an AS that is itself compromised, only an owner-signed projection carrying the hash makes the substitution detectable.
-- **C3.** When the approver set changes (e.g., an approver leaves the group), a **new** mandate with a new disclosure object MUST be issued for any subsequent action: the CEK is regenerated and re-wrapped for the new `approvers_frozen` set. Superseded wrapped keys MUST be retained for audit but MUST NOT be referenced by any future ticket. A ticket MUST only be issued against a mandate whose `approvers_frozen` matches the current required-approver set.
+- **C3.** When the approver set changes (e.g., an approver leaves the group), a **new** mandate with a new disclosure object MUST be issued for any subsequent action: the CEK is regenerated and re-wrapped for the new `approvers_frozen` set. Superseded wrapped keys MUST be retained for audit but MUST NOT be referenced by any future ticket. `approvers_frozen` MUST equal the mandate's signed decider set — the Mandate Owner and its `above_cap_approvers` — and a ticket MUST only be issued against a mandate whose disclosure object was wrapped for exactly that set.
 
 As a companion spec, only `review` / `review_above_cap` deployments opt in; `automatic`-only deployments carry none of this. See `protocol.md` *Intent canonicalization* for the shared hashing rule the chain depends on; which implementations claim this companion spec is stated in their own conformance reports (*Reference Conformance* → *Implementation reports*).
 

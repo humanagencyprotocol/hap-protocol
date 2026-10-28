@@ -62,14 +62,19 @@ This file exists because the execution boundary has become a crowded control poi
 | Group roles — grantors distinct from above-cap approvers; a signed approval count; the proposer never counts; hard caps refused at signing; the decider set derived from the signed mandate | 0.7 (record) · 2026-10-14 | 0.8 (draft) | |
 | Group ceilings on reads and capability switches — the signed bound value is the ceiling; enum values ordered most permissive first | 0.7 (record) · 2026-10-14 | 0.8 (draft) | |
 | Profile-declared limits on a mandate — `commitment_modes`, `maximum` on a bound, `requiredFor` on a per-transaction bound | 0.7 (record) · 2026-09-30 → 10-06 | 0.8 (draft) | |
-| System context beside bound values on an approval surface; the request an action answers (the agent points, the Gatekeeper reads); `shown_hash` per decider | 0.7 (record) · 2026-10-13/14 | 0.8 (draft) | |
-| Owner Interface / approval surface / local custody domain — a remote approval surface is a verifying client | 0.7 (record) · 2026-09-10 | 0.8 (draft) | |
+| System data beside bound values on an approval surface; the request an action answers (the agent points, the Gatekeeper reads); `shown_hash` per decider | 0.7 (record) · 2026-10-13/14 | 0.8 (draft) | |
+| Owner Interface / approval surface / local custody domain — a remote approval surface is a verifying client | 0.7 (record) · 2026-09-10 | 0.8 (draft, specification-led) | |
+| Required owners — a third group role, separate from grantors and above-cap approvers: whose mandate must exist before a ticket issues | 0.8 (draft) · 2026-10-28 | 0.8 (draft) | Found by review of the 0.8 draft: splitting grantors from approvers left coverage pointing at a list that no longer existed. |
+| The owner's disclosure choice can be standing | 0.7 (record) · 2026-10-06 | 0.8 (draft) | |
+| Consumption counts tickets, not outcomes — a failed execution keeps its consumption | 0.8 (draft) · 2026-10-14 | 0.8 (draft) | |
+| Revocation on group membership change, with the cause named | 0.8 (draft) · 2026-10-11 | 0.8 (draft) | |
+| `mandateId` on the ticket request — the id selects, the bounds hash must still agree | 0.8 (draft) · 2026-10-28 | 0.8 (draft) | |
 | Public ticket projection (`HAP-ticket-projection`) — a separately signed public subset so a public view verifies without the AS | 0.5 (record) | 0.8 (draft, specification-led) | Targeted 0.7, slipped; promoted under rule 3 with a vector. |
 | Verifier policy (`HAP-verifier-policy`) — a declarative document a relying party evaluates, one failure per line | 0.6 (record) | 0.8 (draft, specification-led) | |
 
 ## Directions recorded but not yet binding
 
-Ideas appear in the review ledger before they are promoted, and the ledger is versioned and dated with the rest. Directions on the record with their first-appearance version: dual-signed public ticket projection (0.5), verifier policy for external relying parties (0.6), selective disclosure per field (0.5), witnessed transparency log (0.5), subject export of evidence at the AS (0.6), output provenance bound to observable outputs (0.2 as the deploy gate; companion spec since 0.5), `eudi` wallet integration and key rotation (0.6), sub-mandates and hierarchies of accountability (0.7), Owner Interface / approval-surface separation with a local custody domain, and remote review as the owner acting as their own approver (0.7), a ticket naming the request it answers via a signed `idempotencyKey` (0.7, promoted in 0.8), attachments by reference and `gates` on enum bounds (0.8), execution outcome reporting (0.8), device enrolment for remote approval surfaces (0.8). See the current `review.md`.
+Ideas appear in the review ledger before they are promoted, and the ledger is versioned and dated with the rest. Directions on the record with their first-appearance version: dual-signed public ticket projection (0.5; specification-led in 0.8), verifier policy for external relying parties (0.6; specification-led in 0.8), selective disclosure per field (0.5), witnessed transparency log (0.5), subject export of evidence at the AS (0.6), output provenance bound to observable outputs (0.2 as the deploy gate; companion spec since 0.5), `eudi` wallet integration and key rotation (0.6), sub-mandates and hierarchies of accountability (0.7), remote review as the owner acting as their own approver (0.7), attachments by reference and `gates` on enum bounds (0.8), execution outcome reporting (0.8), device enrolment for remote approval surfaces (0.8). See the current `review.md`.
 
 ## Maintaining this record
 
