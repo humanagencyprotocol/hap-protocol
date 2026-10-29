@@ -98,7 +98,7 @@
     },
     {
       "id": "required-value-absent",
-      "situation": "v0.8 — A per_transaction bound declares requiredFor for this actionType and executionContext lacks the bound's `of` field, or carries a value that is not a number.",
+      "situation": "v0.8 — A per_transaction bound declares requiredFor for this actionType and executionContext lacks the bound's `of` field (or carries it as null, which counts as absent).",
       "expected_error": "BOUND_EXCEEDED",
       "note": "Naming the bound and stating that the value is absent. Absence of a value is otherwise indistinguishable from absence of enforcement. For an action type the bound does not list, absence still passes (rule 7)."
     },
@@ -187,9 +187,9 @@
     },
     {
       "id": "non-number-value",
-      "situation": "v0.8 — executionContext carries amount: null (or a string) for a field some bound reads, under an action type the bound's requiredFor does not list.",
+      "situation": "v0.8 — executionContext carries a string (or a negative or non-finite number) for a field some bound reads, under any action type.",
       "expected_error": "MALFORMED_TICKET_REQUEST",
-      "note": "A present value is a finite, non-negative number, whatever requiredFor says; requiredFor governs only absence."
+      "note": "A present value is a finite, non-negative number, whatever requiredFor says; this check runs before the requiredFor check. null is absent, not present."
     },
     {
       "id": "coverage-different-caps",
@@ -201,6 +201,28 @@
       "id": "mandate-id-unknown",
       "situation": "v0.8 — The request's mandateId names no mandate of the authenticated owner.",
       "expected_error": "MANDATE_NOT_FOUND"
+    },
+    {
+      "id": "profile-id-differs",
+      "situation": "v0.8 — The request's profileId differs from the resolved mandate's profile_id.",
+      "expected_error": "MALFORMED_TICKET_REQUEST"
+    },
+    {
+      "id": "binding-missing",
+      "situation": "v0.8 — A content binding applies to the actionType and the request carries no contentHash, or a contentBinding that differs from the profile's declaration.",
+      "expected_error": "MALFORMED_TICKET_REQUEST"
+    },
+    {
+      "id": "review-content-hash-differs",
+      "situation": "v0.8 — The named proposal is committed, and the request's contentHash or contentBinding differs from the proposal's.",
+      "expected_error": "PROPOSAL_CONTENT_MISMATCH",
+      "note": "A ticket binds exactly the content the deciders approved."
+    },
+    {
+      "id": "null-value-under-required-for",
+      "situation": "v0.8 — executionContext carries amount: null for a bound whose requiredFor lists this actionType.",
+      "expected_error": "BOUND_EXCEEDED",
+      "note": "null counts as absent."
     }
   ],
   "mandate_request_refusals": [
@@ -218,7 +240,7 @@
     },
     {
       "id": "count-bound-without-applies-to",
-      "situation": "A v0.7-or-later profile has a cumulative_count bound with no appliesTo.",
+      "situation": "A profile in the v0.7 vocabulary (no contextSchema, no decision_owner gate) declares a cumulative_count bound without appliesTo.",
       "expected_error": "PROFILE_INVALID",
       "note": "Absence would mean \"governs every action type\", so a forgotten declaration silently throttles all writes."
     },
@@ -256,7 +278,7 @@
     },
     {
       "id": "owner-signature-required",
-      "situation": "An applicable profile floor or verifier policy requires an owner signature at a minimum binding and none satisfying it is present.",
+      "situation": "An applicable profile floor requires an owner signature at a minimum binding and none satisfying it is present.",
       "expected_error": "OWNER_SIGNATURE_REQUIRED",
       "note": "MUST fail, not warn."
     },
@@ -401,6 +423,23 @@
       "id": "list-element-with-comma",
       "situation": "v0.8 — A list-valued scope field has an element that contains a comma.",
       "expected_error": "SCOPE_INVALID_VALUE"
+    },
+    {
+      "id": "review-above-cap-unreachable-in-group",
+      "situation": "v0.8 — Group mode: the owner requests review_above_cap, and the group has no approval-kind caps, or approvers other than this owner fewer than its count.",
+      "expected_error": "ABOVE_CAP_CONFIG_INVALID",
+      "note": "The AS does not sign another mode silently."
+    },
+    {
+      "id": "approver-not-key-bearing",
+      "situation": "v0.8 — above_cap_approvers names an identity-only DID (did:email) or a service account.",
+      "expected_error": "ABOVE_CAP_CONFIG_INVALID"
+    },
+    {
+      "id": "commitment-modes-only-above-cap",
+      "situation": "v0.8 — The profile declares commitment_modes: [\"review_above_cap\"].",
+      "expected_error": "PROFILE_INVALID",
+      "note": "The entry is ignored, so the list admits no mode."
     }
   ],
   "fail_closed_situations": [
@@ -451,7 +490,7 @@
     },
     {
       "id": "replayed-ticket-outcome-unknown",
-      "situation": "v0.8 — As above, but the record shows the action was started and no completion — or there is no record at all.",
+      "situation": "v0.8 — As above, but the record shows the action was started and no completion.",
       "required_behaviour": "Surface the ambiguity to the Mandate Owner. MUST NOT resolve it by guessing; there is no idempotent-action escape hatch."
     },
     {
@@ -533,12 +572,42 @@
       "id": "surface-fingerprint-mismatch",
       "situation": "v0.8 — An approval surface, local or remote, recomputes proposalContentHash over what it decrypted and it differs from the proposal's.",
       "required_behaviour": "MUST NOT offer the decision."
+    },
+    {
+      "id": "replay-after-requested-only",
+      "situation": "v0.8 — A ticket request returns idempotent: true and the Gatekeeper's record shows only requested: the original response was lost.",
+      "required_behaviour": "MAY execute under the replayed ticket — the action cannot have started. A revocation issued after the original ticket does not reach it."
+    },
+    {
+      "id": "replay-without-record",
+      "situation": "v0.8 — A replayed ticket arrives for a request or proposal the Gatekeeper has no record of.",
+      "required_behaviour": "MUST NOT execute."
+    },
+    {
+      "id": "second-ticket-same-request",
+      "situation": "v0.8 — A ticket with a new id arrives for an idempotencyKey or proposalId the Gatekeeper's record already shows completed.",
+      "required_behaviour": "MUST NOT execute: the record is keyed on the request as well as the ticket."
+    },
+    {
+      "id": "ticket-unverified",
+      "situation": "v0.8 — The ticket's signature does not verify under its issuer, or an echoed field (profileId, actionType, boundsHash, executionContext, contentHash, contentBinding, proposalId, proposalContentHash) differs from the request.",
+      "required_behaviour": "Refuse to execute (INVALID_SIGNATURE / TICKET_REQUEST_MISMATCH)."
+    },
+    {
+      "id": "argument-coercion",
+      "situation": "v0.8 — A numeric manifest mapping finds null, an empty string, an array or a boolean in the argument.",
+      "required_behaviour": "Refuse locally (MALFORMED_TICKET_REQUEST); never coerce to 0."
+    },
+    {
+      "id": "public-projection-as-authorization",
+      "situation": "v0.8 — A projection served on a public page is presented to an effector as authorization.",
+      "required_behaviour": "MUST NOT be accepted as authorization."
     }
   ],
   "proposal_refusals": [
     {
       "id": "proposal-in-clear",
-      "situation": "v0.8 — A proposal carries its content (the action's arguments, previews) readable, or carries no content envelope and no fingerprint for an action that has content.",
+      "situation": "v0.8 — A proposal carries its content readable, or carries no content envelope or no fingerprint (every proposal carries both; an action with no arguments has the empty object as its content).",
       "expected_error": "PROPOSAL_NOT_ENCRYPTED",
       "note": "The only readable per-call values are action, actionType and the executionContext fields some bound reads. Emitted by the AS at proposal submission (AS · proposal)."
     },
@@ -546,7 +615,7 @@
       "id": "approvers-not-the-signed-set",
       "situation": "v0.8 — The caller supplies an approver list or reader set for an above-cap proposal that differs from the signed above_cap_approvers (omits one or adds anyone).",
       "expected_error": "PROPOSAL_APPROVERS_INVALID",
-      "note": "Deciders come from the signed mandate: exactly the signed above_cap_approvers, all of them readers. Neither narrowing nor widening is allowed — the Gatekeeper acts for the proposer."
+      "note": "Deciders come from the signed mandate: exactly the signed above_cap_approvers, each in readers or, where no reader key exists, in unreadable. Neither narrowing nor widening is allowed — the Gatekeeper acts for the proposer."
     },
     {
       "id": "unreadable-with-key",

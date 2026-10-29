@@ -53,11 +53,11 @@ v0.7 states the boundary sharply: a Mandate Owner is **one identifiable natural 
 
 ### Invariant 3 — Required-Owner Coverage
 
-Each Mandate Owner is identified by DID. In group mode, execution is invalid if the profile's required owners (as defined by the AS group configuration; `protocol.md` → *Group roles*, rule 8) are not all covered by the granting Mandate Owners. In personal mode, the user commits directly with no approver checks.
+Each Mandate Owner is identified by DID. In group mode, execution is invalid if the profile's required owners (as defined by the AS group configuration; `protocol.md` → *Group roles*, rule 8) are not all covered by the granting Mandate Owners. In personal mode there is no group configuration: the owner commits directly, and the only approvers are those the owner names for `review_above_cap` (`protocol.md` → *Group roles*, rule 4).
 
 ### Invariant 4 — Privacy Preservation
 
-No semantic content may leave local custody by protocol design. ASes and Executors receive only:
+No semantic content may leave local custody by protocol design. The Authority Server receives only (the Executor is inside the local custody domain and receives the arguments it acts on):
 
 - Bounds (in plaintext, for AS enforcement)
 - Cryptographic hashes (`bounds_hash`, `scope_hash`, `execution_context_hash`, `gate_content_hashes.intent`, `contentHash`)
@@ -157,7 +157,7 @@ Ambiguous Profiles are unenforceable.
 
 Profiles MUST NOT define:
 - `executionPaths` — removed in v0.4
-- `requiredDomains` — moved to AS group configuration (now `requiredApprovers`)
+- `requiredDomains` — moved to AS group configuration (v0.7 `requiredApprovers`; since v0.8 the three roles grantors, required owners and above-cap approvers — `protocol.md` → *Group roles*)
 - `gateQuestions` — the intent prompt is universal in the Owner Interface
 - `paths: [...]` arrays on bounds fields — finished removal in v0.5
 - `field.enum: string[]` — retired in v0.5; allowed values live in `constraint.values` (published versions that still carry it: deviation rule D3, `review.md`)
@@ -243,11 +243,10 @@ To support interoperability without institutional control, the HAP ecosystem mai
 - Reference bounds and scope canonicalization tests (including escape rules: newline rejection, percent-encoding of `=`/`%`/non-printable bytes)
 - Signing canonicalization test vectors — `(payload, canonical bytes, base64url signature)` triples with a known public key
 - Mandate validation test cases (per-mode: `automatic`, `review`, `review_above_cap`; `commitment_modes`, `maximum`, hard caps)
-- Ticket validation test cases (success, `BOUND_EXCEEDED` including an absent required value, `CUMULATIVE_LIMIT_EXCEEDED`, `APPROVAL_REQUIRED`, `APPROVAL_IMPOSSIBLE`, `INVALID_ACTION_TYPE`, `PROPOSAL_CONTENT_MISMATCH`)
+- Ticket validation test cases (`BOUND_EXCEEDED` including an absent required value, `CUMULATIVE_LIMIT_EXCEEDED`, `APPROVAL_REQUIRED`, `APPROVAL_IMPOSSIBLE`, `INVALID_ACTION_TYPE`, `PROPOSAL_CONTENT_MISMATCH`)
 - Profile compliance checks (presence of `boundsSchema.actionTypes`; `appliesTo` present and non-empty on every `cumulative_count` bound of a profile in the v0.7 vocabulary and ⊆ `actionTypes`; `appliesTo` absent on `per_transaction` and `enum` bounds; `requiredFor` only inside a `per_transaction` `boundType` and ⊆ `actionTypes`; `maximum` numeric; `boundType` on every bounds field except `profile`; `content_binding.appliesTo` ⊆ `actionTypes`; absence of `field.enum` in profiles published under v0.8 or later; absence of `paths` arrays)
 - A profile-hash vector — a published profile and its `profile_hash` (JCS-derived, `protocol.md` → *Profile hash*)
-- Tool-gating manifest schema validator (incl. `manifestVersion` and the closed transform vocabulary)
-- Content-binding canonicalization vectors (`text` rule, JCS field-binding objects, pinned hashes)
+- *Not yet in the published set, and named here as owed rather than claimed:* a tool-gating manifest schema validator (incl. `manifestVersion` and the closed transform vocabulary); content-binding canonicalization vectors (`text` rule, JCS field-binding objects, pinned hashes); intent canonicalization and `intent_disclosure_hash` vectors; success-path ticket cases (`review.md` → *Vectors owed*)
 - Mandate-projection vectors — (mandate payload, reconstructed `HAP-mandate-projection` canonical bytes, signature) triples (new in v0.6; the above-cap projection carries `above_cap_approvals` since v0.8)
 - Ticket vectors carrying `idempotencyKey` and, on the review path, `proposalId` and `proposalContentHash`; a `HAP-ticket-projection` vector (new in v0.8)
 
@@ -267,7 +266,7 @@ Running these tests is voluntary. Publishing results is optional.
 
 ### Implementation reports
 
-Implementation status is **not part of this specification**. The specification says what MUST hold; whether a given implementation holds it is a claim that implementation makes, in its own report, where a reader can weigh it against what that implementation exposes. A report SHOULD state: the protocol version(s) claimed on the wire; which optional surfaces (companion specifications, owner-signature bindings, `disclose_fields`) it implements; which vectors it reproduces; and every normative requirement it does not yet meet, in the specification's own terms. It SHOULD NOT describe internals the reader cannot inspect. The reference implementation's report is published with the conformance suite (`hap-e2e/CONFORMANCE.md`); its Gatekeeper and core library are open, its Authority Server is not, and the report says which claims a reader can check.
+Implementation status is **not part of this specification**. The specification says what MUST hold; whether a given implementation holds it is a claim that implementation makes, in its own report, where a reader can weigh it against what that implementation exposes. A report SHOULD state: the protocol version(s) claimed on the wire; which optional surfaces (companion specifications, owner-signature bindings, `disclose_fields`) it implements; which vectors it reproduces; and every normative requirement it does not yet meet, in the specification's own terms. It SHOULD NOT describe internals the reader cannot inspect. An implementation's report says which of its claims a reader can check for themselves.
 
 No entity grants approval. No entity issues certification.
 
@@ -294,7 +293,7 @@ Each obligation below is an **honest-operator control** (`protocol.md` → *Enfo
 - Records MUST be append-only — a renewal is a new record beside the old, an expired mandate is retained, and an export includes expired and superseded records (v0.8 states what *append-only* already meant)
 - ASes MUST maintain a revocation list (new in v0.4)
 - ASes SHOULD publish mandate and ticket counts and statistics
-- ASes MUST NOT issue mandates to anyone who is not a grantor, nor tickets without verifying required-owner coverage (in group mode)
+- In group mode, ASes MUST NOT issue mandates to anyone who is not a grantor, nor tickets without verifying required-owner coverage
 - ASes MUST NOT issue tickets for revoked or expired mandates
 - ASes MUST NOT hold the content of a proposed action in the clear, and MUST NOT echo it (v0.8)
 - A revocation record MUST name what initiated it (v0.8)
@@ -485,7 +484,7 @@ Owner signatures (`protocol.md` → *Owner Signatures*) are this invariant appli
 
 **Consequence.** Adopting this invariant obliged an audit of everything this specification describes as "enforced," separating what holds only against an honest AS from what holds against a later-compromised one. v0.7 performed it; the result is the enforcement-class table in `protocol.md` → *Enforcement classes*, which annotates each control as *honest-operator* or *compromise-resistant* and forbids describing the former as a defence against the operator. An invariant with no audit behind it would have been the same decorative control it was written to eliminate.
 
-**Scope of AS trust.** Choosing to trust an Authority Server's key means trusting it to **sign honestly and to enforce cumulative bounds, revocation, and approval**. The local Gatekeeper is the counterweight: it re-derives `gate_content_hashes` from locally-held content, enforces per-transaction bounds and scope constraints, checks that a ticket answers the request it sent, and executes at most once per ticket (v0.8), so a misbehaving AS cannot cause an Executor to run an action the human never authored locally, nor run it twice. Since v0.8 the AS also never holds what a proposed action contains; its comparison of fingerprints is an honest-operator control, the fingerprint in the signed ticket is not. A *compromised* AS can still over-authorize authorities the human did create — cumulative state and pre-flight ordering are claims about a sequence only the AS witnesses, and that residue is stated honestly in `protocol.md` → *What this does and does not prove*. What v0.6 removes from the compromised-AS attack surface is **fabrication of authority**: where owners co-sign their mandates and approvals, the AS can no longer forge authorization artifacts attributed to a Mandate Owner, fabricate or discard approvals, flip commitment mode, or extend a mandate's life. Mandates without owner signatures retain the v0.5 posture. The remaining hardening directions (a witnessed transparency log, approver-public-key authenticity) are tracked in `review.md` → "Resilience to a Compromised Authority Server."
+**Scope of AS trust.** Choosing to trust an Authority Server's key means trusting it to **sign honestly and to enforce cumulative bounds, revocation, and approval**. The local Gatekeeper is the counterweight: it re-derives `gate_content_hashes` from locally-held content, enforces per-transaction bounds and scope constraints, checks that a ticket answers the request it sent, and executes at most once per ticket (v0.8), so a misbehaving AS cannot cause an Executor to run an action the human never authored locally — nor, through that Gatekeeper, run one ticket twice. A compromised AS that signs a second ticket for one approval is not stopped by a record keyed on ticket ids alone (`protocol.md` → *One execution per ticket*). Since v0.8 the AS also never holds what a proposed action contains; its comparison of fingerprints is an honest-operator control, the fingerprint in the signed ticket is not. A *compromised* AS can still over-authorize authorities the human did create — cumulative state and pre-flight ordering are claims about a sequence only the AS witnesses, and that residue is stated honestly in `protocol.md` → *What this does and does not prove*. What v0.6 removes from the compromised-AS attack surface is **fabrication of authority**: where owners co-sign their mandates and approvals, the AS can no longer forge authorization artifacts attributed to a Mandate Owner, fabricate or discard approvals, flip commitment mode, or extend a mandate's life. Mandates without owner signatures retain the v0.5 posture. The remaining hardening directions (a witnessed transparency log, approver-public-key authenticity) are tracked in `review.md` → "Resilience to a Compromised Authority Server."
 
 ### Relationship to execution-boundary control models (non-normative)
 
@@ -561,7 +560,7 @@ This is the integrity anchor: `intent_ciphertext`, `encrypted_keys`, and `approv
 
 - **C1.** The AS MUST NOT be able to decrypt `intent_ciphertext`. If the AS holds any decryption key for any approver, the companion spec is not in force.
 - **C2.** The signed mandate payload MUST include `intent_disclosure_hash` as defined above. Without it, a malicious or compromised AS could swap ciphertexts, replace wrapped keys, or widen/shrink the approver set without invalidating the AS signature over the mandate; against an AS that is itself compromised, only an owner-signed projection carrying the hash makes the substitution detectable.
-- **C3.** When the approver set changes (e.g., an approver leaves the group), a **new** mandate with a new disclosure object MUST be issued for any subsequent action: the CEK is regenerated and re-wrapped for the new `approvers_frozen` set. Superseded wrapped keys MUST be retained for audit but MUST NOT be referenced by any future ticket. `approvers_frozen` MUST equal the mandate's signed decider set — the Mandate Owner and its `above_cap_approvers` — and a ticket MUST only be issued against a mandate whose disclosure object was wrapped for exactly that set.
+- **C3.** When the approver set changes (e.g., an approver leaves the group), the existing mandate continues under `protocol.md` → *Group roles*, rule 5 — a departed approver can no longer decide, which may make above-cap approval unreachable (`APPROVAL_IMPOSSIBLE`) — and a **new** mandate with a new disclosure object MUST be issued before the new set decides anything: the CEK is regenerated and re-wrapped for the new `approvers_frozen` set. Superseded wrapped keys MUST be retained for audit but MUST NOT be referenced by any future ticket. `approvers_frozen` MUST equal the mandate's signed decider set — the Mandate Owner and its `above_cap_approvers` — and a ticket MUST only be issued against a mandate whose disclosure object was wrapped for exactly that set.
 
 As a companion spec, only `review` / `review_above_cap` deployments opt in; `automatic`-only deployments carry none of this. See `protocol.md` *Intent canonicalization* for the shared hashing rule the chain depends on; which implementations claim this companion spec is stated in their own conformance reports (*Reference Conformance* → *Implementation reports*).
 

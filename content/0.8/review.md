@@ -10,7 +10,7 @@ This document is the **forward ledger**: what is open, what it targets, and whic
 
 Each open direction carries an explicit **target**; "undated" means no version commitment exists yet.
 
-**Implementation status is not part of this specification.** Whether a given implementation meets a requirement is that implementation's claim, made in its own report where a reader can weigh it (`governance.md` → *Reference Conformance* → *Implementation reports*). The reference implementation's report is published with the conformance suite (`hap-e2e/CONFORMANCE.md`).
+**Implementation status is not part of this specification.** Whether a given implementation meets a requirement is that implementation's claim, made in its own report where a reader can weigh it (`governance.md` → *Reference Conformance* → *Implementation reports*). Where an implementation publishes its report is that implementation's matter.
 
 ---
 
@@ -40,7 +40,7 @@ The normative design is in `protocol.md` → *Owner Signatures*; it was promoted
 
 P5 being configuration rather than redesign is the point of the ordering: build the slot against key material that exists today (passkeys), and a national scheme plugs into it.
 
-**The curve is an open decision, and P2 cannot start without it.** `did:key` is defined for several key types; this specification's vectors and its `alg: "EdDSA"` examples use Ed25519, and the reference `did:key` encoder accepts only the Ed25519 multicodec. Platform authenticators on the major desktop and mobile systems commonly sign with **ES256 (P-256)** rather than Ed25519, so "enrol a passkey as the signing DID" is not automatically implementable. Two ways forward, and the choice belongs to whoever starts P2:
+**The curve is an open decision, and P2 cannot start without it.** `did:key` is defined for several key types; this specification's vectors and its `alg: "EdDSA"` examples use Ed25519, and a `did:key` encoder built to these examples accepts only the Ed25519 multicodec. Platform authenticators on the major desktop and mobile systems commonly sign with **ES256 (P-256)** rather than Ed25519, so "enrol a passkey as the signing DID" is not automatically implementable. Two ways forward, and the choice belongs to whoever starts P2:
 
 - **Accept P-256 signing DIDs.** Widest reach, since it is what platform authenticators already produce. Costs a second multicodec in every encoder, decoder and verifier, and a conformance vector per curve — the whole point of `alg` being carried alongside the DID is to keep curve confusion out, so both paths must be pinned by vectors rather than inferred.
 - **Require Ed25519 key material.** Keeps one curve everywhere and the existing vectors unchanged, but narrows enrolment to authenticators and wallets that offer it, which excludes some platform passkeys.
@@ -59,11 +59,11 @@ The immutability rule was violated before v0.6 closed the loophole normatively: 
 
 ### D2 — The field-name fallback for cumulative bounds (closed in v0.8)
 
-v0.7 permitted an enforcement point to keep a field-name fallback for mandates on profile versions that predate `appliesTo`, until no live, unexpired mandate referenced one. v0.8 closes it for v0.8 mandates: a v0.8 mandate names a profile version that declares `appliesTo`, so the fallback is unreachable for it and MUST NOT exist on its path (`protocol.md` → *Migration from v0.7*). For a live v0.7 mandate the v0.7 condition governs until it expires. Whether a given implementation has removed the fallback is a matter for its own report.
+v0.7 permitted an enforcement point to keep a field-name fallback for mandates on profile versions that predate `appliesTo`, until no live, unexpired mandate referenced one. v0.8 closes it for v0.8 mandates: the fallback MUST NOT exist on a v0.8 mandate's path. Where a v0.8 mandate names a profile in the v0.6 vocabulary that lacks `appliesTo` on a count bound (D4, marked †), the defined reading applies — absence means the bound governs every action type — and no field-name correlation is used (`protocol.md` → *Migration from v0.7*). For a live v0.7 mandate the v0.7 condition governs until it expires. Whether a given implementation has removed the fallback is a matter for its own report.
 
 ### D3 — Scope enum values in `field.enum` (grandfathered per version, closes per profile)
 
-v0.5 retired the top-level `field.enum: string[]` on a scope field in favour of `constraint.values`, and `protocol.md` → *Scope Schema* says implementations MUST NOT fall back to it. Every published profile with enum scope fields still declares its values in `field.enum`, and none in `constraint.values` — the rule was never followed by the profiles the rule's own author publishes. The MUST stands. **Published profile versions carrying `field.enum` are grandfathered**: an implementation MAY read `field.enum` for exactly those versions and for no profile published under v0.8 or later. Each profile MUST move its values to `constraint.values` at its next version, which closes D3 for that profile. Re-admitting `field.enum` as a second read location was rejected (`changelog.md`).
+v0.5 retired the top-level `field.enum: string[]` on a scope field in favour of `constraint.values`, and `protocol.md` → *Scope Schema* says implementations MUST NOT fall back to it. Every published profile with enum scope fields still declares its values in `field.enum`, and none in `constraint.values` — the rule was never followed by the profiles the rule's own author publishes. The MUST stands. **Published profile versions carrying `field.enum` are grandfathered**: an implementation MAY read `field.enum` for exactly those versions — a closed list, like D4: charge@0.4–0.7, customers@0.4–0.11, delegation@0.4–0.6, invoicing@0.1, publish@0.4–0.7, purchase@0.4–0.8, sales@0.1–0.4, as of `hap-profiles` 2026-10-29 — and for no other. Each profile MUST move its values to `constraint.values` at its next version, which closes D3 for that profile. Re-admitting `field.enum` as a second read location was rejected (`changelog.md`).
 
 ### D4 — Profiles in the v0.6 vocabulary (a register, closed list)
 
@@ -111,13 +111,57 @@ v0.8 pins `info` and associated data as empty, as implemented. A fixed `info` la
 
 A mandate's `typ` sits in its unsigned header, so mandates and tickets are told apart by their fields (*Ticket Payload Schema*). Signing `typ` into the payload makes the separation explicit; it changes every mandate signature and belongs to a wire-breaking version.
 
+### Decisions on a proposal — target: before v0.8 publication
+
+*Proposals* defines who may decide and when a proposal commits, not what each decision does. Open: whether one reject by a signed decider is final against a count above one; whether the owner can withdraw or veto a `review_above_cap` proposal; what "send back" leads to; and that the AS MUST refuse, and not count, a decision from a DID outside the signed set, a second decision by the same decider, a decision on a decided proposal, or one from an approver who has left the group — with codes. Pending the author's decision (2026-10-29).
+
+### Approval caps on a value that is absent — target: before v0.8 publication
+
+An approval-kind cap fires only on a value that is present, and nothing requires the capped bound's field to be present: an action mapped without an amount runs above a group cap unapproved and unconsumed. Two repairs: refuse to sign a cap on a bound whose `requiredFor` does not cover every action type it governs, or treat an absent value under an approval-kind cap as above it. Pending the author's decision (2026-10-29).
+
+### Proposal lifetime — target: v0.9
+
+The decision window and an execution deadline for a committed proposal are undefined: a committed proposal refused for a cumulative limit stays redeemable until the mandate expires, and a `review` proposal in a group whose approvers cannot decide has no exit (`APPROVAL_IMPOSSIBLE` exists only at ticket time). Direction: an AS-set deadline stated in the proposal for each state, `PROPOSAL_EXPIRED` after it, and `APPROVAL_IMPOSSIBLE` at submission.
+
+### Refusals still without a code — target: v0.9
+
+Mandate request: `mandate_id`/`issued_at`/`issuer` present; an owner DID other than the authenticated one; invalid `subjects`; an `intent_disclosure_hash` mismatch; an `enum` value outside `values`; `review_above_cap` without caps or approvers; an absent or non-positive TTL. Ticket request: both `proposalId` and `idempotencyKey`. Proposal submission: a revoked or expired mandate, an unknown `mandateId`, an invalid `actionType`, a value over a bound. Each needs one code in the stage lists.
+
+### An audience-bound authorization projection — undated
+
+A public projection must not double as authorization (*Public ticket projection*, rule 3). An effector that wants a minimal object rather than the complete ticket needs a projection naming its audience, signed, and consumed once.
+
+### The owner's projection names no Authority Server — next wire-breaking version
+
+A projection carries no `issuer`, so an owner signature is valid with any AS; a projection that reaches a second AS can become a second mandate with its own cumulative bucket. Adding `issuer` to the projection changes the owner-signed bytes.
+
+### A signed `typ` on every AS-signed object other than mandate and ticket — v0.9
+
+Mandates and tickets are told apart by their fields; every further AS-signed object (a decision record, a key-directory signature) should carry a signed `typ`, and the decision record needs a defined shape.
+
+### Coverage evidence on the ticket — undated
+
+A ticket names no covering mandates, and group configuration is unsigned, so after the fact no artifact shows which required owners covered an action. Direction: an optional list of the covering `mandateId`s in the signed ticket.
+
+### Comparison and normalization semantics — v0.9
+
+Which whitespace intent canonicalization and the `text` binding strip (ASCII, or Unicode White_Space); the comparison rule for write-path `enum`/`subset` scope checks (case, NFKC) and the `pattern` dialect; `join_domains` lowercasing against scope strings kept as committed; stringification of objects and booleans in manifest transforms. Each changes an outcome and needs one rule and a vector.
+
+### Vectors owed — v0.9
+
+Content binding (`text` with CRLF, trailing blanks and NFC; a v2 field binding), intent canonicalization and `intent_disclosure_hash`, a manifest validator, success-path ticket cases, and a chain from a co-signed above-cap mandate to its projection.
+
+### Buckets per profile version — undated
+
+The cumulative key carries the versioned `profileId`, so mandates under `charge@0.5` and `charge@0.6` with the same daily bound give one owner two ceilings. Whether the bucket should be per profile name across versions is open; until then the split is stated (*Cumulative State Tracking*).
+
 ### Cumulative state on the ticket, per bound — undated
 
 A ticket's `cumulativeState` reports running totals per (profile, action type) bucket, but a `cumulative_count` or `cumulative_sum` bound with an `appliesTo` list spans several buckets, and a profile may declare several sum bounds over different fields. The number on the ticket is then not the number the bound was checked against, and a verifier cannot reproduce the decision from the ticket. The direction: report, per bound that was checked, the running value it was checked against — keyed by the bound's field name. It changes the signed ticket, so it needs its own design and a version that says so. Until then, `cumulativeState` is not the checked value of a bound that spans several action types.
 
 ### Device enrolment and revocation for remote approval surfaces — undated
 
-v0.8 named the roles (*Owner Interface*, *approval surface*, *local custody domain*) and the obligation on a remote surface: verify before showing. What is genuinely new protocol surface is **device enrolment and revocation**: an owner with keys on several devices needs enrolment that is itself a consequential, verifiable act (else it is the account-takeover path), and per-device revocation that does not void the mandates. Open questions, deliberately unresolved: whether a remote device is **review-only** (ephemeral per-decision disclosure — decrypt, show, sign, discard) or a **custody peer** holding plaintext at rest, and whether device keys are per-device DIDs under one owner identity or one provisioned key. Review-only with per-device keys is the conservative default. The proposal-content channel (`protocol.md` → *Proposals*) gives this its first case: today one key per user serves every device, which is the custody-peer answer taken by default rather than by decision. This is the same gap as the owner-signature enrolment ceremony above.
+v0.8 named the roles (*Owner Interface*, *approval surface*, *local custody domain*) and the obligation on a remote surface: verify before showing. What is genuinely new protocol surface is **device enrolment and revocation**: an owner with keys on several devices needs enrolment that is itself a consequential, verifiable act (else it is the account-takeover path), and per-device revocation that does not void the mandates. Open questions, deliberately unresolved: whether a remote device is **review-only** (ephemeral per-decision disclosure — decrypt, show, sign, discard) or a **custody peer** holding plaintext at rest, and whether device keys are per-device DIDs under one owner identity or one provisioned key. Review-only with per-device keys is the conservative default. The proposal-content channel (`protocol.md` → *Proposals*) gives this its first case: one key per user can serve every device, which is the custody-peer answer taken by default rather than by decision. This is the same gap as the owner-signature enrolment ceremony above.
 
 ### A wire binding — undated
 
