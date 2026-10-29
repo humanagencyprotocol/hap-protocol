@@ -1,7 +1,7 @@
 {
   "spec_version": "0.8",
-  "status": "draft for v0.8, 2026-10-28 — not yet independently re-derived (see README)",
-  "generated": "2026-10-28",
+  "status": "draft for v0.8, 2026-10-29 — independently re-derived 2026-10-29 (see README)",
+  "generated": "2026-10-29",
   "set": "required-refusals",
   "what_this_proves": "That an implementation refuses the same things, with the same error code. This is the set that matters most: refusal is where the safety lives, and it can be stated without reference to any URL, store, or identity system. An implementation that authorizes where this table refuses is not conformant, whatever its signatures look like.",
   "reading_this_table": "Each row is a situation, the request made in it, and the code that MUST come back. \"MUST NOT be substituted\" means exactly that: returning a different code for these situations — including a more generic one — is non-conformance, because the Gatekeeper's behaviour branches on the code (see protocol.md, Pre-flight Ticket Request). Rows marked v0.8 are new in this version; every v0.7 row still holds.",
@@ -40,14 +40,15 @@
     },
     {
       "id": "review-without-proposal",
-      "situation": "The mandate is in review mode and no approved proposalId accompanies the request.",
-      "expected_error": "PROPOSAL_REQUIRED"
+      "situation": "The mandate is in review mode and the request carries no proposalId — with or without an idempotencyKey.",
+      "expected_error": "PROPOSAL_REQUIRED",
+      "note": "The mode is checked before the key (Ticket Issuance, stage 5): a review request without a proposal is PROPOSAL_REQUIRED, never IDEMPOTENCY_KEY_REQUIRED."
     },
     {
       "id": "above-cap",
       "situation": "The mandate is in review_above_cap mode and a value exceeds a configured cap.",
       "expected_error": "APPROVAL_REQUIRED",
-      "note": "MUST NOT be downgraded to BOUND_EXCEEDED: the action is not forbidden, it needs a named approver, and the response carries the approver list."
+      "note": "MUST NOT be downgraded to BOUND_EXCEEDED: the action is not forbidden, it needs a named approver, and the response carries the approver list. Assumes the signed approvers other than the proposer can still reach above_cap_approvals; otherwise APPROVAL_IMPOSSIBLE."
     },
     {
       "id": "missing-idempotency-key",
@@ -57,7 +58,7 @@
     },
     {
       "id": "reused-idempotency-key",
-      "situation": "An idempotencyKey is reused for a different execution (profileId, action or executionContext differ).",
+      "situation": "An idempotencyKey already bound to a ticket is reused with a different profileId, action, actionType or executionContext.",
       "expected_error": "IDEMPOTENCY_MISMATCH",
       "note": "Reuse with an IDENTICAL payload is not an error: it MUST return the original ticket unchanged, without consuming bounds again."
     },
@@ -73,14 +74,45 @@
     },
     {
       "id": "coverage-insufficient",
-      "situation": "Group mode: the union of live, non-revoked mandates matching this bounds_hash, scope_hash, profile_id, intent hash and commitment_mode does not cover the required owners (v0.8: Group roles, rule 8; v0.7: the required approver set).",
-      "expected_error": "COVERAGE_INSUFFICIENT"
+      "situation": "Group mode: the union of live, non-revoked mandates matching this bounds_hash, scope_hash, profile_id, intent hash and commitment_mode does not cover the required owners, each of whom holds some live mandate for the profile (v0.8: Group roles, rule 8; v0.7: the required approver set).",
+      "expected_error": "COVERAGE_INSUFFICIENT",
+      "note": "A required owner with no live mandate for the profile at all is OWNER_NOT_COVERED instead (owner-not-covered)."
+    },
+    {
+      "id": "owner-not-covered",
+      "situation": "v0.8 — Group mode: a required owner holds no live mandate for the profile at all.",
+      "expected_error": "OWNER_NOT_COVERED",
+      "note": "The fix is a grant. Where the owner holds a mandate that does not match this one's hashes and mode, the code is COVERAGE_INSUFFICIENT."
+    },
+    {
+      "id": "revoked-and-expired",
+      "situation": "v0.8 — The mandate has been revoked and has also expired.",
+      "expected_error": "MANDATE_REVOKED",
+      "note": "The checks run in the listed order (Ticket Issuance); revocation, a human act, is reported before expiry."
+    },
+    {
+      "id": "above-bound-and-above-cap",
+      "situation": "v0.8 — review_above_cap: a value exceeds both its per-transaction bound and its above_cap_caps entry.",
+      "expected_error": "BOUND_EXCEEDED",
+      "note": "Bounds before caps: a request above a bound is refused, never routed for approval."
     },
     {
       "id": "required-value-absent",
       "situation": "v0.8 — A per_transaction bound declares requiredFor for this actionType and executionContext lacks the bound's `of` field, or carries a value that is not a number.",
       "expected_error": "BOUND_EXCEEDED",
       "note": "Naming the bound and stating that the value is absent. Absence of a value is otherwise indistinguishable from absence of enforcement. For an action type the bound does not list, absence still passes (rule 7)."
+    },
+    {
+      "id": "ambiguous-bounds-hash",
+      "situation": "v0.8 — The authenticated owner holds two live mandates with the same bounds_hash and the request carries boundsHash without mandateId.",
+      "expected_error": "MALFORMED_TICKET_REQUEST",
+      "note": "The AS never chooses a mandate itself: the two may differ in scope, mode or intent."
+    },
+    {
+      "id": "idempotency-key-other-action-type",
+      "situation": "v0.8 — A synchronous request reuses an idempotencyKey already bound to a ticket with the same profileId, action and executionContext but a different actionType.",
+      "expected_error": "IDEMPOTENCY_MISMATCH",
+      "note": "Not a replay: actionType selects which cumulative bounds apply, so the original ticket does not answer this request."
     },
     {
       "id": "mandate-id-bounds-disagree",
@@ -105,6 +137,70 @@
       "situation": "v0.8 — The request exceeds an approval-kind cap and the signed approvers still able to decide (not departed from the group, holding a reader key), other than the proposer, number fewer than above_cap_approvals.",
       "expected_error": "APPROVAL_IMPOSSIBLE",
       "note": "Not APPROVAL_REQUIRED: the proposal it would raise could never commit. A configuration that could never reach the count is refused at signing instead (ABOVE_CAP_CONFIG_INVALID). A hard-cap or per-transaction refusal is decided first."
+    },
+    {
+      "id": "proposal-unknown",
+      "situation": "v0.8 — The request names a proposalId unknown to this authenticated request context.",
+      "expected_error": "PROPOSAL_NOT_FOUND"
+    },
+    {
+      "id": "proposal-other-mandate",
+      "situation": "v0.8 — The named proposal belongs to a different mandate.",
+      "expected_error": "PROPOSAL_MANDATE_MISMATCH"
+    },
+    {
+      "id": "proposal-pending",
+      "situation": "v0.8 — The named proposal has not been decided.",
+      "expected_error": "PROPOSAL_NOT_APPROVED"
+    },
+    {
+      "id": "proposal-rejected",
+      "situation": "v0.8 — The named proposal was rejected.",
+      "expected_error": "PROPOSAL_REJECTED"
+    },
+    {
+      "id": "proposal-expired",
+      "situation": "v0.8 — The named proposal's decision window closed before it was committed.",
+      "expected_error": "PROPOSAL_EXPIRED"
+    },
+    {
+      "id": "proposal-fields-differ",
+      "situation": "v0.8 — The named proposal is committed, and the request's action, actionType or executionContext differ from the proposal's.",
+      "expected_error": "PROPOSAL_MISMATCH"
+    },
+    {
+      "id": "proposal-executed-other-request",
+      "situation": "v0.8 — The named proposal is executed, and the request differs from the one its ticket was issued for.",
+      "expected_error": "PROPOSAL_ALREADY_EXECUTED",
+      "note": "The same request gets the original ticket back with idempotent: true (stage 3)."
+    },
+    {
+      "id": "approval-signature-invalid",
+      "situation": "v0.8 — The proposal is committed and the HAP-approval signature the AS must verify does not verify under the approver's DID.",
+      "expected_error": "APPROVAL_SIGNATURE_INVALID"
+    },
+    {
+      "id": "negative-value",
+      "situation": "v0.8 — executionContext carries amount: -100 for a field a cumulative_sum bound reads.",
+      "expected_error": "MALFORMED_TICKET_REQUEST",
+      "note": "For every action type. A negative value would lower a running sum and return consumed authority."
+    },
+    {
+      "id": "non-number-value",
+      "situation": "v0.8 — executionContext carries amount: null (or a string) for a field some bound reads, under an action type the bound's requiredFor does not list.",
+      "expected_error": "MALFORMED_TICKET_REQUEST",
+      "note": "A present value is a finite, non-negative number, whatever requiredFor says; requiredFor governs only absence."
+    },
+    {
+      "id": "coverage-different-caps",
+      "situation": "v0.8 — Group mode: two required owners hold mandates with the same hashes and mode but different above_cap_caps.",
+      "expected_error": "COVERAGE_INSUFFICIENT",
+      "note": "Mandates cover each other only with identical approval conditions."
+    },
+    {
+      "id": "mandate-id-unknown",
+      "situation": "v0.8 — The request's mandateId names no mandate of the authenticated owner.",
+      "expected_error": "MANDATE_NOT_FOUND"
     }
   ],
   "mandate_request_refusals": [
@@ -218,10 +314,10 @@
       "note": "review_above_cap is admitted iff automatic is listed: below the caps it runs without approval."
     },
     {
-      "id": "commitment-modes-empty",
-      "situation": "v0.8 — The profile declares commitment_modes as an empty list, a non-list, or a list with no valid entry.",
-      "expected_error": "COMMITMENT_MODE_NOT_ALLOWED",
-      "note": "Read fail-closed: a declaration with no valid entry admits no mandate."
+      "id": "commitment-modes-malformed",
+      "situation": "v0.8 — The profile declares commitment_modes as an empty list, a non-list, or a list with an entry that is not a commitment mode.",
+      "expected_error": "PROFILE_INVALID",
+      "note": "The fault is the profile's, not the request's: no mandate issues under it, whatever mode is requested."
     },
     {
       "id": "above-maximum",
@@ -242,7 +338,7 @@
     },
     {
       "id": "omitted-under-ceiling",
-      "situation": "v0.8 — Group mode: a group ceiling exists for a bound and the request omits the field.",
+      "situation": "v0.8 — Group mode: a group ceiling exists for an optional bound and the request omits the field. (An omitted required bound is MALFORMED_MANDATE whatever the group configures.)",
       "expected_error": "GROUP_CAP_EXCEEDED",
       "note": "The signed value is the ceiling; an absent value would be no ceiling at all."
     },
@@ -260,15 +356,51 @@
     },
     {
       "id": "approvals-count-invalid",
-      "situation": "v0.8 — above_cap_approvers is signed and above_cap_approvals is absent, not an integer ≥ 1, or greater than the number of above_cap_approvers other than the Mandate Owner.",
+      "situation": "v0.8 — Outside a group: the owner requests review_above_cap with above_cap_approvers, and above_cap_approvals is absent, not an integer >= 1, or greater than the number of above_cap_approvers other than the Mandate Owner.",
       "expected_error": "ABOVE_CAP_CONFIG_INVALID",
-      "note": "An owner listed as their own only approver, with a count of 1, can never commit: the proposer never counts."
+      "note": "An owner listed as their own only approver, with a count of 1, can never commit: the proposer never counts — in a group or not (v0.7 accepted this configuration outside a group; v0.8 does not)."
     },
     {
       "id": "cosigned-request-the-group-would-promote",
       "situation": "v0.8 — Group mode with approval-kind caps: a request carrying an owner signature asks for automatic. The AS would sign review_above_cap, but cannot alter a projection the owner already signed.",
       "expected_error": "MALFORMED_MANDATE",
       "note": "The AS refuses rather than promotes. An Owner Interface shows the owner the mode the group imposes before signing."
+    },
+    {
+      "id": "execution-context-hash-wrong",
+      "situation": "v0.8 — execution_context_hash is not the hash of the profile's executionContextSchema.",
+      "expected_error": "MALFORMED_MANDATE"
+    },
+    {
+      "id": "bounds-profile-differs",
+      "situation": "bounds.profile differs from profile_id.",
+      "expected_error": "MALFORMED_MANDATE"
+    },
+    {
+      "id": "group-count-unreachable",
+      "situation": "v0.8 — Group mode: the group's approval-kind cap is 1000 with one approval required, the owner is the group's only approver, and the request carries a bound of 5000.",
+      "expected_error": "GROUP_CAP_EXCEEDED",
+      "note": "The approval cannot be reached for this owner, so the caps are hard for their mandate (Group roles, rule 5): a bound at or below 1000 is signed, without above-cap fields."
+    },
+    {
+      "id": "approval-cap-on-cumulative",
+      "situation": "v0.8 — above_cap_caps names a cumulative_sum or cumulative_count field, or profile.",
+      "expected_error": "ABOVE_CAP_CONFIG_INVALID"
+    },
+    {
+      "id": "disclose-scope-field",
+      "situation": "v0.8 — A profile's disclose_fields names a field no bound reads (a scope value such as environment).",
+      "expected_error": "PROFILE_INVALID"
+    },
+    {
+      "id": "subjects-disclosed-disagrees",
+      "situation": "v0.8 — A co-signed request whose projection says subjects_disclosed: false while the owner's standing disclosure choice is set.",
+      "expected_error": "MALFORMED_MANDATE"
+    },
+    {
+      "id": "list-element-with-comma",
+      "situation": "v0.8 — A list-valued scope field has an element that contains a comma.",
+      "expected_error": "SCOPE_INVALID_VALUE"
     }
   ],
   "fail_closed_situations": [
@@ -309,8 +441,8 @@
     },
     {
       "id": "ticket-names-another-request",
-      "situation": "v0.8 — The Gatekeeper receives a valid ticket whose idempotencyKey is absent or differs from the key it sent, or whose timestamp is outside the freshness window.",
-      "required_behaviour": "Refuse to execute (TICKET_REQUEST_MISMATCH). Exactly-once at the AS is held against this check at the Gatekeeper."
+      "situation": "v0.8 — The Gatekeeper receives a valid ticket whose idempotencyKey is absent or differs from the key it sent, or whose mandateId differs from the mandate it verified in Phase 1.",
+      "required_behaviour": "Refuse to execute (TICKET_REQUEST_MISMATCH). Freshness is separate: a freshly issued ticket outside the 300-second window SHOULD be refused, and a replay (idempotent: true) is exempt from it (Ticket Payload Schema, rule 4)."
     },
     {
       "id": "replayed-ticket-after-completion",
@@ -319,7 +451,7 @@
     },
     {
       "id": "replayed-ticket-outcome-unknown",
-      "situation": "v0.8 — As above, but the record shows the action was started and no completion.",
+      "situation": "v0.8 — As above, but the record shows the action was started and no completion — or there is no record at all.",
       "required_behaviour": "Surface the ambiguity to the Mandate Owner. MUST NOT resolve it by guessing; there is no idempotent-action escape hatch."
     },
     {
@@ -359,8 +491,8 @@
     },
     {
       "id": "projection-after-valid-until",
-      "situation": "v0.8 — A HAP-ticket-projection is presented to a relying party after its valid_until.",
-      "required_behaviour": "Refuse. Where repeating the action is itself the harm, consume the projection's id atomically on first presentation."
+      "situation": "v0.8 — A HAP-ticket-projection is presented to a relying party acting on it as authorization after its valid_until.",
+      "required_behaviour": "Refuse. Where repeating the action is itself the harm, consume the projection's id atomically on first presentation. A reader using it as evidence (a public page, an auditor) does not apply valid_until."
     },
     {
       "id": "policy-line-unmet",
@@ -368,9 +500,39 @@
       "required_behaviour": "Fail, naming the line and the code (the specific code where one exists, else POLICY_UNMET). Absent lines impose nothing."
     },
     {
-      "id": "revocation-without-cause",
+      "id": "revocation-by-membership-change",
       "situation": "v0.8 — A mandate is revoked by a membership change.",
       "required_behaviour": "Permanent like any revocation; the record names the cause."
+    },
+    {
+      "id": "replay-other-request-context",
+      "situation": "v0.8 — A second Gatekeeper, authenticated as another request context, presents an idempotencyKey or an executed proposalId that another context obtained a ticket for.",
+      "required_behaviour": "The AS does not serve the original: MANDATE_NOT_FOUND or PROPOSAL_NOT_FOUND, as if the record did not exist."
+    },
+    {
+      "id": "projection-other-key",
+      "situation": "v0.8 — A HAP-ticket-projection verifies only under a key other than its ticket's issuer.",
+      "required_behaviour": "Refuse (INVALID_SIGNATURE)."
+    },
+    {
+      "id": "content-binding-required-absent",
+      "situation": "v0.8 — A content binding applies to the action and a field it requires is absent, or no declared field carries a value.",
+      "required_behaviour": "The Gatekeeper refuses before any AS call (CONTENT_BINDING_INCOMPLETE)."
+    },
+    {
+      "id": "scope-hash-mismatch",
+      "situation": "The Gatekeeper's recomputed scope_hash differs from the mandate's.",
+      "required_behaviour": "Refuse locally (SCOPE_HASH_MISMATCH)."
+    },
+    {
+      "id": "held-mandate-expired",
+      "situation": "The Gatekeeper's held mandate is past expires_at plus the skew tolerance.",
+      "required_behaviour": "Refuse locally (TTL_EXPIRED)."
+    },
+    {
+      "id": "surface-fingerprint-mismatch",
+      "situation": "v0.8 — An approval surface, local or remote, recomputes proposalContentHash over what it decrypted and it differs from the proposal's.",
+      "required_behaviour": "MUST NOT offer the decision."
     }
   ],
   "proposal_refusals": [
@@ -381,10 +543,20 @@
       "note": "The only readable per-call values are action, actionType and the executionContext fields some bound reads. Emitted by the AS at proposal submission (AS · proposal)."
     },
     {
-      "id": "approvers-not-a-subset",
+      "id": "approvers-not-the-signed-set",
       "situation": "v0.8 — The caller supplies an approver list or reader set for an above-cap proposal that differs from the signed above_cap_approvers (omits one or adds anyone).",
       "expected_error": "PROPOSAL_APPROVERS_INVALID",
       "note": "Deciders come from the signed mandate: exactly the signed above_cap_approvers, all of them readers. Neither narrowing nor widening is allowed — the Gatekeeper acts for the proposer."
+    },
+    {
+      "id": "unreadable-with-key",
+      "situation": "v0.8 — A signed approver for whom the AS serves a reader key is listed in unreadable instead of readers.",
+      "expected_error": "PROPOSAL_APPROVERS_INVALID"
+    },
+    {
+      "id": "readers-keys-differ",
+      "situation": "v0.8 — readers differs from the key set of encrypted_keys.",
+      "expected_error": "PROPOSAL_NOT_ENCRYPTED"
     }
   ]
 }

@@ -71,6 +71,11 @@ This file exists because the execution boundary has become a crowded control poi
 | `mandateId` on the ticket request — the id selects, the bounds hash must still agree | 0.8 (draft) · 2026-10-28 | 0.8 (draft) | |
 | Public ticket projection (`HAP-ticket-projection`) — a separately signed public subset so a public view verifies without the AS | 0.5 (record) | 0.8 (draft, specification-led) | Targeted 0.7, slipped; promoted under rule 3 with a vector. |
 | Verifier policy (`HAP-verifier-policy`) — a declarative document a relying party evaluates, one failure per line | 0.6 (record) | 0.8 (draft, specification-led) | |
+| Ticket checks in a stated order, replay answered first and only to the requesting context | 0.8 (draft) · 2026-10-29 | 0.8 (draft) | first external review round |
+| Values a bound reads are finite and non-negative | 0.8 (draft) · 2026-10-29 | 0.8 (draft) | first external review round |
+| Owner-signed `binding`, `signing_surface`, `subjects_disclosed` in the mandate projection | 0.8 (draft) · 2026-10-29 | 0.8 (draft) | first external review round |
+| `proposal_content_hash` on `HAP-approval` — the whole content signed beside the bound subset | 0.8 (draft) · 2026-10-29 | 0.8 (draft) | first external review round |
+| Proposal encryption pinned byte for byte, with a vector | 0.8 (draft) · 2026-10-29 | 0.8 (draft) | first external review round |
 
 ## Directions recorded but not yet binding
 

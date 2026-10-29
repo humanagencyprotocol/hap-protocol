@@ -3,7 +3,7 @@ title: "Human Agency Protocol — Review and Future Directions"
 version: "Version 0.8"
 date: "October 2026"
 status: "Non-normative — future directions (draft)"
-description: "The forward ledger for v0.8: open directions with their targets, the two specification-led surfaces tracked until an implementation closes them, and the deviation rules that bind every implementation. The record of what changed in v0.8 is changelog.md. Implementation status is not part of the specification."
+description: "The forward ledger for v0.8: open directions with their targets, the three specification-led surfaces tracked until an implementation closes them, and the deviation rules that bind every implementation. The record of what changed in v0.8 is changelog.md. Implementation status is not part of the specification."
 ---
 
 This document is the **forward ledger**: what is open, what it targets, and which deviation rules are on record. What was promoted into v0.8 and why — the twelve directions built before they were written, the two promoted specification-led, the details pinned, and the proposals rejected — is `changelog.md`. A v0.8 implementation MAY implement any direction below without losing conformance, and MAY skip all of them without losing conformance.
@@ -22,7 +22,7 @@ Promotion rule 3 admits a direction that is additive and optional without an imp
 - **Remote approval surfaces** (`protocol.md` → *Roles* → *Approval surfaces*). A surface away from the owner's device MUST verify before it shows. What closes it: a remote surface that verifies the mandate and the proposal fingerprint itself, and refuses to offer a decision it cannot decrypt. Device enrolment is the open half (*Device enrolment and revocation* below).
 - **Verifier policy** (`protocol.md` → *Owner Signatures* → *Verifier policy — `HAP-verifier-policy`*). What closes it: a verifier — a core-library helper, a pipeline, an auditor's tool — that evaluates a policy document and fails on the named line. The policy's lines are the ones the v0.6 procedure already implied; a relying party that needs a line not listed should say so here before an implementation invents one.
 
-Both were written so that P2 of the owner-signature order below is not a dependency: the owner entry in the projection, and the `min_binding` and `required_owners` lines of the policy, are conditional on owner signatures existing and impose nothing where they do not.
+The first two were written so that P2 of the owner-signature order below is not a dependency: the owner entry in the projection, and the `min_binding` and `required_owners` lines of the policy, are conditional on owner signatures existing and impose nothing where they do not.
 
 ---
 
@@ -65,6 +65,14 @@ v0.7 permitted an enforcement point to keep a field-name fallback for mandates o
 
 v0.5 retired the top-level `field.enum: string[]` on a scope field in favour of `constraint.values`, and `protocol.md` → *Scope Schema* says implementations MUST NOT fall back to it. Every published profile with enum scope fields still declares its values in `field.enum`, and none in `constraint.values` — the rule was never followed by the profiles the rule's own author publishes. The MUST stands. **Published profile versions carrying `field.enum` are grandfathered**: an implementation MAY read `field.enum` for exactly those versions and for no profile published under v0.8 or later. Each profile MUST move its values to `constraint.values` at its next version, which closes D3 for that profile. Re-admitting `field.enum` as a second read location was rejected (`changelog.md`).
 
+### D4 — Profiles in the v0.6 vocabulary (a register, closed list)
+
+`protocol.md` → *Profiles* reads a profile in the v0.6 vocabulary — one that carries `contextSchema` or a `decision_owner` gate — under its v0.7 names, and exempts it from the v0.7 requirement of `appliesTo` on count bounds. Whether a profile is in that vocabulary is read from its bytes, not from a date. For reference, the published profiles in it, as of `hap-profiles` commit `26f9ef8` (2026-10-29); those marked † also lack `appliesTo` on a `cumulative_count` bound:
+
+calendar@0.4†, calendar@0.5, charge@0.3, charge@0.4†, charge@0.5, customers@0.4†, customers@0.5†, customers@0.6, customers@0.7, customers@0.8, delegation@0.1, delegation@0.2, deploy@0.6†, deploy@0.7†, deploy@0.8†, deploy@0.9, deploy@0.10, email@0.3, email@0.4†, email@0.5†, email@0.6, email@0.7, publish@0.4†, publish@0.5, purchase@0.4†, purchase@0.5, purchase@0.6, records@0.4†, records@0.5, reporting@0.1, reporting@0.2, sales@0.1, sales@0.2, sales@0.3.
+
+The list is closed: a new profile version in the v0.6 vocabulary is not conformant. It shrinks as mandates under these versions expire; it is never extended.
+
 ---
 
 ## Open directions
@@ -82,6 +90,30 @@ The v0.7 group-caps entry proposed that an `enum` bound SHOULD declare what it g
 ### Execution outcome reporting — undated
 
 v0.8 fixed the rule that matters (*Execution Context Schema*, rule 6: consumption counts tickets, never outcomes). What remains is whether and how a Gatekeeper reports an outcome — succeeded, failed, unknown — to the Authority Server, display-only, so that an owner looking at a ticket list sees which actions ran. The report is unsigned by construction (the Gatekeeper is reporting on itself) and MUST NOT feed enforcement; the open design questions are its shape and whether a failed execution's ticket should be marked in a public projection.
+
+### Custody evidence for `binding` — undated
+
+Since v0.8 the owner signs `binding` and `signing_surface`, so an AS can no longer restate them. They remain the owner's device's own claim. Proving custody — that a `webauthn` signature came from a platform authenticator, an `eudi` one from a wallet — needs attestation evidence carried with the signature and a stated trust root for it. Until then `min_binding` constrains the AS, not a compromised device.
+
+### Execution records across Gatekeepers, and consumption by approval — undated
+
+*One execution per ticket* holds per Gatekeeper. Two directions remain: a shared, atomic execution record for an owner who runs several Gatekeepers against one mandate; and, against an AS that signs a second ticket for one approval, consumption keyed on the human approval (`proposal_id` with its approval signature) rather than on the ticket `id`, carried into the public projection so an effector can apply it.
+
+### A hiding commitment for proposal content — undated
+
+`proposalContentHash` is unsalted, so where the possible contents are few an AS can confirm a guess. A commitment salted with randomness kept inside the encrypted content would hide it; it has to be designed together with every other deterministic hash over the same values (`contentHash`), or the salt hides nothing.
+
+### Domain separation of the HPKE wrap — undated
+
+v0.8 pins `info` and associated data as empty, as implemented. A fixed `info` label per use (intent, proposal) would bind each wrap to its purpose. It changes the bytes, so it is a versioned change with a new vector.
+
+### `typ` inside the signed mandate payload — undated
+
+A mandate's `typ` sits in its unsigned header, so mandates and tickets are told apart by their fields (*Ticket Payload Schema*). Signing `typ` into the payload makes the separation explicit; it changes every mandate signature and belongs to a wire-breaking version.
+
+### Cumulative state on the ticket, per bound — undated
+
+A ticket's `cumulativeState` reports running totals per (profile, action type) bucket, but a `cumulative_count` or `cumulative_sum` bound with an `appliesTo` list spans several buckets, and a profile may declare several sum bounds over different fields. The number on the ticket is then not the number the bound was checked against, and a verifier cannot reproduce the decision from the ticket. The direction: report, per bound that was checked, the running value it was checked against — keyed by the bound's field name. It changes the signed ticket, so it needs its own design and a version that says so. Until then, `cumulativeState` is not the checked value of a bound that spans several action types.
 
 ### Device enrolment and revocation for remote approval surfaces — undated
 

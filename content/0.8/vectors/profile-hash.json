@@ -1,13 +1,14 @@
 {
   "spec_version": "0.8",
-  "status": "draft for v0.8, 2026-10-28 — not yet independently re-derived (see README)",
-  "generated": "2026-10-28",
+  "status": "draft for v0.8, 2026-10-29 — independently re-derived 2026-10-29 (see README)",
+  "generated": "2026-10-29",
   "set": "profile-hash",
   "what_this_proves": "That two parties who provisioned the same profile through different channels compute the same profile_hash. The hash is over the RFC 8785 (JCS) serialization of the PARSED profile document, never over file bytes — formatting, key order, and trailing newlines do not change it.",
   "rules": [
     "Parse the profile JSON, serialize with RFC 8785 JCS (UTF-8, sorted keys, no whitespace, shortest numbers), sha256 the bytes, write as \"sha256:\" + 64 lowercase hex.",
     "The profile_id in the mandate request names which profile; profile_hash names which bytes. Both parties MUST agree on both or refuse (PROFILE_HASH_MISMATCH).",
-    "A profile that declares the v0.8 fields (commitment_modes, maximum, requiredFor inside a per_transaction boundType, enforcedBy) hashes like any other: the hash covers the parsed document, whatever it declares."
+    "A profile that declares the v0.8 fields (commitment_modes, maximum, requiredFor inside a per_transaction boundType, enforcedBy) hashes like any other: the hash covers the parsed document, whatever it declares.",
+    "canonical_prefix is not a value to reproduce: it is the first 80 characters of the canonical (JCS) serialization of the profile, given so that an implementation whose profile_hash differs can see where its bytes diverge."
   ],
   "cases": [
     {
@@ -15,7 +16,7 @@
       "profile_id": "github.com/humanagencyprotocol/hap-profiles/charge@0.5",
       "source": "hap-profiles/charge/0.5.profile.json as published (commit 0646a98)",
       "note": "The published charge@0.5 profile. Re-indent the file, reorder its keys, or strip its trailing newline and the hash MUST NOT change.",
-      "jcs_sha256_of_canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"charge\",\"subscribe\",\"unclassified\"],\"fields\":{\"…",
+      "canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"charge\",\"subscribe\",\"unclassified\"],\"fields\":{\"",
       "profile_hash": "sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd"
     },
     {
@@ -23,7 +24,7 @@
       "profile_id": "github.com/humanagencyprotocol/hap-profiles/delegation@0.6",
       "source": "hap-profiles/delegation/0.6.profile.json as published (commit e766944)",
       "note": "Declares commitment_modes: [\"review\"] — a mandate under it may not be automatic (protocol.md → Commitment Modes, rule 8). Re-indent the file, reorder its keys, or strip its trailing newline and the hash MUST NOT change.",
-      "jcs_sha256_of_canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"brief\",\"mandate\"],\"fields\":{\"brief_daily_max\":{…",
+      "canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"brief\",\"mandate\"],\"fields\":{\"brief_daily_max\":{",
       "profile_hash": "sha256:0307c583496ebfa6f65f330e026db08d4a3fa3f19cdb27772183817a03b75f13"
     },
     {
@@ -31,7 +32,7 @@
       "profile_id": "github.com/humanagencyprotocol/hap-profiles/reporting@0.2",
       "source": "hap-profiles/reporting/0.2.profile.json as published (commit 66e5aad)",
       "note": "Declares maximum: 366 on read_max_age_days — the first bound with a profile-declared maximum (protocol.md → Bounds Schema, rule 9). Re-indent the file, reorder its keys, or strip its trailing newline and the hash MUST NOT change.",
-      "jcs_sha256_of_canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"report\"],\"fields\":{\"profile\":{\"required\":true,\"…",
+      "canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"report\"],\"fields\":{\"profile\":{\"required\":true,\"",
       "profile_hash": "sha256:9a6619969ac27f13ea9e4eb04d441a8a1cd36d0a59033a8a89ecd02ca94b85be"
     },
     {
@@ -39,7 +40,7 @@
       "profile_id": "github.com/humanagencyprotocol/hap-profiles/sales@0.3",
       "source": "hap-profiles/sales/0.3.profile.json as published (commit 5f62e8a)",
       "note": "Declares requiredFor inside the per_transaction boundType of value_max and discount_max (protocol.md → Bounds Schema, rule 8). Re-indent the file, reorder its keys, or strip its trailing newline and the hash MUST NOT change.",
-      "jcs_sha256_of_canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"quote\",\"send\",\"order\",\"setup\"],\"fields\":{\"disco…",
+      "canonical_prefix": "{\"boundsSchema\":{\"actionTypes\":[\"quote\",\"send\",\"order\",\"setup\"],\"fields\":{\"disco",
       "profile_hash": "sha256:fbe3045872339470af878f9142f97a8098af8c9458a1d08b89ab3c1020be8d7f"
     }
   ]
