@@ -223,6 +223,12 @@
       "situation": "v0.8 — executionContext carries amount: null for a bound whose requiredFor lists this actionType.",
       "expected_error": "BOUND_EXCEEDED",
       "note": "null counts as absent."
+    },
+    {
+      "id": "approval-for-another-operation",
+      "situation": "v0.8 — The committed proposal's HAP-approval signs action archive_record; the ticket request and the ticket name delete_record with the same arguments.",
+      "expected_error": "APPROVAL_SIGNATURE_INVALID",
+      "note": "The approval reconstructed from the ticket carries delete_record and does not verify. A Gatekeeper verifying the ticket's approval signatures refuses the same way."
     }
   ],
   "mandate_request_refusals": [
@@ -440,6 +446,16 @@
       "situation": "v0.8 — The profile declares commitment_modes: [\"review_above_cap\"].",
       "expected_error": "PROFILE_INVALID",
       "note": "The entry is ignored, so the list admits no mode."
+    },
+    {
+      "id": "enum-value-not-allowed",
+      "situation": "An enum bound's value is not in its boundType.values.",
+      "expected_error": "BOUNDS_INVALID_VALUE"
+    },
+    {
+      "id": "v2-binding-text-kind",
+      "situation": "v0.8 — A profile declares content_binding version 2 with kind text.",
+      "expected_error": "PROFILE_INVALID"
     }
   ],
   "fail_closed_situations": [
