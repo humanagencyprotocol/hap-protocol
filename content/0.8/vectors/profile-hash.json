@@ -1,7 +1,7 @@
 {
   "spec_version": "0.8",
-  "status": "draft for v0.8, 2026-10-29 — independently re-derived 2026-10-29 (see README)",
-  "generated": "2026-10-29",
+  "status": "draft for v0.8, 2026-10-30 — independently re-derived 2026-10-30 (see README)",
+  "generated": "2026-10-30",
   "set": "profile-hash",
   "what_this_proves": "That two parties who provisioned the same profile through different channels compute the same profile_hash. The hash is over the RFC 8785 (JCS) serialization of the PARSED profile document, never over file bytes — formatting, key order, and trailing newlines do not change it.",
   "rules": [

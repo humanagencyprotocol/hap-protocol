@@ -1,6 +1,6 @@
 {
   "spec_version": "0.8",
-  "status": "draft for v0.8, 2026-10-29 — independently re-derived 2026-10-29 (see README)",
+  "status": "draft for v0.8, 2026-10-30 — independently re-derived 2026-10-30 (see README)",
   "generated": "2026-10-29",
   "set": "proposal-encryption",
   "what_this_proves": "That an implementation encrypts and decrypts proposal content with exactly the construction protocol.md → Proposals, rule 3 pins: the content as JCS of the argument object, AES-256-GCM with no associated data and IV ‖ ciphertext ‖ tag, and the content key wrapped per reader with HPKE base mode, empty info and empty associated data. Real use draws the content key, the IV and every ephemeral key at random; here they are fixed so the output is reproducible.",
@@ -8,7 +8,8 @@
     "HPKE (RFC 9180) mode_base, KEM DHKEM(X25519, HKDF-SHA256) 0x0020, KDF HKDF-SHA256 0x0001, AEAD AES-256-GCM 0x0002; info is empty; the content key is sealed single-shot with empty associated data.",
     "Reader key pairs and ephemeral key pairs are derived with the suite's DeriveKeyPair from the ikm given, so that the output is deterministic. A real Gatekeeper uses a fresh random ephemeral key for every wrap.",
     "Every binary value is base64url without padding. encrypted_keys is keyed by the reader's DID; the reader key is an X25519 key distinct from the DID's signing key.",
-    "proposalContentHash is \"sha256:\" + hex(sha256(UTF-8 of JCS(arguments))), over the same bytes that are encrypted."
+    "proposalContentHash is \"sha256:\" + hex(sha256(UTF-8 of JCS(arguments))), over the same bytes that are encrypted.",
+    "reader_private_key_hex is the DeriveKeyPair output as RFC 9180 gives it, before X25519 clamping; X25519 clamps it when it is used."
   ],
   "inputs": {
     "arguments": {

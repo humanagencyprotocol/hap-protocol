@@ -1,7 +1,7 @@
 {
   "spec_version": "0.8",
-  "status": "draft for v0.8, 2026-10-29 — independently re-derived 2026-10-29 (see README)",
-  "generated": "2026-10-29",
+  "status": "draft for v0.8, 2026-10-30 — independently re-derived 2026-10-30 (see README)",
+  "generated": "2026-10-30",
   "set": "required-refusals",
   "what_this_proves": "That an implementation refuses the same things, with the same error code. This is the set that matters most: refusal is where the safety lives, and it can be stated without reference to any URL, store, or identity system. An implementation that authorizes where this table refuses is not conformant, whatever its signatures look like.",
   "reading_this_table": "Each row is a situation, the request made in it, and the code that MUST come back. \"MUST NOT be substituted\" means exactly that: returning a different code for these situations — including a more generic one — is non-conformance, because the Gatekeeper's behaviour branches on the code (see protocol.md, Pre-flight Ticket Request). Rows marked v0.8 are new in this version; every v0.7 row still holds.",
@@ -14,8 +14,9 @@
     },
     {
       "id": "unknown-bounds-hash",
-      "situation": "boundsHash names no mandate the AS holds.",
-      "expected_error": "MANDATE_NOT_FOUND"
+      "situation": "The request carries no mandateId, and its boundsHash names no mandate.",
+      "expected_error": "MANDATE_NOT_FOUND",
+      "note": "With a mandateId naming a known mandate, an unknown boundsHash is MALFORMED_TICKET_REQUEST instead (Ticket Issuance, stage 2)."
     },
     {
       "id": "expired-mandate",
@@ -100,7 +101,7 @@
       "id": "required-value-absent",
       "situation": "v0.8 — A per_transaction bound declares requiredFor for this actionType and executionContext lacks the bound's `of` field (or carries it as null, which counts as absent).",
       "expected_error": "BOUND_EXCEEDED",
-      "note": "Naming the bound and stating that the value is absent. Absence of a value is otherwise indistinguishable from absence of enforcement. For an action type the bound does not list, absence still passes (rule 7)."
+      "note": "Naming the bound and stating that the value is absent. For an action type the bound does not list, absence passes this check — but is refused where a cumulative_sum bound governs the action type, and needs approval where an approval cap reads the field (decided 2026-10-30)."
     },
     {
       "id": "ambiguous-bounds-hash",
@@ -226,9 +227,32 @@
     },
     {
       "id": "approval-for-another-operation",
-      "situation": "v0.8 — The committed proposal's HAP-approval signs action archive_record; the ticket request and the ticket name delete_record with the same arguments.",
+      "situation": "v0.8 — The proposal names delete_record; the decider was shown, and signed a HAP-approval for, archive_record with the same arguments; the ticket request and the ticket name delete_record.",
       "expected_error": "APPROVAL_SIGNATURE_INVALID",
       "note": "The approval reconstructed from the ticket carries delete_record and does not verify. A Gatekeeper verifying the ticket's approval signatures refuses the same way."
+    },
+    {
+      "id": "v07-mandate-on-v08-as",
+      "situation": "v0.8 — A ticket request names a live, unexpired version 0.7 mandate on a v0.8 Authority Server.",
+      "expected_error": "VERSION_UNSUPPORTED",
+      "note": "Every mandate is re-granted under v0.8; v0.7 artifacts remain verifiable as evidence."
+    },
+    {
+      "id": "amount-absent-under-approval-cap",
+      "situation": "v0.8 — review_above_cap with above_cap_caps on amount_max; the request carries no amount and names no committed proposal.",
+      "expected_error": "APPROVAL_REQUIRED",
+      "note": "An unknown amount is treated as above the cap."
+    },
+    {
+      "id": "amount-absent-under-sum-bound",
+      "situation": "v0.8 — automatic; a cumulative_sum bound on amount governs this actionType (no appliesTo); the request carries no amount.",
+      "expected_error": "BOUND_EXCEEDED",
+      "note": "Naming the bound and stating that the value is absent. Excluding the action type through the bound's appliesTo is how a profile admits amount-less actions."
+    },
+    {
+      "id": "proposal-withdrawn",
+      "situation": "v0.8 — The named proposal was withdrawn by its proposer before a decision.",
+      "expected_error": "PROPOSAL_WITHDRAWN"
     }
   ],
   "mandate_request_refusals": [
@@ -426,11 +450,6 @@
       "expected_error": "MALFORMED_MANDATE"
     },
     {
-      "id": "list-element-with-comma",
-      "situation": "v0.8 — A list-valued scope field has an element that contains a comma.",
-      "expected_error": "SCOPE_INVALID_VALUE"
-    },
-    {
       "id": "review-above-cap-unreachable-in-group",
       "situation": "v0.8 — Group mode: the owner requests review_above_cap, and the group has no approval-kind caps, or approvers other than this owner fewer than its count.",
       "expected_error": "ABOVE_CAP_CONFIG_INVALID",
@@ -618,6 +637,21 @@
       "id": "public-projection-as-authorization",
       "situation": "v0.8 — A projection served on a public page is presented to an effector as authorization.",
       "required_behaviour": "MUST NOT be accepted as authorization."
+    },
+    {
+      "id": "list-element-with-comma",
+      "situation": "v0.8 — The owner enters a list-valued scope field and one element contains a comma.",
+      "required_behaviour": "The Owner Interface refuses it (SCOPE_INVALID_VALUE); the AS never sees scope values."
+    },
+    {
+      "id": "one-reject-against-approvals",
+      "situation": "v0.8 — above_cap_approvals is 2; one approver commits, another rejects.",
+      "required_behaviour": "The proposal is rejected. A reject from any signed decider is final, whatever approvals it already has."
+    },
+    {
+      "id": "send-back-then-revise",
+      "situation": "v0.8 — A decider sends a proposal back with a note; the agent revises the action.",
+      "required_behaviour": "The revision is a new proposal with its own id and fingerprint; no decision on the old one carries over."
     }
   ],
   "proposal_refusals": [
@@ -642,6 +676,18 @@
       "id": "readers-keys-differ",
       "situation": "v0.8 — readers differs from the key set of encrypted_keys.",
       "expected_error": "PROPOSAL_NOT_ENCRYPTED"
+    },
+    {
+      "id": "decision-from-non-decider",
+      "situation": "v0.8 — A decision arrives from a DID that is not a signed decider for the proposal, or from one who has left the group.",
+      "expected_error": "DECIDER_INVALID",
+      "note": "Refused and not counted. Emitted at decision time (AS · decision)."
+    },
+    {
+      "id": "second-decision-same-decider",
+      "situation": "v0.8 — A decider who already decided sends a second decision, or any decider decides on a proposal that is no longer pending.",
+      "expected_error": "PROPOSAL_ALREADY_DECIDED",
+      "note": "A decision is not changed once made."
     }
   ]
 }

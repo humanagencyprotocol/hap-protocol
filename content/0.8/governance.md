@@ -546,7 +546,7 @@ intent_disclosure_hash = "sha256:" + hex(
 )
 ```
 
-where `intent_ciphertext` is the exact base64url string above, `sort(approvers_frozen)` orders the DIDs by Unicode code point, and `JCS` is RFC 8785 JSON Canonicalization of the sorted array. The mandate owner computes this **after** encryption and signs it as part of the mandate.
+where `intent_ciphertext` is the exact base64url string above, `sort(approvers_frozen)` orders the DIDs by UTF-16 code units, as RFC 8785 orders keys (identical to code-point order for `did:key` strings, which are ASCII), and `JCS` is RFC 8785 JSON Canonicalization of the sorted array. The mandate owner computes this **after** encryption and signs it as part of the mandate.
 
 This is the integrity anchor: `intent_ciphertext`, `encrypted_keys`, and `approvers_frozen` travel unsigned, but any change to the ciphertext or the approver set alters `intent_disclosure_hash`, which is covered by the AS signature over the mandate — and, where the owner co-signed, by the owner-signed projection as well, which is what makes approver-set substitution detectable against a compromised AS. (`encrypted_keys` is bound transitively: its key set MUST equal `approvers_frozen`, and a verifier MUST reject any mismatch.)
 

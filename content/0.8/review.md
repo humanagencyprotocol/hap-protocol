@@ -59,7 +59,7 @@ The immutability rule was violated before v0.6 closed the loophole normatively: 
 
 ### D2 — The field-name fallback for cumulative bounds (closed in v0.8)
 
-v0.7 permitted an enforcement point to keep a field-name fallback for mandates on profile versions that predate `appliesTo`, until no live, unexpired mandate referenced one. v0.8 closes it for v0.8 mandates: the fallback MUST NOT exist on a v0.8 mandate's path. Where a v0.8 mandate names a profile in the v0.6 vocabulary that lacks `appliesTo` on a count bound (D4, marked †), the defined reading applies — absence means the bound governs every action type — and no field-name correlation is used (`protocol.md` → *Migration from v0.7*). For a live v0.7 mandate the v0.7 condition governs until it expires. Whether a given implementation has removed the fallback is a matter for its own report.
+v0.7 permitted an enforcement point to keep a field-name fallback for mandates on profile versions that predate `appliesTo`, until no live, unexpired mandate referenced one. v0.8 closes it for v0.8 mandates: the fallback MUST NOT exist on a v0.8 mandate's path. Where a v0.8 mandate names a profile in the v0.6 vocabulary that lacks `appliesTo` on a count bound (D4, marked †), the defined reading applies — absence means the bound governs every action type — and no field-name correlation is used (`protocol.md` → *Migration from v0.7*). No v0.7 mandate is exercised by a v0.8 AS (every mandate is re-granted), so no path remains for it. Whether a given implementation has removed the fallback is a matter for its own report.
 
 ### D3 — Scope enum values in `field.enum` (grandfathered per version, closes per profile)
 
@@ -111,21 +111,13 @@ v0.8 pins `info` and associated data as empty, as implemented. A fixed `info` la
 
 A mandate's `typ` sits in its unsigned header, so mandates and tickets are told apart by their fields (*Ticket Payload Schema*). Signing `typ` into the payload makes the separation explicit; it changes every mandate signature and belongs to a wire-breaking version.
 
-### Decisions on a proposal — target: before v0.8 publication
-
-*Proposals* defines who may decide and when a proposal commits, not what each decision does. Open: whether one reject by a signed decider is final against a count above one; whether the owner can withdraw or veto a `review_above_cap` proposal; what "send back" leads to; and that the AS MUST refuse, and not count, a decision from a DID outside the signed set, a second decision by the same decider, a decision on a decided proposal, or one from an approver who has left the group — with codes. Pending the author's decision (2026-10-29).
-
-### Approval caps on a value that is absent — target: before v0.8 publication
-
-An approval-kind cap fires only on a value that is present, and nothing requires the capped bound's field to be present: an action mapped without an amount runs above a group cap unapproved and unconsumed. Two repairs: refuse to sign a cap on a bound whose `requiredFor` does not cover every action type it governs, or treat an absent value under an approval-kind cap as above it. Pending the author's decision (2026-10-29).
-
 ### Proposal lifetime — target: v0.9
 
 The decision window and an execution deadline for a committed proposal are undefined: a committed proposal refused for a cumulative limit stays redeemable until the mandate expires, and a `review` proposal in a group whose approvers cannot decide has no exit (`APPROVAL_IMPOSSIBLE` exists only at ticket time). Direction: an AS-set deadline stated in the proposal for each state, `PROPOSAL_EXPIRED` after it, and `APPROVAL_IMPOSSIBLE` at submission.
 
 ### Refusals still without a code — target: v0.9
 
-Mandate request: `mandate_id`/`issued_at`/`issuer` present; an owner DID other than the authenticated one; invalid `subjects`; an `intent_disclosure_hash` mismatch; an `enum` value outside `values`; `review_above_cap` without caps or approvers; an absent or non-positive TTL. Ticket request: both `proposalId` and `idempotencyKey`. Proposal submission: a revoked or expired mandate, an unknown `mandateId`, an invalid `actionType`, a value over a bound. Each needs one code in the stage lists.
+Mandate request: `mandate_id`/`issued_at`/`issuer` present; an owner DID other than the authenticated one; invalid `subjects`; an `intent_disclosure_hash` mismatch; `review_above_cap` without caps or approvers; an absent or non-positive TTL. Ticket request: both `proposalId` and `idempotencyKey`. Proposal submission: a revoked or expired mandate, an unknown `mandateId`, an invalid `actionType`, a value over a bound. Each needs one code in the stage lists.
 
 ### An audience-bound authorization projection — undated
 
