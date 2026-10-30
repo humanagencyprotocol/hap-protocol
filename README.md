@@ -1,6 +1,6 @@
 # Human Agency Protocol
 
-**People stay in charge. AI does the work. Nothing runs without a ticket.**
+**People stay in charge. AI does the work. No consequential action runs without a ticket.**
 
 Open protocol — v0.7, September 2026. MIT.
 
@@ -21,20 +21,20 @@ A person gives an agent a **mandate** — what it may do, within which limits, f
 
 The first half rules out acting *without* a mandate — every permission system promises that much, for access. The second half is the one only HAP promises: a signed ticket, obtained before each act, that puts an identifiable person behind it. **Access is not a mandate.**
 
-1. A person gives a **mandate** — bounds, scope, time, and commitment mode. The Authority Server signs it. Where the person co-signs with their own key, the mandate is attributable to them independently of the operator.
+1. A person gives a **mandate** — bounds, scope, intent, time, and commitment mode. The Authority Server signs it. Where the person co-signs with their own key, the mandate is attributable to them independently of the operator.
 2. The **Gatekeeper** verifies the mandate locally (Ed25519 signature, expiry, `bounds_hash`, `scope_hash`), enforces per-action bounds and scope, then requests a ticket — pre-flight, fail-closed.
 3. The **Authority Server** checks cumulative limits, expiry, revocation, and approval, then **signs the ticket**. It can refuse.
 4. The **Executor** runs the action — only after the ticket exists. The Gatekeeper keeps the complete signed ticket, so the person the evidence is about never depends on the operator to hold it.
 
-The agent holds no credential, mandate, or signing key at any point. It receives a brief describing its bounds; it never receives anything it could present as proof of authority. *A mandate constrains execution; it does not transfer authority.*
+The agent holds no authority-bearing credential, mandate, or signing key at any point. It receives a brief describing its bounds; it never receives anything it could present as proof of authority. *A mandate constrains execution; it does not transfer authority.*
 
 ### One ticket, three directions
 
 - **Now — enforcement.** The action is checked against the mandate before it happens. Prevented, not caught in a log.
-- **Outward — credibility.** The ticket is portable: a holder verifies the signature and, where content binding applies, recomputes the content hash — cryptography, not testimony.
+- **Outward — credibility.** The ticket is portable: a holder verifies the signature of an issuer they trust and, where content binding applies, recomputes the content hash — without asking the operator.
 - **Back — attribution.** Evidence generated *before* the act: which mandate, which bounds, which content, which person.
 
-Honest status: today the chain holds as far as you trust one operator's signing key — the Authority Server asserts that the person authorized it. v0.6 specified **owner signatures** (the person's own key co-signs the mandate), which remove that trust requirement; they remain specified ahead of implementation; the reference implementation's report says so.
+Who you have to trust: without owner signatures, the chain holds as far as you trust the Authority Server's signing key — it asserts that the person authorized it. **Owner signatures** (the person's own key co-signs the mandate, specified since v0.6) make the mandate and each approval attributable to that person's key; cumulative totals and the order of events still rest on the Authority Server. Whether an implementation supports them is stated in its implementation report, not in the specification.
 
 ### What a ticket looks like
 
@@ -50,8 +50,7 @@ Honest status: today the chain holds as far as you trust one operator's signing 
   "executionContext": { "amount": 48, "currency": "EUR" },
   "cumulativeState": { "daily": { "amount": 391, "count": 12 }, "monthly": { "amount": 2140, "count": 61 } },
   "limits": { "profile": "charge@0.5", "amount_max": 100, "amount_daily_max": 500 },
-  "contentHash": "sha256:…",                  // optional: binds the exact content
-  "contentBinding": { "version": "2", "kind": "jcs", "fields": ["…"] },
+  // contentHash + contentBinding: present only where the profile binds content (e.g. deploy, email)
   "timestamp": 1757000000,
   "signature": "base64url…"                   // Ed25519 over RFC 8785 (JCS) canonical bytes
 }
@@ -62,9 +61,9 @@ Honest status: today the chain holds as far as you trust one operator's signing 
 1. Read `issuer`. For a `did:key` the public key *is* the identifier; decide by local policy whether you trust that issuer.
 2. Strip `signature`, canonicalize the payload per RFC 8785 (JCS), verify.
 3. Where `contentHash` is present: recompute it from the artifact you hold, using the signed `contentBinding` — the field list travels in the ticket, so you know exactly what the hash covers.
-4. Optionally walk up the chain: obtain the mandate named by `mandateId`, verify it the same way, and — where the owner co-signed — verify the owner's own signature against the key carried in their DID. No key directory involved: for signing identities, the key *is* the identifier.
+4. Optionally walk up the chain: obtain the mandate named by `mandateId`, verify it the same way, and — where the owner co-signed — verify the owner's own signature against the key carried in their DID, and confirm from a source other than the AS that the DID is the person you expect. No key directory involved: for signing identities, the key *is* the identifier.
 
-Every value your implementation must reproduce — canonical strings, hashes, signatures under published test keys, the profile hash, and the refusals — is in [content/0.7/vectors/](content/0.7/vectors/).
+The published answer key — canonical strings, hashes, signatures under published test keys, the profile hash, and the refusals — is in [content/0.7/vectors/](content/0.7/vectors/).
 
 ---
 
@@ -132,8 +131,8 @@ Full record with rationale and review history: [changelog.md](content/0.7/change
 | **Conformance vectors** | The values every implementation must reproduce | [content/0.7/vectors/](content/0.7/vectors/) |
 | **Authority Server** | Signs mandates and tickets; enforces bounds, cumulative limits, expiry, revocation, approval | [protocol.md → Authority Server Behavior](content/0.7/protocol.md#authority-server-behavior) |
 | **Gatekeeper** | Local verification + pre-flight ticket, fail-closed; custody of tickets | [protocol.md → Gatekeeper & Executor Behavior](content/0.7/protocol.md#gatekeeper--executor-behavior) |
-| **Gateway** | Suveren's open-source Gatekeeper + Executor — any MCP-compatible agent connects | [github.com/suverenai/suveren-gateway](https://github.com/suverenai/suveren-gateway) |
-| **Authority Profiles** | Eight published profiles, versioned independently: charge, purchase, email, customers, calendar, publish, records, deploy | [github.com/humanagencyprotocol/hap-profiles](https://github.com/humanagencyprotocol/hap-profiles) |
+| **Gateway** | Suveren's open-source Gatekeeper + Executor — any MCP-compatible agent connects | [suveren.ai](https://www.suveren.ai) |
+| **Authority Profiles** | Published profiles, versioned independently — charge, purchase, email, customers, calendar, publish, records, deploy and more | [github.com/humanagencyprotocol/hap-profiles](https://github.com/humanagencyprotocol/hap-profiles) |
 | **Core library** | Types, canonicalization, verification, content binding — on npm | [@humanagencyp/hap-core](https://www.npmjs.com/package/@humanagencyp/hap-core) |
 | **Governance** | Invariants, trust model, deployment obligations | [content/0.7/governance.md](content/0.7/governance.md) |
 
@@ -169,7 +168,7 @@ Compliance note: HAP is enabling infrastructure for regimes that require demonst
 - **hap-e2e** — protocol conformance suite against real servers, with the map from MUSTs to the tests that prove them
 
 **Suveren — reference implementation:**
-- [**suveren-gateway**](https://github.com/suverenai/suveren-gateway) — Gatekeeper + Executor, runs locally (open source)
+- **Suveren Gateway** — Gatekeeper + Executor, runs locally ([suveren.ai](https://www.suveren.ai))
 
 ---
 
@@ -187,4 +186,4 @@ The sync script reads the spec version from `website/package.json` and copies `c
 
 ## License
 
-MIT — open infrastructure. The Human Agency Protocol is maintained by stewards, not owners.
+MIT — open infrastructure. The Human Agency Protocol is developed in the open and owned by no one.

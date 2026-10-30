@@ -5,7 +5,7 @@ import { siteConfig } from '../config';
 
 <BaseLayout
   title="HAP - Human authorization for consequential AI actions"
-  description="HAP is the open, MIT-licensed protocol for bounded AI-agent authority. Humans authorize; an agent executes only once a signed mandate ticket has been issued for the action."
+  description="HAP is the open, MIT-licensed protocol for bounded, human-mandated AI-agent execution. Humans authorize; an agent executes only once a signed mandate ticket has been issued for the action."
 >
 
   <!-- ──────────────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ import { siteConfig } from '../config';
         <ol class="chain">
           <li>A human authorizes <strong>bounded execution</strong> — scope, limits, time, and commitment mode.</li>
           <li>The <span class="role">Gatekeeper</span> verifies the mandate, checks per-action bounds, and enforces scope locally.</li>
-          <li>The <span class="role">Authority Server</span> checks cumulative limits, expiry, and revocation, then <strong>signs the ticket</strong>.</li>
+          <li>The <span class="role">Authority Server</span> checks cumulative limits, expiry, revocation, and approval, then <strong>signs the ticket</strong>.</li>
           <li>The <span class="role">Executor</span> runs the action — only <strong>after</strong> the ticket exists — and the <span class="role">Gatekeeper</span> keeps its own signed copy.</li>
         </ol>
       </div>
@@ -121,8 +121,8 @@ import { siteConfig } from '../config';
         </div>
         <div>
           <div class="job-name"><span class="dir">Outward</span>A stranger can check it.</div>
-          <p>Hand someone the ticket and they verify the signature and the content
-            themselves — no account, no relationship with you. Cryptography, not testimony.</p>
+          <p>Hand someone the ticket and they check the signature against an issuer they trust
+            and, where the content is bound, the content too — without an account, without asking you.</p>
         </div>
         <div>
           <div class="job-name"><span class="dir">Back</span>You can answer for it.</div>
@@ -136,7 +136,9 @@ import { siteConfig } from '../config';
         <p>
           With the Authority Server's signature alone, the chain holds as far as you trust
           that operator's key. The protocol also defines the human's own co-signature on the
-          mandate. With it, the chain holds <strong>without trusting any operator</strong>.
+          mandate. With it, the mandate and each approval are attributable to <strong>the person's own
+          key, not the operator's word</strong>. Cumulative totals and the order of events still rest on
+          the Authority Server.
         </p>
       </div>
 
@@ -237,7 +239,7 @@ import { siteConfig } from '../config';
         permissions — turning them into authority-bearing actors. HAP does the opposite.
       </p>
       <p>
-        An agent never carries authority or raw credentials of its own. A human authorizes a bounded
+        An agent never carries authority of its own, or a credential that by itself can cause a consequential effect. A human authorizes a bounded
         action; the <strong>ticket</strong> is cryptographic proof that this specific
         action was authorized — and issued before it ran. An agent may have technical
         identifiers for logging and routing, but it holds no <strong>independent authority</strong>.
@@ -291,7 +293,7 @@ import { siteConfig } from '../config';
           </tr>
           <tr>
             <td class="old">Post-incident, the answer is “the agent was permitted”</td>
-            <td class="hap">Post-incident, the answer is “this person mandated this scope — here is the proof”</td>
+            <td class="hap">Post-incident, the answer is “this person mandated these bounds — here is the proof”</td>
           </tr>
         </tbody>
       </table>
@@ -301,8 +303,8 @@ import { siteConfig } from '../config';
         <p>
           Article 14 requires effective human oversight of high-risk AI. HAP turns
           that oversight into an <strong>enforceable control at the action layer</strong>:
-          consequential actions cannot run unless a ticket under a person's mandate
-          exists before execution.
+          on every path HAP mediates, consequential actions cannot run unless a ticket
+          under a person's mandate exists before execution.
         </p>
         <p class="general">
           Wherever an organization must show a human stood behind an automated act —
@@ -357,9 +359,9 @@ import { siteConfig } from '../config';
       <p class="label">Open infrastructure</p>
       <h2>No single vendor owns the trust layer.</h2>
       <p class="body-lead">
-        HAP is an open-source protocol — MIT-licensed, developed in the open, and maintained
-        by stewards, not owners. Any compliant Authority Server can issue tickets, and every
-        value an implementation must reproduce is <a href="/vectors">published</a>.
+        HAP is an open-source protocol — MIT-licensed, developed in the open, and owned by
+        no one. Any compliant Authority Server can issue tickets, and the answer key an
+        implementation must reproduce is <a href="/vectors">published</a>.
       </p>
       <div class="cta-group">
         <a href="/protocol" class="btn btn-primary">Read the Protocol</a>
