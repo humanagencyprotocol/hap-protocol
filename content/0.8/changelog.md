@@ -119,7 +119,7 @@ The lesson is the one the v0.7 changelog already recorded for `appliesTo`, now w
 - **Re-admitting `field.enum`** — see D3.
 - **Making `gates` a SHOULD before it is built** — a SHOULD nobody has implemented is a sentence, not a rule.
 - **Deciding the P-256 question in this version** — nothing in v0.8 depends on it.
-- **A wire-breaking v0.8** — nothing promoted needed a rename, and an additive version lets v0.7 and v0.8 implementations keep working together through version negotiation.
+- **Renaming or retiring fields in v0.8** — nothing promoted needed a rename, so v0.7 artifacts stay verifiable as evidence. Live v0.7 mandates are nevertheless not honoured: v0.8 changes what a live mandate means, so it is a re-grant release (*What v0.8 is*; `protocol.md` → *Version negotiation*, rule 3).
 - **Treating the workspace model** (an account is personal *or* in one team) as protocol — the v0.7 worked example of one person in two groups remains conformant; the implementation's restriction is policy.
 
 ## Review record
