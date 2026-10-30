@@ -137,7 +137,7 @@ Those are the profiles that exist, not the boundary of what HAP governs. A profi
 
 ### No single vendor owns the trust layer.
 
-HAP is an open standard — MIT-licensed, developed in the open, and maintained by stewards, not owners. Any compliant Authority Server can issue tickets, and every value an implementation must reproduce is published as conformance vectors (humanagencyprotocol.org/vectors).
+HAP is an open-source protocol — MIT-licensed, developed in the open, and maintained by stewards, not owners. Any compliant Authority Server can issue tickets, and every value an implementation must reproduce is published as conformance vectors (humanagencyprotocol.org/vectors).
 
 ---
 
