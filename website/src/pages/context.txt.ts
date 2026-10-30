@@ -238,7 +238,7 @@ HAP is not a paper spec. Every component described above is implemented and runn
 - **Specification** — v${version}, published in \`content/${version}/\` (open source), with conformance vectors at humanagencyprotocol.org/vectors and a dated provenance record at humanagencyprotocol.org/provenance
 - **Suveren Gateway** — open source, github.com/suverenai/suveren-gateway
 - **Authority Profiles** — open source, versioned independently, at github.com/humanagencyprotocol/hap-profiles
-- **Authority Server** — hosted service at suveren.ai (not open source; runs the signing backend and public verification endpoints). Its implementation report against the specification: github.com/humanagencyprotocol/hap-e2e/blob/main/CONFORMANCE.md
+- **Authority Server** — hosted service at suveren.ai (not open source; runs the signing backend and public verification endpoints). Its implementation report against the specification: github.com/suverenai/suveren-gateway/blob/main/docs/CONFORMANCE.md
 - **MCP integrations** — CRM, records, LinkedIn, Gmail, Mollie reference implementations
 
 An AI agent reading this context can connect to a running Suveren Gateway today and operate within bounds.

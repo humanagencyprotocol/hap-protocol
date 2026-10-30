@@ -11,7 +11,7 @@ A person gives an agent a **mandate** — what it may do, within which limits, f
 - Conformance vectors (the answer key): [content/0.7/vectors/](content/0.7/vectors/)
 - What changed in 0.7: [content/0.7/changelog.md](content/0.7/changelog.md)
 - Open directions: [content/0.7/review.md](content/0.7/review.md)
-- Implementation report for the reference implementation: [hap-e2e/CONFORMANCE.md](https://github.com/humanagencyprotocol/hap-e2e/blob/main/CONFORMANCE.md)
+- Implementation report for the reference implementation: [suveren-gateway/docs/CONFORMANCE.md](https://github.com/suverenai/suveren-gateway/blob/main/docs/CONFORMANCE.md)
 - Dated record of every version and concept: [content/provenance.md](content/provenance.md)
 - Website: [humanagencyprotocol.org](https://humanagencyprotocol.org)
 
@@ -165,7 +165,7 @@ Compliance note: HAP is enabling infrastructure for regimes that require demonst
 **Protocol (open source):**
 - [**hap-profiles**](https://github.com/humanagencyprotocol/hap-profiles) — authority profiles (JSON, immutable, independently versioned)
 - [**hap-core**](https://www.npmjs.com/package/@humanagencyp/hap-core) — TypeScript library: types, JCS canonicalization, verification, content binding
-- **hap-e2e** — protocol conformance suite against real servers, with the map from MUSTs to the tests that prove them
+- [**suveren-e2e**](https://github.com/suverenai/suveren-e2e) — Suveren's end-to-end and conformance suite against real servers, with the map from MUSTs to the tests that prove them
 
 **Suveren — reference implementation:**
 - [**suveren-gateway**](https://github.com/suverenai/suveren-gateway) — Gatekeeper + Executor, runs locally (open source)
