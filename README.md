@@ -131,7 +131,7 @@ Full record with rationale and review history: [changelog.md](content/0.7/change
 | **Conformance vectors** | The values every implementation must reproduce | [content/0.7/vectors/](content/0.7/vectors/) |
 | **Authority Server** | Signs mandates and tickets; enforces bounds, cumulative limits, expiry, revocation, approval | [protocol.md → Authority Server Behavior](content/0.7/protocol.md#authority-server-behavior) |
 | **Gatekeeper** | Local verification + pre-flight ticket, fail-closed; custody of tickets | [protocol.md → Gatekeeper & Executor Behavior](content/0.7/protocol.md#gatekeeper--executor-behavior) |
-| **Gateway** | Suveren's open-source Gatekeeper + Executor — any MCP-compatible agent connects | [suveren.ai](https://www.suveren.ai) |
+| **Gateway** | Suveren's open-source Gatekeeper + Executor — any MCP-compatible agent connects | [github.com/suverenai/suveren-gateway](https://github.com/suverenai/suveren-gateway) |
 | **Authority Profiles** | Published profiles, versioned independently — charge, purchase, email, customers, calendar, publish, records, deploy and more | [github.com/humanagencyprotocol/hap-profiles](https://github.com/humanagencyprotocol/hap-profiles) |
 | **Core library** | Types, canonicalization, verification, content binding — on npm | [@humanagencyp/hap-core](https://www.npmjs.com/package/@humanagencyp/hap-core) |
 | **Governance** | Invariants, trust model, deployment obligations | [content/0.7/governance.md](content/0.7/governance.md) |
@@ -168,7 +168,7 @@ Compliance note: HAP is enabling infrastructure for regimes that require demonst
 - **hap-e2e** — protocol conformance suite against real servers, with the map from MUSTs to the tests that prove them
 
 **Suveren — reference implementation:**
-- **Suveren Gateway** — Gatekeeper + Executor, runs locally ([suveren.ai](https://www.suveren.ai))
+- [**suveren-gateway**](https://github.com/suverenai/suveren-gateway) — Gatekeeper + Executor, runs locally (open source)
 
 ---
 

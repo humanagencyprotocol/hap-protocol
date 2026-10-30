@@ -181,7 +181,7 @@ Agents never hold an authority-bearing credential or a signing key. They connect
 
 All three are bounded. All obtain tickets before acting. The Gateway keeps every signed ticket as the person's own evidence.
 
-Install instructions: https://www.suveren.ai
+Source and install instructions: https://github.com/suverenai/suveren-gateway
 
 ---
 
@@ -236,7 +236,7 @@ Source: https://github.com/humanagencyprotocol/hap-profiles
 HAP is not a paper spec. Every component described above is implemented and running:
 
 - **Specification** — v${version}, published in \`content/${version}/\` (open source), with conformance vectors at humanagencyprotocol.org/vectors and a dated provenance record at humanagencyprotocol.org/provenance
-- **Suveren Gateway** — Gatekeeper and Executor, installed from suveren.ai
+- **Suveren Gateway** — open source, github.com/suverenai/suveren-gateway
 - **Authority Profiles** — open source, versioned independently, at github.com/humanagencyprotocol/hap-profiles
 - **Authority Server** — hosted service at suveren.ai (not open source; runs the signing backend and public verification endpoints). Its implementation report against the specification: github.com/humanagencyprotocol/hap-e2e/blob/main/CONFORMANCE.md
 - **MCP integrations** — CRM, records, LinkedIn, Gmail, Mollie reference implementations
