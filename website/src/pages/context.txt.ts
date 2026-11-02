@@ -129,7 +129,7 @@ EU AI Act — Article 14: Article 14 requires effective human oversight of high-
 
 The protocol defines a consequential action as any operation that affects external state, human wellbeing, financial position, legal standing, or reputation. That is the test — not a category on a list. If an action passes it, it needs a mandate and a ticket.
 
-Authority profiles published today: payments (refunds, charges, payouts), email (high-stakes sends), CRM (record changes and deletes), infrastructure (deploys and config), calendar (booking on someone's time), publishing (anything said in your name).
+Authority profiles published today: charging customers, spending company money, email, customers (CRM), master data, sales quotes and orders, invoicing, calendar, publishing, records, making a built version live, reporting, and an agent's own setup (delegation).
 
 Those are the profiles that exist, not the boundary of what HAP governs. A profile is data — it declares which limits exist for one kind of authority — and anyone can publish one: no approval, no registry, no central list to be added to. Whatever your agents do that you would want a name against, that is what a profile describes.
 
@@ -216,12 +216,17 @@ Profiles are referenced by ID (e.g., \`charge@0.5\`) and are immutable once publ
 |---------|--------|----------------|
 | \`charge@0.7\` | Charging customers (payments, refunds, subscriptions) | amount_max, amount_daily_max, amount_monthly_max, charge_daily_max |
 | \`purchase@0.8\` | Spending company money (subscriptions, supplies, ads) | spend_max, spend_daily_max, spend_monthly_max |
-| \`email@0.10\` | Sending, drafting, and reading email | recipient_max, send_daily_max, read_max_age_days |
+| \`email@0.9\` | Sending, drafting, and reading email | recipient_max, send_daily_max, read_max_age_days |
 | \`customers@0.11\` | CRM operations (contacts, deals, tasks) | read_access, export_access, write_daily_max, delete_daily_max |
+| \`master-data@0.1\` | Customer records and the catalogue that quotes and invoices rely on | read_access, customer_create_daily_max, customer_update_daily_max |
+| \`sales@0.4\` | Quote-to-order in an ERP | read_access, value_max, discount_max |
+| \`invoicing@0.1\` | Issuing invoices and credit notes | read_access, invoice_net_max, credit_net_max |
 | \`calendar@0.6\` | Calendar access (read, draft, book) | booking_daily_max, booking_duration_max, lookahead_days_max |
 | \`publish@0.7\` | Public content (social, blog, etc.) | post_daily_max, post_monthly_max |
 | \`records@0.6\` | Personal structured data (queries, exports) | read_access, write_daily_max, delete_access, archive_access |
-| \`deploy@0.12\` | Releasing software to an environment | release_daily_max, rollback_allowed |
+| \`deploy@0.12\` | Making an already-built version live | release_daily_max, rollback_allowed |
+| \`reporting@0.4\` | Reading the evidence a gateway holds to write a report | read_access, read_max_age_days, report_daily_max |
+| \`delegation@0.6\` | An agent proposing changes to its own setup (brief, mandates) | read_access, brief_daily_max, mandate_daily_max |
 
 All profiles require the same four gates: bounds, intent, commitment, and mandate owner. (The single \`intent\` gate replaced the v0.3 trio of problem, objective, and tradeoff; execution paths were removed in v0.4 and are forbidden from v0.5 on.)
 
