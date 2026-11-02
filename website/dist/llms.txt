@@ -51,6 +51,6 @@ agent sandboxing.
 
 ## Implementations
 
-- [Suveren](https://www.suveren.ai): a commercial HAP-compliant implementation. The Suveren Gateway (open source) implements the Gatekeeper and Executor roles; the Suveren Authority Server implements the Authority Server role, hosted or self-hosted. Its implementation report against the specification: https://github.com/humanagencyprotocol/hap-e2e/blob/main/CONFORMANCE.md
+- [Suveren](https://www.suveren.ai): a commercial HAP-compliant implementation. The Suveren Gateway (open source) implements the Gatekeeper and Executor roles; the Suveren Authority Server implements the Authority Server role, hosted or self-hosted. Its implementation report against the specification: https://github.com/suverenai/suveren-gateway/blob/main/docs/CONFORMANCE.md
 - [hap-core on npm](https://www.npmjs.com/package/@humanagencyp/hap-core): the open-source protocol library — verification, canonicalisation and hashing, mandate decode/verify, content binding, identity.
 - [GitHub](https://github.com/humanagencyprotocol/hap-protocol): specification source, conformance vectors, and provenance record.
