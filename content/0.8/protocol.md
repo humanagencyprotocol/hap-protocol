@@ -1,8 +1,8 @@
 ---
 title: "Human Agency Protocol — Core Specification"
 version: "Version 0.8"
-date: "October 2026"
-status: "Normative specification — draft"
+date: "November 2026"
+status: "Normative specification"
 description: "The normative HAP specification: profiles, bounds, scope, gates, mandates, proposals, mandate tickets, content binding, read authorization, group roles, and owner signatures. No mandate, no ticket. No ticket, no execution."
 ---
 

@@ -1,6 +1,6 @@
 {
   "spec_version": "0.8",
-  "status": "draft for v0.8, 2026-10-30 — independently re-derived 2026-10-30 (see README)",
+  "status": "published with v0.8, 2026-11-02 — independently re-derived 2026-10-30 (see README)",
   "generated": "2026-10-29",
   "set": "proposal-encryption",
   "what_this_proves": "That an implementation encrypts and decrypts proposal content with exactly the construction protocol.md → Proposals, rule 3 pins: the content as JCS of the argument object, AES-256-GCM with no associated data and IV ‖ ciphertext ‖ tag, and the content key wrapped per reader with HPKE base mode, empty info and empty associated data. Real use draws the content key, the IV and every ephemeral key at random; here they are fixed so the output is reproducible.",

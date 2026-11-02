@@ -1,8 +1,8 @@
 ---
 title: "Human Agency Protocol — v0.8 Changelog"
 version: "Version 0.8"
-date: "October 2026"
-status: "Non-normative — record of change (draft)"
+date: "November 2026"
+status: "Non-normative — record of change"
 description: "What changed from v0.7 to v0.8: twelve ledger directions promoted on implementation evidence, three promoted specification-led, the details the ledger left open and how they were pinned, the deviation rules restated, closed, and added, and the review record behind each. Forward-looking material lives in review.md."
 ---
 

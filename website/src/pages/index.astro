@@ -85,7 +85,7 @@ import { siteConfig } from '../config';
           <li>A human authorizes <strong>bounded execution</strong> — scope, limits, time, and commitment mode.</li>
           <li>The <span class="role">Gatekeeper</span> verifies the mandate, checks per-action bounds, and enforces scope locally.</li>
           <li>The <span class="role">Authority Server</span> checks cumulative limits, expiry, revocation, and approval, then <strong>signs the ticket</strong>.</li>
-          <li>The <span class="role">Executor</span> runs the action — only <strong>after</strong> the ticket exists — and the <span class="role">Gatekeeper</span> keeps its own signed copy.</li>
+          <li>The <span class="role">Executor</span> runs the action — only <strong>after</strong> the ticket exists, and <strong>once</strong> per ticket on that Gatekeeper — and the <span class="role">Gatekeeper</span> keeps its own signed copy.</li>
         </ol>
       </div>
 
@@ -122,7 +122,7 @@ import { siteConfig } from '../config';
         <div>
           <div class="job-name"><span class="dir">Outward</span>A stranger can check it.</div>
           <p>Hand someone the ticket and they check the signature against an issuer they trust
-            and, where the content is bound, the content too — without an account, without asking you.</p>
+            and, where the content is bound, the content too — without an account, without asking you. Where only part of it may be shown, the Authority Server can sign a public view that verifies on its own.</p>
         </div>
         <div>
           <div class="job-name"><span class="dir">Back</span>You can answer for it.</div>
@@ -216,12 +216,11 @@ import { siteConfig } from '../config';
         <div>
           <div class="mode-name">Review<span class="who">You approve each action</span></div>
           <p>The agent proposes; you approve each action before it runs.
-            No approval, no ticket — no execution.</p>
+            No approval, no ticket — no execution. What the agent proposes reaches the Authority Server encrypted to you and the people who decide: a server that follows the protocol cannot read it, and keeps only a fingerprint.</p>
         </div>
         <div>
           <div class="mode-name">Review above a cap<span class="who">Approvers decide above a limit</span></div>
-          <p>The agent runs on its own under a limit you set. Above it, the action
-            routes to a named set of approvers before any ticket is issued.</p>
+          <p>The agent runs on its own under a limit you set. Above it, the action becomes a proposal for the approvers named in the mandate — the person it acts for never counts as one of them — before any ticket is issued. A cap can also be hard: above it, the action is refused.</p>
         </div>
       </div>
     </div>

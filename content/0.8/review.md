@@ -1,8 +1,8 @@
 ---
 title: "Human Agency Protocol — Review and Future Directions"
 version: "Version 0.8"
-date: "October 2026"
-status: "Non-normative — future directions (draft)"
+date: "November 2026"
+status: "Non-normative — future directions"
 description: "The forward ledger for v0.8: open directions with their targets, the three specification-led surfaces tracked until an implementation closes them, and the deviation rules that bind every implementation. The record of what changed in v0.8 is changelog.md. Implementation status is not part of the specification."
 ---
 

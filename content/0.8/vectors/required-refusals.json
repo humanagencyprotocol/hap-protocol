@@ -1,6 +1,6 @@
 {
   "spec_version": "0.8",
-  "status": "draft for v0.8, 2026-10-30 — independently re-derived 2026-10-30 (see README)",
+  "status": "published with v0.8, 2026-11-02 — independently re-derived 2026-10-30 (see README)",
   "generated": "2026-10-30",
   "set": "required-refusals",
   "what_this_proves": "That an implementation refuses the same things, with the same error code. This is the set that matters most: refusal is where the safety lives, and it can be stated without reference to any URL, store, or identity system. An implementation that authorizes where this table refuses is not conformant, whatever its signatures look like.",
