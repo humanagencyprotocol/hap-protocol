@@ -1,0 +1,354 @@
+{
+  "spec_version": "0.8",
+  "status": "published with v0.8, 2026-11-02 — independently re-derived 2026-10-30 (see README)",
+  "generated": "2026-10-30",
+  "set": "payload-signatures",
+  "what_this_proves": "That an implementation signs the same bytes for the same payload. Pins key ordering, string escaping, number formatting, null handling and signature encoding together. Ed25519 is deterministic, so any correct implementation reproduces these exact signatures.",
+  "rules": [
+    "Signing bytes are RFC 8785 (JCS): UTF-8, object keys sorted, no insignificant whitespace, numbers in shortest round-trippable form, array order preserved.",
+    "The artifact's own signature field is never part of the bytes being signed.",
+    "A null-valued field is signed as null, not omitted (see groupId in the ticket).",
+    "Signatures are base64url with no padding. Standard base64 is NOT accepted.",
+    "The AS signs the mandate, the ticket and the public ticket projection. The Mandate Owner signs the mandate projection and the approval. Each vector names which key signed it, and the mandate's \"issuer\" field is the AS key's own DID — so a verifier resolves the key from the artifact. Conditional projection fields (above_cap_caps, above_cap_approvers, above_cap_approvals, disclose_fields, intent_disclosure_hash) are present exactly when the mandate carries them.",
+    "New in v0.8: a ticket carries the idempotencyKey of the request it answers (synchronous path) or proposalId + proposalContentHash (review path); the above-cap projection carries above_cap_approvals; HAP-ticket-projection is a separately signed public subset of a ticket. Every \"version\" field is \"0.8\", so no v0.7 signature is reused."
+  ],
+  "keys": {
+    "note": "Both keys are the published test vectors from RFC 8032 section 7.1 (vector 1 = owner, vector 2 = Authority Server). They are test keys with public seeds and MUST NOT be used for anything real.",
+    "owner": {
+      "did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+      "public_key_hex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+      "seed_hex": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
+    },
+    "as": {
+      "did": "did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT",
+      "public_key_hex": "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+      "seed_hex": "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb"
+    }
+  },
+  "cases": [
+    {
+      "id": "mandate-payload",
+      "signed_by": "authority_server",
+      "key": "as",
+      "note": "The AS-signed mandate payload. The envelope's own signature field is never part of the signed bytes. mandate_owners here carries no signature fields — an owner who did not co-sign. In v0.8 the mandate is automatic, because the synchronous ticket below runs under it, and its bounds_hash and profile_hash are real: the hash of the bounds-charge-plain case and the published charge@0.5 profile_hash.",
+      "payload": {
+        "mandate_id": "00000000-0000-4000-8000-00000000a001",
+        "version": "0.8",
+        "profile_id": "charge@0.5",
+        "profile_hash": "sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd",
+        "issuer": "did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT",
+        "bounds_hash": "sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc",
+        "scope_hash": "sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4",
+        "execution_context_hash": "sha256:baf4ab7d80683c52efde1567e4edfebf0b6f5464e2265540adf64046890edc18",
+        "mandate_owners": [
+          {
+            "did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw"
+          }
+        ],
+        "gate_content_hashes": {
+          "intent": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+        },
+        "commitment_mode": "automatic",
+        "issued_at": 1767139200,
+        "expires_at": 1767225600
+      },
+      "canonical": "{\"bounds_hash\":\"sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc\",\"commitment_mode\":\"automatic\",\"execution_context_hash\":\"sha256:baf4ab7d80683c52efde1567e4edfebf0b6f5464e2265540adf64046890edc18\",\"expires_at\":1767225600,\"gate_content_hashes\":{\"intent\":\"sha256:4444444444444444444444444444444444444444444444444444444444444444\"},\"issued_at\":1767139200,\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"mandate_id\":\"00000000-0000-4000-8000-00000000a001\",\"mandate_owners\":[{\"did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\"}],\"profile_hash\":\"sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd\",\"profile_id\":\"charge@0.5\",\"scope_hash\":\"sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4\",\"version\":\"0.8\"}",
+      "signature": "uxkmwRvA5I3CowdDIaQDoZi1_JjwnYce8AEwmq_z4xcuIU9gvjn19oLD1N9RpgNiQMxkGgJHDSRmlMmZ1izwAQ"
+    },
+    {
+      "id": "ticket-payload",
+      "signed_by": "authority_server",
+      "key": "as",
+      "note": "The AS-signed mandate ticket. mandateId names the mandate it ran under (a bounds_hash alone is ambiguous once a revoked mandate has been replaced); limits is the mandate's full plaintext bounds object including the profile key; executionContext carries a non-integral number; cumulativeState is nested; groupId is null (personal mode) and null is signed, not omitted. New in v0.8: idempotencyKey is copied verbatim from the request into the signed payload, so the ticket names the single request it answers; a Gatekeeper refuses a ticket whose key differs from the one it sent. executionContext carries only what a bound reads (amount; currency is a scope value and never travels — Ticket Request Schema, rule 7). limits is the full bounds object of the bounds-charge-plain case and boundsHash is its hash, so the two reconstruct each other. No contentHash: charge@0.5 declares no content_binding.",
+      "payload": {
+        "id": "00000000-0000-4000-8000-00000000b001",
+        "mandateId": "00000000-0000-4000-8000-00000000a001",
+        "version": "0.8",
+        "issuer": "did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT",
+        "groupId": null,
+        "userId": "user-vector-1",
+        "boundsHash": "sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc",
+        "profileId": "charge@0.5",
+        "action": "create_payment_link",
+        "actionType": "charge",
+        "executionContext": {
+          "amount": 12.5
+        },
+        "cumulativeState": {
+          "daily": {
+            "amount": 45,
+            "count": 8
+          },
+          "monthly": {
+            "amount": 320,
+            "count": 47
+          }
+        },
+        "limits": {
+          "profile": "charge@0.5",
+          "amount_max": 100,
+          "amount_daily_max": 500,
+          "amount_monthly_max": 2000,
+          "transaction_count_daily_max": 20
+        },
+        "timestamp": 1767139260,
+        "idempotencyKey": "00000000-0000-4000-8000-00000000c001"
+      },
+      "canonical": "{\"action\":\"create_payment_link\",\"actionType\":\"charge\",\"boundsHash\":\"sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc\",\"cumulativeState\":{\"daily\":{\"amount\":45,\"count\":8},\"monthly\":{\"amount\":320,\"count\":47}},\"executionContext\":{\"amount\":12.5},\"groupId\":null,\"id\":\"00000000-0000-4000-8000-00000000b001\",\"idempotencyKey\":\"00000000-0000-4000-8000-00000000c001\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"limits\":{\"amount_daily_max\":500,\"amount_max\":100,\"amount_monthly_max\":2000,\"profile\":\"charge@0.5\",\"transaction_count_daily_max\":20},\"mandateId\":\"00000000-0000-4000-8000-00000000a001\",\"profileId\":\"charge@0.5\",\"timestamp\":1767139260,\"userId\":\"user-vector-1\",\"version\":\"0.8\"}",
+      "signature": "0fzEo2X_oeSuHUkRhOwp0qjkR8_qOhgG5VqhlrijbKnDmtMIC2vb82-3RRhBTiaf5GqzBRDnDuDzdhDwdTwCAA"
+    },
+    {
+      "id": "mandate-projection",
+      "signed_by": "mandate_owner",
+      "key": "owner",
+      "note": "What the owner's own key signs, before the AS signs anything. Every field except typ, owner_did, nonce, binding, signing_surface and subjects_disclosed exists verbatim in the co-signed mandate below; owner_did, nonce, binding and signing_surface are in its mandate_owners entry, and subjects_disclosed is false because that mandate carries no subjects. New in v0.8: binding, signing_surface and subjects_disclosed are owner-signed, so an AS can no longer upgrade the binding label or attach the owner's name. profile_hash, bounds_hash, scope_hash and execution_context_hash are real values from this vector set (charge@0.5, bounds-charge-plain, scope-charge, and the profile's executionContextSchema).",
+      "payload": {
+        "typ": "HAP-mandate-projection",
+        "version": "0.8",
+        "profile_id": "charge@0.5",
+        "profile_hash": "sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd",
+        "owner_did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+        "bounds_hash": "sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc",
+        "scope_hash": "sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4",
+        "execution_context_hash": "sha256:baf4ab7d80683c52efde1567e4edfebf0b6f5464e2265540adf64046890edc18",
+        "gate_content_hashes": {
+          "intent": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+        },
+        "commitment_mode": "review",
+        "expires_at": 1767225600,
+        "nonce": "vector-nonce-1",
+        "binding": "webauthn",
+        "signing_surface": "gatekeeper_local",
+        "subjects_disclosed": false
+      },
+      "canonical": "{\"binding\":\"webauthn\",\"bounds_hash\":\"sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc\",\"commitment_mode\":\"review\",\"execution_context_hash\":\"sha256:baf4ab7d80683c52efde1567e4edfebf0b6f5464e2265540adf64046890edc18\",\"expires_at\":1767225600,\"gate_content_hashes\":{\"intent\":\"sha256:4444444444444444444444444444444444444444444444444444444444444444\"},\"nonce\":\"vector-nonce-1\",\"owner_did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"profile_hash\":\"sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd\",\"profile_id\":\"charge@0.5\",\"scope_hash\":\"sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4\",\"signing_surface\":\"gatekeeper_local\",\"subjects_disclosed\":false,\"typ\":\"HAP-mandate-projection\",\"version\":\"0.8\"}",
+      "signature": "Dbg0itMUtEr0Ze-q-qV1agYiEJ_yQpcJSjsxt5TwO7UkLGNN--f0cIy96GJtDhlG6KxXPFQ49NcgrcJCoeSNDw"
+    },
+    {
+      "id": "mandate-cosigned",
+      "signed_by": "authority_server",
+      "key": "as",
+      "note": "A mandate the owner co-signed — the composed artifact, and the one most likely to be built wrong, because it carries two signatures made by different parties at different times over different objects. The AS signature covers the whole payload INCLUDING the owner entry, so the AS cannot strip the owner signature afterwards without invalidating its own. The entry's \"signature\" is the owner's, over the projection reconstructed from these very fields — it is byte-identical to the mandate-projection vector, so the two cases chain. Verify it in this order: (1) the AS signature over this payload, (2) rebuild the projection from this payload's profile_id, profile_hash, bounds_hash, scope_hash, execution_context_hash, gate_content_hashes, commitment_mode and expires_at plus the entry's did, nonce, binding and signing_surface, and subjects_disclosed (false: the payload carries no subjects), (3) the entry signature over those bytes using the key carried in the entry's did.",
+      "payload": {
+        "mandate_id": "00000000-0000-4000-8000-00000000a002",
+        "version": "0.8",
+        "profile_id": "charge@0.5",
+        "profile_hash": "sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd",
+        "issuer": "did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT",
+        "bounds_hash": "sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc",
+        "scope_hash": "sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4",
+        "execution_context_hash": "sha256:baf4ab7d80683c52efde1567e4edfebf0b6f5464e2265540adf64046890edc18",
+        "mandate_owners": [
+          {
+            "did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+            "alg": "EdDSA",
+            "signature": "Dbg0itMUtEr0Ze-q-qV1agYiEJ_yQpcJSjsxt5TwO7UkLGNN--f0cIy96GJtDhlG6KxXPFQ49NcgrcJCoeSNDw",
+            "signed_at": 1767139100,
+            "nonce": "vector-nonce-1",
+            "binding": "webauthn",
+            "signing_surface": "gatekeeper_local"
+          }
+        ],
+        "gate_content_hashes": {
+          "intent": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+        },
+        "commitment_mode": "review",
+        "issued_at": 1767139200,
+        "expires_at": 1767225600
+      },
+      "chains_to": "mandate-projection",
+      "canonical": "{\"bounds_hash\":\"sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc\",\"commitment_mode\":\"review\",\"execution_context_hash\":\"sha256:baf4ab7d80683c52efde1567e4edfebf0b6f5464e2265540adf64046890edc18\",\"expires_at\":1767225600,\"gate_content_hashes\":{\"intent\":\"sha256:4444444444444444444444444444444444444444444444444444444444444444\"},\"issued_at\":1767139200,\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"mandate_id\":\"00000000-0000-4000-8000-00000000a002\",\"mandate_owners\":[{\"alg\":\"EdDSA\",\"binding\":\"webauthn\",\"did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"nonce\":\"vector-nonce-1\",\"signature\":\"Dbg0itMUtEr0Ze-q-qV1agYiEJ_yQpcJSjsxt5TwO7UkLGNN--f0cIy96GJtDhlG6KxXPFQ49NcgrcJCoeSNDw\",\"signed_at\":1767139100,\"signing_surface\":\"gatekeeper_local\"}],\"profile_hash\":\"sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd\",\"profile_id\":\"charge@0.5\",\"scope_hash\":\"sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4\",\"version\":\"0.8\"}",
+      "signature": "2bvf8nO8Tt4j6jGZ2SXLGIYMwZMTG1iPMQrqnz2USdHXd62mE8w6kxWZTnWEXk-iNGjxGqkni9zlQmeCaV99CQ"
+    },
+    {
+      "id": "mandate-projection-above-cap",
+      "signed_by": "mandate_owner",
+      "key": "owner",
+      "note": "A projection for a review_above_cap mandate. above_cap_caps, above_cap_approvers and (new in v0.8) above_cap_approvals are conditional projection fields — present exactly when the mandate carries them — under review_above_cap, or (v0.8) under review in a group with approval-kind caps — all three together — so a compromised AS cannot keep the mode string and raise the caps, swap the approvers, or drop the count. disclose_fields would likewise be included exactly when the mandate narrows disclosure; it is absent here because charge@0.5 declares no disclose_fields, so no mandate under it can narrow them. A projection built to the v0.7 field list (without above_cap_approvals) for a v0.8 above-cap mandate does not reconstruct. The approver is the did:key of RFC 8032 section 7.1 test 3, a party distinct from both the owner and the AS, so above_cap_approvals = 1 is reachable: one approver other than the Mandate Owner.",
+      "payload": {
+        "typ": "HAP-mandate-projection",
+        "version": "0.8",
+        "profile_id": "charge@0.5",
+        "profile_hash": "sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd",
+        "owner_did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+        "bounds_hash": "sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc",
+        "scope_hash": "sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4",
+        "execution_context_hash": "sha256:baf4ab7d80683c52efde1567e4edfebf0b6f5464e2265540adf64046890edc18",
+        "gate_content_hashes": {
+          "intent": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+        },
+        "commitment_mode": "review_above_cap",
+        "above_cap_caps": {
+          "amount_max": 50
+        },
+        "above_cap_approvers": [
+          "did:key:z6MkwSD8dBdqcXQzKJZQFPy2hh2izzxskndKCjdmC2dBpfME"
+        ],
+        "expires_at": 1767225600,
+        "nonce": "vector-nonce-3",
+        "above_cap_approvals": 1,
+        "binding": "webauthn",
+        "signing_surface": "gatekeeper_local",
+        "subjects_disclosed": false
+      },
+      "canonical": "{\"above_cap_approvals\":1,\"above_cap_approvers\":[\"did:key:z6MkwSD8dBdqcXQzKJZQFPy2hh2izzxskndKCjdmC2dBpfME\"],\"above_cap_caps\":{\"amount_max\":50},\"binding\":\"webauthn\",\"bounds_hash\":\"sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc\",\"commitment_mode\":\"review_above_cap\",\"execution_context_hash\":\"sha256:baf4ab7d80683c52efde1567e4edfebf0b6f5464e2265540adf64046890edc18\",\"expires_at\":1767225600,\"gate_content_hashes\":{\"intent\":\"sha256:4444444444444444444444444444444444444444444444444444444444444444\"},\"nonce\":\"vector-nonce-3\",\"owner_did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"profile_hash\":\"sha256:13b33d8e943f98d59d2a1751563cbd7929b9b774bdf68388164cb2cfe1b441fd\",\"profile_id\":\"charge@0.5\",\"scope_hash\":\"sha256:20096853bc07e3f431afe4c8990c87dd720a308f39a404b54c417c9f26f4c2a4\",\"signing_surface\":\"gatekeeper_local\",\"subjects_disclosed\":false,\"typ\":\"HAP-mandate-projection\",\"version\":\"0.8\"}",
+      "signature": "zegNVMV3bxvGDnaDmX2wzArNTcEPkJX-sdcAS8eWxHpwFdKkLeeo8zelwk90ZslxpCatJb6nQzuxwnIPXTW6Dg"
+    },
+    {
+      "id": "approval",
+      "signed_by": "mandate_owner",
+      "key": "owner",
+      "note": "A per-action approval in review mode, for a proposal under the co-signed mandate (00000000-0000-4000-8000-00000000a002). Signing a rejection matters as much: set decision to \"reject\". content_hash equals the ticket's contentHash where the profile binds content; where it does not — as here, charge@0.5 declares no content_binding — it is the proposal's content fingerprint (proposalContentHash). New in v0.8: approver_did names who decided — here the Mandate Owner, in review mode — and the signature verifies under the key that DID carries.",
+      "payload": {
+        "typ": "HAP-approval",
+        "version": "0.8",
+        "proposal_id": "00000000-0000-4000-8000-00000000d001",
+        "mandate_id": "00000000-0000-4000-8000-00000000a002",
+        "decision": "commit",
+        "content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "decided_at": 1767139250,
+        "nonce": "vector-nonce-2",
+        "approver_did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+        "proposal_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "action": "create_payment_link",
+        "action_type": "charge"
+      },
+      "canonical": "{\"action\":\"create_payment_link\",\"action_type\":\"charge\",\"approver_did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"content_hash\":\"sha256:7777777777777777777777777777777777777777777777777777777777777777\",\"decided_at\":1767139250,\"decision\":\"commit\",\"mandate_id\":\"00000000-0000-4000-8000-00000000a002\",\"nonce\":\"vector-nonce-2\",\"proposal_content_hash\":\"sha256:7777777777777777777777777777777777777777777777777777777777777777\",\"proposal_id\":\"00000000-0000-4000-8000-00000000d001\",\"typ\":\"HAP-approval\",\"version\":\"0.8\"}",
+      "signature": "2QOJjQv27g2_0PjVfs1XWXPYi5cthgJflODVfTZ6lt4IjpbgpLNO080O1v9i19B16eCTNvqiCh6EMfQRjhmHCQ"
+    },
+    {
+      "id": "ticket-payload-review",
+      "signed_by": "authority_server",
+      "key": "as",
+      "note": "The AS-signed ticket on the review path (new case in v0.8). It carries no idempotencyKey — the proposal's committed→executed transition is its replay protection — and instead binds proposalId, the proposal's content fingerprint proposalContentHash (copied verbatim from what the AS compared), and the owner's HAP-approval signature as the object approvalSignature, whose signed bytes are reconstructible from this ticket plus the mandate (proposalId, mandateId, proposalContentHash — charge@0.5 binds no content, so the approval's content_hash is the proposal's fingerprint — decided_at and nonce from approvalSignature, action and action_type from the ticket's action and actionType, decision \"commit\" because a ticket issues only on a commit, and approver_did, which in review mode is the mandate's owner and so comes from the mandate) — byte-identical to the approval case, so the two chain. The ticket carries no contentHash because the profile declares no content_binding.",
+      "payload": {
+        "id": "00000000-0000-4000-8000-00000000b002",
+        "mandateId": "00000000-0000-4000-8000-00000000a002",
+        "version": "0.8",
+        "issuer": "did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT",
+        "groupId": null,
+        "userId": "user-vector-1",
+        "boundsHash": "sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc",
+        "profileId": "charge@0.5",
+        "action": "create_payment_link",
+        "actionType": "charge",
+        "executionContext": {
+          "amount": 12.5
+        },
+        "cumulativeState": {
+          "daily": {
+            "amount": 57.5,
+            "count": 9
+          },
+          "monthly": {
+            "amount": 332.5,
+            "count": 48
+          }
+        },
+        "limits": {
+          "profile": "charge@0.5",
+          "amount_max": 100,
+          "amount_daily_max": 500,
+          "amount_monthly_max": 2000,
+          "transaction_count_daily_max": 20
+        },
+        "proposalId": "00000000-0000-4000-8000-00000000d001",
+        "proposalContentHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "approvalSignature": {
+          "alg": "EdDSA",
+          "signature": "2QOJjQv27g2_0PjVfs1XWXPYi5cthgJflODVfTZ6lt4IjpbgpLNO080O1v9i19B16eCTNvqiCh6EMfQRjhmHCQ",
+          "nonce": "vector-nonce-2",
+          "decided_at": 1767139250
+        },
+        "timestamp": 1767139300
+      },
+      "chains_to": "approval",
+      "canonical": "{\"action\":\"create_payment_link\",\"actionType\":\"charge\",\"approvalSignature\":{\"alg\":\"EdDSA\",\"decided_at\":1767139250,\"nonce\":\"vector-nonce-2\",\"signature\":\"2QOJjQv27g2_0PjVfs1XWXPYi5cthgJflODVfTZ6lt4IjpbgpLNO080O1v9i19B16eCTNvqiCh6EMfQRjhmHCQ\"},\"boundsHash\":\"sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc\",\"cumulativeState\":{\"daily\":{\"amount\":57.5,\"count\":9},\"monthly\":{\"amount\":332.5,\"count\":48}},\"executionContext\":{\"amount\":12.5},\"groupId\":null,\"id\":\"00000000-0000-4000-8000-00000000b002\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"limits\":{\"amount_daily_max\":500,\"amount_max\":100,\"amount_monthly_max\":2000,\"profile\":\"charge@0.5\",\"transaction_count_daily_max\":20},\"mandateId\":\"00000000-0000-4000-8000-00000000a002\",\"profileId\":\"charge@0.5\",\"proposalContentHash\":\"sha256:7777777777777777777777777777777777777777777777777777777777777777\",\"proposalId\":\"00000000-0000-4000-8000-00000000d001\",\"timestamp\":1767139300,\"userId\":\"user-vector-1\",\"version\":\"0.8\"}",
+      "signature": "Vp7AvoyPIENJFkMv_uVBA3vwoPMRUVsUXyyccJBotmkJUJ70tyqnjLm36ArIPTm9KvsmeuMCzVMgV5N2psSzDA"
+    },
+    {
+      "id": "ticket-projection",
+      "signed_by": "authority_server",
+      "key": "as",
+      "note": "The public ticket projection (new in v0.8, specification-led). A public-only subset of 00000000-0000-4000-8000-00000000b002, separately signed by the AS so a public view verifies on its own: id, mandateId, timestamp, profileId, actionType and boundsHash are copied verbatim from the ticket (contentHash and contentBinding are absent because the ticket carries neither); executionContext is absent because the profile declares no disclose_fields; subjects is absent because the ticket carries none; owner is the mandate_owners entry of 00000000-0000-4000-8000-00000000a002, present because that entry carries a signature; valid_until is set by the AS. It MUST NOT carry userId, cumulativeState, limits or action. The owner entry is verifiable only against the mandate (rebuild its projection from the mandate's fields — the mandate-projection case), not from this object alone.",
+      "payload": {
+        "typ": "HAP-ticket-projection",
+        "version": "0.8",
+        "id": "00000000-0000-4000-8000-00000000b002",
+        "mandateId": "00000000-0000-4000-8000-00000000a002",
+        "issuer": "did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT",
+        "timestamp": 1767139300,
+        "valid_until": 1767225700,
+        "profileId": "charge@0.5",
+        "actionType": "charge",
+        "boundsHash": "sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc",
+        "owner": {
+          "did": "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw",
+          "alg": "EdDSA",
+          "signature": "Dbg0itMUtEr0Ze-q-qV1agYiEJ_yQpcJSjsxt5TwO7UkLGNN--f0cIy96GJtDhlG6KxXPFQ49NcgrcJCoeSNDw",
+          "signed_at": 1767139100,
+          "nonce": "vector-nonce-1",
+          "binding": "webauthn",
+          "signing_surface": "gatekeeper_local"
+        }
+      },
+      "chains_to": "ticket-payload-review",
+      "owner_entry_from": "mandate-cosigned",
+      "canonical": "{\"actionType\":\"charge\",\"boundsHash\":\"sha256:c03a422569b3d8230beed02b85290a69f30a86e5ce00a7578ed671543c7625cc\",\"id\":\"00000000-0000-4000-8000-00000000b002\",\"issuer\":\"did:key:z6MkiaMbhXHNA4eJVCCj8dbzKzTgYDKf6crKgHVHid1F1WCT\",\"mandateId\":\"00000000-0000-4000-8000-00000000a002\",\"owner\":{\"alg\":\"EdDSA\",\"binding\":\"webauthn\",\"did\":\"did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw\",\"nonce\":\"vector-nonce-1\",\"signature\":\"Dbg0itMUtEr0Ze-q-qV1agYiEJ_yQpcJSjsxt5TwO7UkLGNN--f0cIy96GJtDhlG6KxXPFQ49NcgrcJCoeSNDw\",\"signed_at\":1767139100,\"signing_surface\":\"gatekeeper_local\"},\"profileId\":\"charge@0.5\",\"timestamp\":1767139300,\"typ\":\"HAP-ticket-projection\",\"valid_until\":1767225700,\"version\":\"0.8\"}",
+      "signature": "hQ5_vgh-q7sp1B3rq0h8H5wdnkmEFiulQ0Oy-DlhfVr3DLW_NZM-e3CVkaKFTSNN6kL0LfyFonyXWoy1eY6gDA"
+    },
+    {
+      "id": "jcs-edge-cases",
+      "signed_by": "authority_server",
+      "key": "as",
+      "note": "Not a protocol object: a payload that exercises the RFC 8785 rules the protocol objects never reach — escapes (quote, backslash, the short escapes, other control characters as lowercase \\u00xx, DEL passed through), non-ASCII passed through as UTF-8, keys ordered by UTF-16 code units (the astral U+1F600 sorts BEFORE the private-use U+E000, the opposite of code-point order), the ECMAScript number forms (-0 as 0, 20.0 as 20, 1e21 as 1e+21, 1e-7, 1.23e-18, the largest safe integer, the smallest and largest doubles), null kept as null, and empty containers. An implementation that sorts by code point, or formats numbers with its language's default, fails here and nowhere else.",
+      "payload": {
+        "typ": "HAP-vector-canonicalization",
+        "version": "0.8",
+        "strings": {
+          "quote": "say \"hi\"",
+          "backslash": "a\\b",
+          "controls": "\u0001\u001f\t\n\b\f\r",
+          "delete": "",
+          "non_ascii": "Grüße — €",
+          "astral": "😀"
+        },
+        "key_order": {
+          "a": 1,
+          "é": 2,
+          "": 3,
+          "😀": 4,
+          "B": 5,
+          "_": 6
+        },
+        "numbers": [
+          0,
+          -0.0,
+          1,
+          -1,
+          0.1,
+          12.5,
+          20.0,
+          1e+21,
+          1e+20,
+          1e-07,
+          1e-06,
+          1.23e-18,
+          9007199254740991,
+          5e-324,
+          1.7976931348623157e+308
+        ],
+        "nulls": {
+          "absent_is_not_null": null
+        },
+        "empty": {
+          "object": {},
+          "array": [],
+          "string": ""
+        }
+      },
+      "canonical": "{\"empty\":{\"array\":[],\"object\":{},\"string\":\"\"},\"key_order\":{\"B\":5,\"_\":6,\"a\":1,\"é\":2,\"😀\":4,\"\":3},\"nulls\":{\"absent_is_not_null\":null},\"numbers\":[0,0,1,-1,0.1,12.5,20,1e+21,100000000000000000000,1e-7,0.000001,1.23e-18,9007199254740991,5e-324,1.7976931348623157e+308],\"strings\":{\"astral\":\"😀\",\"backslash\":\"a\\\\b\",\"controls\":\"\\u0001\\u001f\\t\\n\\b\\f\\r\",\"delete\":\"\",\"non_ascii\":\"Grüße — €\",\"quote\":\"say \\\"hi\\\"\"},\"typ\":\"HAP-vector-canonicalization\",\"version\":\"0.8\"}",
+      "signature": "XMod87XAvHM_d4-0QgUJyACE3_H4qWq7UZ4qnlt0rG_ljNhX_KMKFFxChMCmQQBHUqd7lbKQT35iuE9NB0M6BQ"
+    }
+  ]
+}

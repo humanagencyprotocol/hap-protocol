@@ -51,7 +51,7 @@ The 4-step causal chain:
 1. A human authorizes bounded execution — scope, limits, time, and commitment mode.
 2. The Gatekeeper verifies the mandate, checks per-action bounds, and enforces scope locally.
 3. The Authority Server checks cumulative limits, expiry, revocation, and approval, then signs the ticket.
-4. The Executor runs the action — only after the ticket exists — and the Gatekeeper keeps its own signed copy.
+4. The Executor runs the action — only after the ticket exists, and once per ticket on that Gatekeeper — and the Gatekeeper keeps its own signed copy.
 
 Open infrastructure: Any compliant Authority Server can issue tickets — Suveren is one implementation. The protocol is open; no single vendor owns the trust layer.
 
@@ -62,7 +62,7 @@ Open infrastructure: Any compliant Authority Server can issue tickets — Suvere
 Most systems make you choose: a gate that blocks, or a log that explains. The same signed artifact does both, and a third thing neither can.
 
 - **Now — it runs, or it doesn't.** Every consequential action is checked against the mandate before it happens. Not caught in a log afterwards. Prevented.
-- **Outward — a stranger can check it.** Hand someone the ticket and they check the signature against an issuer they trust and, where the content is bound, the content too — without an account, without asking you.
+- **Outward — a stranger can check it.** Hand someone the ticket and they check the signature against an issuer they trust and, where the content is bound, the content too — without an account, without asking you. Where only part of it may be shown, the Authority Server can sign a public view that verifies on its own.
 - **Back — you can answer for it.** Evidence created before the act, not reconstructed after: which mandate, which bounds, which content. What an auditor, an insurer, or a court asks for.
 
 Who you have to trust: with the Authority Server's signature alone, the chain holds as far as you trust that operator's key. The protocol also defines the human's own co-signature on the mandate (owner signatures, specified since v0.6). With it, the mandate and each approval are attributable to the person's own key, not the operator's word. Cumulative totals and the order of events still rest on the Authority Server.
@@ -94,8 +94,8 @@ Agent platforms decide what an agent may reach. HAP records what a human actuall
 The level of autonomy is a signed choice on every authorization — the protocol's commitment mode, not a default the agent can change.
 
 - **Automatic** — The agent acts within the bounds you set. No per-action approval — the Authority Server enforces the limits and issues a signed ticket for each action before execution.
-- **Review** — The agent proposes; you approve each action before it runs. No approval, no ticket — no execution.
-- **Review above a cap** — The agent runs on its own under a limit you set. Above it, the action routes to a named set of approvers before any ticket is issued.
+- **Review** — The agent proposes; you approve each action before it runs. No approval, no ticket — no execution. What the agent proposes reaches the Authority Server encrypted to you and the people who decide: a server that follows the protocol cannot read it, and keeps only a fingerprint.
+- **Review above a cap** — The agent runs on its own under a limit you set. Above it, the action becomes a proposal for the approvers named in the mandate — the person it acts for never counts as one of them — before any ticket is issued. A cap can also be hard: above it, the action is refused.
 
 ---
 
@@ -238,13 +238,15 @@ Source: https://github.com/humanagencyprotocol/hap-profiles
 
 ## Protocol Status
 
-HAP is not a paper spec. Every component described above is implemented and running:
+HAP is not a paper spec. These components are published or running today:
 
 - **Specification** — v${version}, published in \`content/${version}/\` (open source), with conformance vectors at humanagencyprotocol.org/vectors and a dated provenance record at humanagencyprotocol.org/provenance
 - **Suveren Gateway** — open source, github.com/suverenai/suveren-gateway
 - **Authority Profiles** — open source, versioned independently, at github.com/humanagencyprotocol/hap-profiles
 - **Authority Server** — hosted service at suveren.ai (not open source; runs the signing backend and public verification endpoints). Its implementation report against the specification: github.com/suverenai/suveren-gateway/blob/main/docs/CONFORMANCE.md
 - **MCP integrations** — CRM, records, LinkedIn, Gmail, Mollie reference implementations
+
+Implementations follow the specification on their own schedule: a new protocol version is published before it is implemented. Which version an implementation speaks, and which requirements it meets, is in its implementation report — not in the specification.
 
 An AI agent reading this context can connect to a running Suveren Gateway today and operate within bounds.
 
