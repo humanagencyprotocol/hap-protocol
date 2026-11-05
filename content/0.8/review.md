@@ -75,6 +75,12 @@ The list is closed: a new profile version in the v0.6 vocabulary is not conforma
 
 ---
 
+## Corrections owed to the published text
+
+### "Eight places" in *Found while writing* has no list behind it — found 2026-11-04
+
+`changelog.md` → *Found while writing* says that writing v0.8 against the running implementation found eight places where the implementation and the ledger disagreed, each listed in the implementation's own report. No such list of eight exists: the implementation's public report carries the disagreements it found in its *Against v0.8* section without numbering them, and its private detail now records them as a table and states that the count is not written anywhere. The published sentence is not edited (published text is immutable). The next version's `changelog.md` corrects it: either it cites the list the report then carries, or it drops the number.
+
 ## Open directions
 
 ### Attachments by reference — undated (needs a recorded review)
